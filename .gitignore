@@ -1,0 +1,24 @@
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Dados brutos (downloads grandes do IBGE/Receita)
+data/raw/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Node
+node_modules/
+dist/
+frontend/perf/results/
+
+# Editor/SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
