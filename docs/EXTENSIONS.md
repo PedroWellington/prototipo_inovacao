@@ -1,0 +1,63 @@
+# Pontos de extensão (fora do escopo do MVP)
+
+Cada item abaixo diz onde encaixar a extensão sem mexer no motor de ranking.
+
+## Google Places (detalhe nos 5 primeiros e no bairro aberto)
+
+- **Onde encaixar:** um novo endpoint, `GET /api/cities/{ibge}/neighborhoods/{id}/details`, chamado pelo frontend só quando o usuário abre um bairro ou olha os 5 primeiros. Ele **nunca** é chamado dentro de `rank()` ([`backend/app/scoring/rank.py`](../backend/app/scoring/rank.py)).
+- **Regras do PDF (seção 5):**
+  - Places API (New) com *field mask* mínima.
+  - Limite de chamadas por sessão e por dia.
+  - Contador de uso no modo de desenvolvimento.
+  - Nada de montar banco com dados do Google.
+  - Respeitar as regras de cache e armazenamento dos termos.
+- **Antes de implementar:** confirmar cotas e preços na página oficial do Google Maps Platform. Não use valores de memória.
+- **Credencial:** `GOOGLE_MAPS_API_KEY` no `.env`. Nunca no Git.
+
+## Provedor de tiles do mapa-base (obrigatório antes de produção)
+
+- **Hoje:** o mapa usa os tiles públicos do OpenStreetMap (`tile.openstreetmap.org`), que só servem para desenvolvimento. A política de uso desse servidor não permite tráfego de produção.
+- **Onde trocar:** `baseStyle()` em [`frontend/src/map/mapView.js`](../frontend/src/map/mapView.js). Basta trocar a fonte raster, ou o estilo inteiro, por um provedor com política adequada: MapTiler, Stadia, Protomaps auto-hospedado etc.
+- **Atribuição:** manter "© OpenStreetMap contributors" visível em qualquer provedor baseado em OSM.
+
+## Localização dos estabelecimentos por CNEFE/CEP (refino)
+
+- **Hoje:** usa a opção B do PDF, o texto do campo "bairro" do CNPJ ([`backend/app/etl/locate.py`](../backend/app/etl/locate.py)).
+- **Refino (opção A):** casar logradouro + número + CEP do CNPJ com o CNEFE 2022 do IBGE, para obter coordenadas, e atribuir por ponto-em-polígono (`ST_Contains` em `neighborhoods.geom`).
+- **Onde encaixar:** um novo passo `cnefe` em `load_city`, antes de `locate`. Só os estabelecimentos ainda com `match_method = 'none'` seriam tentados, e o novo método seria gravado como `match_method = 'cnefe'`. Isso exige ampliar o CHECK da coluna numa migration.
+- **Ponto de partida:** a lista dos textos não casados está em `city_data_status.unmatched_top` e em [DATA.md](DATA.md).
+
+## Pagamentos, planos e cotas
+
+- **Fora do MVP.** O PDF (seção 8) prevê os planos Essencial, Profissional e Rede, cobrança mensal por gateway (Mercado Pago ou Stripe) com webhooks e cotas lidas de uma tabela de configuração.
+- **Onde encaixar:**
+  - tabelas `plans`, `subscriptions` e `usage_counters`;
+  - uma dependência FastAPI `require_quota("cities")`, aplicada em `/api/cities/{ibge}/rank`.
+- **Exige:** CNPJ ou MEI e conta no gateway.
+
+## Verificação de e-mail, redefinição de senha, login com Google
+
+- **Hoje:** `users.email_verified` já existe e vale `false`.
+- **Verificação e redefinição:** tabela `email_tokens(user_id, purpose, token_hash, expires_at)`, mais um provedor de e-mail transacional (credencial no `.env`).
+- **Login com Google:** OAuth 2.0 / OpenID Connect com `state` + PKCE. Uma conta existente é vinculada pelo e-mail verificado.
+
+## Limite de tentativas de login distribuído
+
+- **Hoje:** em memória, por processo ([`backend/app/auth/rate_limit.py`](../backend/app/auth/rate_limit.py)). Zera ao reiniciar e não vale com vários workers.
+- **Antes de produção:** trocar por Redis ou por uma tabela.
+
+## Agente de IA, relatório em PDF, comparar cidades, contas de equipe, aluguel
+
+- **Agente de IA (PDF, seção 7):** deve **chamar `rank()`**. Ele traduz o pedido em critérios e pesos e explica o resultado com os números da resposta. Nunca calcula nem inventa números.
+- **Comparar cidades:** reaproveita `RANK_SQL` agregando por cidade. Só usa cidades carregadas.
+- **Aluguel:** só com fonte licenciada, como faixa de preço anunciado, com fonte e data. Sem raspagem.
+- **Fora para sempre:** previsão de lucro, de faturamento ou de chance de sucesso.
+
+## Renda (Censo 2022, por setor censitário)
+
+- **Fora do MVP.** Ver [DATA.md](DATA.md).
+- **Regras para quando entrar:**
+  - Valor oculto ("x") vira "indisponível".
+  - Agregação por média ponderada, marcada como aproximada.
+  - Nota "Renda é um indicador e não determina preferências".
+  - Nunca afirmar o que as pessoas "estão dispostas a pagar".
