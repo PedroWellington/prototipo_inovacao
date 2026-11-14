@@ -19,7 +19,7 @@ def business_types(request: Request, db: Session = Depends(get_db)):
     rows = db.execute(
         text(
             """
-            SELECT t.key, t.name, t.name_plural, t.precision, t.note,
+            SELECT t.key, t.name, t.name_plural, t.precision, t.note, t.source,
                    coalesce(json_agg(json_build_object('cnae', c.cnae, 'description', c.description, 'verified', c.verified)
                                      ORDER BY c.cnae) FILTER (WHERE c.cnae IS NOT NULL), '[]') AS cnaes
             FROM business_types t LEFT JOIN business_type_cnae c ON c.business_type_key = t.key

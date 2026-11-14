@@ -17,7 +17,7 @@ O VICUS ajuda o dono de um negócio a comparar bairros pelos critérios dele: o 
 6. **Cor nunca é o único canal.** Mapa, tooltip e lista sempre mostram o número da posição.
 7. **Ranking reproduzível.** Empate desfeito pelo nome do bairro.
 8. **Notas vêm sempre do banco (SQL).** O frontend não calcula nota.
-9. **Não guardar nem exibir dados de sócios ou MEI.** Na tabela de estabelecimentos fica só: hash do CNPJ, CNAE, situação, bairro (texto), CEP e município.
+9. **Não guardar nem exibir dados de sócios ou MEI.** Na tabela de estabelecimentos fica só: hash do CNPJ, CNAE, situação, bairro (texto), CEP, município e `location_id` (hash de CNPJ de outro cadastro do mesmo endereço; nunca o endereço nem hash dele). Do CNES, só código, tipo de unidade, município e bairro.
 10. **Nenhum atributo pessoal ou protegido entra em cálculo.** Faturamento e sede não entram no ranking.
 11. **Aviso fixo no rodapé do explorador:** caráter informativo; não é aconselhamento jurídico nem financeiro.
 12. **Sem Google nesta etapa.** O mapa-base é OSM, com atribuição visível.
@@ -29,8 +29,10 @@ O VICUS ajuda o dono de um negócio a comparar bairros pelos critérios dele: o 
 backend/   FastAPI + SQLAlchemy Core (SQL explícito) + Alembic
   app/auth     sessão (cookie httpOnly + hash SHA-256 no banco), CSRF, argon2id, limite de tentativas
   app/api      catalog, geo (malhas do IBGE com cache), profile, cities (status/geojson/rank), account (LGPD)
-  app/scoring  rank.py: o SQL único do ranking
-  app/etl      seed_catalog, ibge_boundaries (bairros ou áreas por setor), cnpj, locate, counts, load_city/load_uf, report
+  app/scoring  rank.py (bairros) e rank_cities.py (cidades): o mesmo motor em SQL
+  app/etl      seed_catalog, ibge_boundaries (bairros ou áreas por setor), cnpj, locate, counts, census, cnes, load_city/load_uf/load_br, report
+  app/seed     CSVs também definem a fonte de cada tipo (business_types.source: cnpj|cnes) e tipo -> TP_UNIDADE do CNES
+  scripts/     medição (perf_rank) e auditoria de dados (audit_establishments, compare_cnes); só desenvolvimento
   app/seed     CSVs editáveis: segmentos, tipos, tipo→CNAE, sugestões por ramo
 frontend/  Vite + JS puro (ES modules), roteador por hash, MapLibre só no explorador
   src/styles/tokens.css  todas as cores, fontes e espaçamentos (troque o visual por aqui)
@@ -43,9 +45,12 @@ data/raw/  downloads do IBGE e da Receita (não versionado)
 
 ```powershell
 docker compose up -d --build                                                  # sobe db, backend e frontend (http://localhost:8080)
+docker compose run --rm backend python -m app.etl.load_br                     # Brasil inteiro, retomável (uma leitura do CNPJ)
 docker compose run --rm backend python -m app.etl.load_uf --uf PE             # carga do estado inteiro (uma leitura do CNPJ)
 docker compose run --rm backend python -m app.etl.load_city --ibge 2611606    # carga de um município
 docker compose run --rm backend python -m app.etl.report --uf PE              # tabela de cobertura por cidade
+docker compose run --rm -T backend python -m app.etl.report --all > docs/COBERTURA.md   # cobertura de todas as cidades
+docker compose run --rm backend python scripts/audit_establishments.py --ibge 2611606 --bairro Iputinga --type hospital  # auditoria (dev)
 docker compose run --rm backend python -m app.etl.seed_catalog                # recarrega o catálogo depois de editar os CSVs
 docker compose run --rm backend pytest                                        # testes do backend (banco locus_test)
 cd frontend; npx vitest run                                                   # testes do frontend
@@ -57,7 +62,7 @@ docker compose --profile dev up frontend-dev                                  # 
 
 - **Idioma:** identificadores em inglês; textos de interface em português do Brasil; comentários curtos em português.
 - **Banco:** toda mudança de esquema passa por migration Alembic. O SQL é escrito à mão: PostGIS e views materializadas ficam mais claros assim.
-- **Tipos de negócio e CNAEs:** são dados (CSV), não código. Nunca escreva `if segmento == ...` no motor.
+- **Tipos de negócio, CNAEs e fonte (CNPJ/CNES):** são dados (CSV), não código. "Estabelecimento" = local distinto (CEP + logradouro + número; ver docs/DATA.md). Nunca escreva `if segmento == ...` no motor.
 - **Nada específico de cidade:** toda cidade com `city_data_status` fica disponível no explorador; nunca escreva código para uma cidade em particular.
 - **Dados brutos:** os .zip do CNPJ e as malhas ficam em `data/raw/` e nunca são apagados pelo ETL.
 - **Mapa:**
@@ -73,11 +78,9 @@ docker compose --profile dev up frontend-dev                                  # 
 - Agente de IA.
 - Relatório em PDF.
 - Google Places.
-- Comparar cidades.
 - Contas de equipe.
 - Verificação de e-mail, redefinição de senha e login com Google.
 - Aluguel.
-- Estados além dos carregados (cada UF nova exige `load_uf`).
 - Refino por CNEFE/CEP.
 
 **Fora para sempre:** previsão de lucro, de faturamento ou de chance de sucesso.

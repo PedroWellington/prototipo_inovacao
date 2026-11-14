@@ -49,15 +49,21 @@ Cada item abaixo diz onde encaixar a extensão sem mexer no motor de ranking.
 ## Agente de IA, relatório em PDF, comparar cidades, contas de equipe, aluguel
 
 - **Agente de IA (PDF, seção 7):** deve **chamar `rank()`**. Ele traduz o pedido em critérios e pesos e explica o resultado com os números da resposta. Nunca calcula nem inventa números.
-- **Comparar cidades:** reaproveita `RANK_SQL` agregando por cidade. Só usa cidades carregadas.
+- **Comparar cidades:** feito como ranking de cidades ("Você já tem uma cidade em mente?" → Não). Ver [SCORING.md](SCORING.md).
 - **Aluguel:** só com fonte licenciada, como faixa de preço anunciado, com fonte e data. Sem raspagem.
 - **Fora para sempre:** previsão de lucro, de faturamento ou de chance de sucesso.
 
-## Renda (Censo 2022, por setor censitário)
+## Renda (Censo 2022)
 
-- **Fora do MVP.** Ver [DATA.md](DATA.md).
-- **Regras para quando entrar:**
-  - Valor oculto ("x") vira "indisponível".
-  - Agregação por média ponderada, marcada como aproximada.
-  - Nota "Renda é um indicador e não determina preferências".
-  - Nunca afirmar o que as pessoas "estão dispostas a pagar".
+- **Implementada.** Ver [DATA.md](DATA.md) e [SCORING.md](SCORING.md).
+- **Próximos passos possíveis:** renda como critério também no ranking de bairros (hoje só aparece no detalhe); outras variáveis do Censo (domicílios, faixa etária) com as mesmas regras de fonte, data e "indisponível".
+
+## CNES para outros tipos de saúde
+
+- **Hoje:** o CNES é a fonte principal de **hospital**, com o CNPJ como complemento. Ver [DATA.md](DATA.md), seção "CNES".
+- **Para estender** a clínica, laboratório e fisioterapia:
+  1. conferir um mapeamento tipo de unidade (`TP_UNIDADE`) → tipo do catálogo, já que "clínica/centro de especialidade" inclui odontologia e "SADT" mistura laboratório e imagem;
+  2. pôr esse mapeamento em `business_type_cnes.csv`;
+  3. trocar `source` para `cnes` em `business_types.csv` e rodar `seed_catalog` e `load_br --steps cnes --force`.
+  - Nenhum código muda.
+- **Cuidados:** o CNES inclui consultórios de pessoa física (tipo 22). Nunca guardar nome de profissional; só código, tipo e lugar.

@@ -30,21 +30,25 @@ Copy-Item .env.example .env
 #    As migrations rodam sozinhas quando o backend sobe.
 docker compose up -d --build
 
-# 3. Carga de Pernambuco inteiro (185 municípios): catálogo do IBGE, bairros/áreas, CNPJ, localização e contagens.
-#    Baixa ~5,4 GB da Receita na primeira vez (fica em data\raw, fora do Git, e nunca é apagado) e leva de
-#    15 a 60 min, conforme a sua internet. Rodar de novo não duplica nada e reaproveita os arquivos.
-docker compose run --rm backend python -m app.etl.load_uf --uf PE
+# 3. Carga do Brasil inteiro (5.570 municípios): Censo 2022, bairros/áreas das 27 UFs, CNPJ (uma leitura só),
+#    localização, renda e contagens. Baixa ~5,4 GB da Receita e ~1,7 GB do IBGE na primeira vez (fica em data\raw,
+#    fora do Git, e nunca é apagado). Retomável: se cair, rode de novo e ela continua da UF seguinte.
+docker compose run --rm backend python -m app.etl.load_br
 
-# Só um município (código IBGE), se preferir:
+# Só um estado ou um município (código IBGE), se preferir:
+docker compose run --rm backend python -m app.etl.load_uf --uf PE
 docker compose run --rm backend python -m app.etl.load_city --ibge 2611606
 ```
 
-Ao final, a carga imprime a tabela por cidade (% de estabelecimentos localizados). Detalhe de uma cidade, com os 20 textos de bairro não casados:
-`docker compose run --rm backend python -m app.etl.report --ibge 2611606`.
+Ao final, a carga imprime a cobertura por UF. Detalhe de uma cidade, com os 20 textos de bairro não casados:
+`docker compose run --rm backend python -m app.etl.report --ibge 2611606`. Tabela de todas as cidades:
+`docker compose run --rm -T backend python -m app.etl.report --all > docs/COBERTURA.md`.
 
 Toda cidade com dados carregados fica clicável no explorador automaticamente. Cidades sem bairros oficiais no IBGE usam **áreas por setor censitário**, e a tela avisa isso.
 
-Abra **http://localhost:8080**, crie uma conta e responda as perguntas iniciais. No mapa, escolha **Nordeste → Pernambuco** e uma cidade (por exemplo, Recife).
+Abra **http://localhost:8080**, crie uma conta e responda as perguntas iniciais. O explorador pergunta **"Você já tem uma cidade em mente?"**:
+- **Sim:** região → estado → cidade → bairros (por exemplo, Nordeste → Pernambuco → Recife).
+- **Não:** escolha o alcance (Brasil, uma região ou um estado) e veja as cidades que mais combinam com os seus critérios. Clique numa cidade para ver os bairros dela.
 
 ### Se o download da Receita falhar
 
@@ -82,18 +86,29 @@ cd frontend; npm run perf                         # fluidez: abre o Edge e mede 
 docker compose run --rm backend python scripts/perf_rank.py   # tempo do ranking (p50/p95) e tamanho da geometria
 ```
 
+## Auditoria dos dados (só desenvolvimento, não é exposto no site)
+
+```powershell
+# Estabelecimentos contados num bairro para um tipo: CNPJ básico, CNAE, endereço e método de localização
+# (sem nome, sem sócio; MEI aparece como "omitido"). Relê os .zip do CNPJ; CSV em data\raw\audit.
+docker compose run --rm backend python scripts/audit_establishments.py --ibge 2611606 --bairro Iputinga --type hospital
+# Compara com o CNES (Ministério da Saúde), por coordenada
+docker compose run --rm backend python scripts/compare_cnes.py --ibge 2611606 --bairro Iputinga
+```
+
 ## Começar de novo do zero
 
 ```powershell
 docker compose down -v      # apaga o banco (os downloads em data\raw ficam)
 docker compose up -d --build
-docker compose run --rm backend python -m app.etl.load_uf --uf PE --local-path /data/raw/cnpj/2026-10
+docker compose run --rm backend python -m app.etl.load_br --local-path /data/raw/cnpj/2026-10
 ```
 
 ## Documentação
 
 - [docs/LOCUS-logica-do-produto.pdf](docs/LOCUS-logica-do-produto.pdf): regras do produto (fonte da verdade).
 - [docs/DATA.md](docs/DATA.md): fontes, layouts, datas, limitações e taxa de localização medida.
+- [docs/COBERTURA.md](docs/COBERTURA.md): taxa de localização de cada cidade carregada (gerado).
 - [docs/SCORING.md](docs/SCORING.md): fórmula do ranking, com exemplo numérico.
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md): metas de fluidez e números medidos.
 - [docs/EXTENSIONS.md](docs/EXTENSIONS.md): Google Places, tiles de produção, CNEFE, pagamentos e demais extensões.

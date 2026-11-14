@@ -2,7 +2,8 @@
 
 Em ordem, sempre dentro do mesmo município:
 1) casamento exato do nome normalizado (sem acento, minúsculo, sem pontuação), só com nome único na cidade;
-2) alias documentado (ex.: "centro" -> área urbana da sede, em cidade sem bairro formal), só se único;
+2) alias documentado (em cidade sem bairro formal: nome do distrito -> área urbana dele; "centro" -> área urbana da
+   sede), só se único na cidade;
 3) casamento aproximado (pg_trgm), só quando há UM único bairro/área acima do limiar.
 Em dúvida, não atribui: prefira "não localizado" a localizar errado.
 """
@@ -33,7 +34,7 @@ def run(conn, munis: list[int], threshold: float = TRIGRAM_THRESHOLD) -> dict:
         text(
             """
             WITH a AS (
-              SELECT municipality_ibge AS mun, alias, min(id) AS id
+              SELECT municipality_ibge AS mun, norm_text(alias) AS alias, min(id) AS id
               FROM neighborhoods, unnest(aliases) AS alias
               WHERE municipality_ibge = ANY(:m) GROUP BY 1, 2 HAVING count(*) = 1
             )

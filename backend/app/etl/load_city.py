@@ -77,7 +77,7 @@ def run(uf: str, munis: list[int], args) -> list[dict]:
         t = step(f"cnpj ({uf}, referência {month})")
         with engine.begin() as c:
             r = cnpj.load(c, uf, month, args.local_path, munis)
-        done(t, f"{r['scanned_lines']:,} linhas lidas; {r['active_in_uf']:,} ativos na UF; {r['inserted']:,} gravados")
+        done(t, f"{r['active_in_uf']:,} ativos na UF com CNAE do catálogo; {r['inserted']:,} gravados")
         for m in r["non_exact_codes"]:
             print(f"  município da Receita {m['code']} {m['rfb_name']!r} -> {m['ibge_name'] or 'SEM CORRESPONDÊNCIA'} ({m['method'] or '-'}, {m['n']:,} estab.)")
 

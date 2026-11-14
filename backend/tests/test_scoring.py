@@ -31,6 +31,8 @@ BAIRROS = {  # nome: (área km², hospitais, farmácias)
 def city():
     seed_minimal_catalog()
     rank_module.clear_cache()
+    with engine.begin() as c:  # a fórmula é testada com o CNPJ; a fonte CNES tem teste próprio (test_cnes.py)
+        c.execute(text("UPDATE business_types SET source = 'cnpj'"))
     with engine.begin() as c:
         c.execute(text("DELETE FROM establishments; DELETE FROM neighborhoods; DELETE FROM city_data_status"))
         seq = 0

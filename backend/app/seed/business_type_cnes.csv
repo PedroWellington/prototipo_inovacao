@@ -1,0 +1,7 @@
+business_type_key,tp_unidade,description
+hospital,05,Hospital geral
+hospital,07,Hospital especializado
+hospital,15,Unidade mista
+hospital,62,Hospital-dia (isolado)
+hospital,20,Pronto-socorro geral
+hospital,21,Pronto-socorro especializado

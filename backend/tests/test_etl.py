@@ -99,3 +99,51 @@ def test_cnpj_load_and_locate(cnpj_dir):
     assert unmatched == {"CENTRO", "BOA VIAJEM", "JARDIM SAO PAULO I"}
     # Nada de dado pessoal: sem nome fantasia, razão social, e-mail, telefone ou CNPJ em claro.
     assert not {"nome_fantasia", "razao_social", "email", "telefone", "cnpj"} & set(columns)
+
+
+def test_area_aliases_use_district_name_and_named_seat():
+    from app.etl.ibge_boundaries import norm
+
+    # Mesmo critério do norm_text do banco; sede = distrito com o nome do município (não o código "05").
+    assert norm("Água Rasa") == "agua rasa" and norm("São Paulo") == norm("SAO  PAULO.")
+    with engine.connect() as c:
+        assert c.execute(text("SELECT norm_text('Sé – área urbana')")).scalar() == norm("Sé – área urbana")
+
+
+def test_location_key_groups_same_address_only_when_provable():
+    def row(basico, cep="50670260", tipo="RUA", rua="DO BOM PASTOR", num="141"):
+        r = [""] * cnpj.N_COLUMNS
+        r[0], r[1], r[2] = basico, "0001", "99"
+        r[cnpj.COL_CEP], r[cnpj.COL_TIPO_LOGRADOURO], r[cnpj.COL_LOGRADOURO], r[cnpj.COL_NUMERO] = cep, tipo, rua, num
+        return r
+
+    a, b = row("00000001"), row("00000002", rua="Do Bom  Pastor.")  # mesma grafia normalizada
+    assert cnpj.location_key(a) == cnpj.location_key(b)
+    assert cnpj.location_key(row("00000003", num="143")) != cnpj.location_key(a)
+    assert cnpj.location_key(row("00000004", cep="50670000")) != cnpj.location_key(a)
+    # sem número ou sem CEP não dá para provar que é o mesmo local: cada CNPJ é um local
+    for sn in ("S/N", "SN", "", "0", "S/Nº"):
+        r = row("00000005", num=sn)
+        assert cnpj.location_key(r) == cnpj.cnpj_hash(r)
+    assert cnpj.location_key(row("00000006", cep="")) == cnpj.cnpj_hash(row("00000006", cep=""))
+
+
+def test_counts_are_distinct_locations():
+    seed_minimal_catalog()
+    with engine.begin() as c:
+        c.execute(text("DELETE FROM establishments; DELETE FROM neighborhoods"))
+        add_unit(c, RECIFE, "1", "Iputinga")
+        nid = c.execute(text("SELECT id FROM neighborhoods WHERE ibge_code = '1'")).scalar()
+        # três farmácias: dois CNPJs no mesmo local (mesmo location_id), um em outro
+        for i, loc in (("1", "A"), ("2", "A"), ("3", "B")):
+            c.execute(
+                text("INSERT INTO establishments (id, cnae_main, situation, municipality_ibge, neighborhood_id, match_method, location_id) "
+                     "VALUES (lpad(:i, 64, '0'), '4771701', '02', :m, :n, 'exact', lpad(:l, 64, '0'))"),
+                {"i": i, "m": RECIFE, "n": nid, "l": loc},
+            )
+        c.execute(text("REFRESH MATERIALIZED VIEW neighborhood_type_counts; REFRESH MATERIALIZED VIEW municipality_type_counts; "
+                       "REFRESH MATERIALIZED VIEW neighborhood_coverage"))
+        assert c.execute(text("SELECT n_establishments FROM neighborhood_type_counts WHERE neighborhood_id = :n"), {"n": nid}).scalar() == 2
+        assert c.execute(text("SELECT n_establishments FROM municipality_type_counts WHERE municipality_ibge = :m AND business_type_key = 'farmacia'"),
+                         {"m": RECIFE}).scalar() == 2
+        assert c.execute(text("SELECT located_count FROM neighborhood_coverage WHERE neighborhood_id = :n"), {"n": nid}).scalar() == 2

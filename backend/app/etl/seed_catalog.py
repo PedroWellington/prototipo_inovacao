@@ -58,8 +58,9 @@ def seed_catalog_tables(conn) -> None:
     segments = read_csv("segments.csv")
     types = read_csv("business_types.csv")
     cnaes = read_csv("business_type_cnae.csv")
+    cnes = read_csv("business_type_cnes.csv")
     defaults = read_csv("segment_defaults.csv")
-    conn.execute(text("DELETE FROM segment_defaults; DELETE FROM business_type_cnae"))
+    conn.execute(text("DELETE FROM segment_defaults; DELETE FROM business_type_cnae; DELETE FROM business_type_cnes"))
     conn.execute(
         text("INSERT INTO segments VALUES (:key, :name, :sort) ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, sort=EXCLUDED.sort"),
         segments,
@@ -67,9 +68,10 @@ def seed_catalog_tables(conn) -> None:
     conn.execute(text("DELETE FROM segments WHERE key <> ALL(:k)"), {"k": [s["key"] for s in segments]})
     conn.execute(
         text(
-            "INSERT INTO business_types VALUES (:key, :name, :name_plural, :precision, nullif(:note, ''), :selectable) "
+            "INSERT INTO business_types (key, name, name_plural, precision, note, selectable, source) "
+            "VALUES (:key, :name, :name_plural, :precision, nullif(:note, ''), :selectable, :source) "
             "ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, name_plural=EXCLUDED.name_plural, "
-            "precision=EXCLUDED.precision, note=EXCLUDED.note, selectable=EXCLUDED.selectable"
+            "precision=EXCLUDED.precision, note=EXCLUDED.note, selectable=EXCLUDED.selectable, source=EXCLUDED.source"
         ),
         [{**t, "selectable": t["selectable"] == "true"} for t in types],
     )
@@ -78,16 +80,20 @@ def seed_catalog_tables(conn) -> None:
         text("INSERT INTO business_type_cnae VALUES (:business_type_key, :cnae, :description, :verified)"),
         [{**c, "verified": c["verified"] == "true"} for c in cnaes],
     )
+    conn.execute(text("INSERT INTO business_type_cnes VALUES (:business_type_key, :tp_unidade, :description)"), cnes)
     conn.execute(text("INSERT INTO segment_defaults VALUES (:segment_key, :business_type_key, :direction, :weight)"), defaults)
-    print(f"Catálogo: {len(segments)} segmentos, {len(types)} tipos, {len(cnaes)} CNAEs, {len(defaults)} sugestões")
+    print(f"Catálogo: {len(segments)} segmentos, {len(types)} tipos, {len(cnaes)} CNAEs, {len(cnes)} tipos CNES, {len(defaults)} sugestões")
 
 
 def main() -> None:
     with engine.begin() as conn:
         seed_localities(conn)
         seed_catalog_tables(conn)
-        # As contagens dependem do mapeamento tipo -> CNAE: editar o CSV exige recontar.
-        conn.execute(text("REFRESH MATERIALIZED VIEW neighborhood_type_counts"))
+        # As contagens dependem do mapeamento tipo -> CNAE/CNES e da fonte: editar o CSV exige recontar.
+        # (CNAE novo exige recarregar o CNPJ; tipo de unidade novo, a etapa cnes do load_br. Ver docs/DATA.md.)
+        from app.etl.counts import refresh_views
+
+        refresh_views(conn)
 
 
 if __name__ == "__main__":

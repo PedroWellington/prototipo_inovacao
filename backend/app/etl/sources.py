@@ -15,6 +15,24 @@ IBGE_SETORES_URL = (
     "malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/setores/gpkg/UF/{uf}/{uf}_setores_CD2022.gpkg"
 )
 
+# IBGE — Malha Municipal 2022 (Brasil inteiro): base dos tiles do ranking de cidades.
+IBGE_MALHA_MUNICIPIOS_URL = (
+    "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/"
+    "municipio_2022/Brasil/BR/BR_Municipios_2022.zip"
+)
+# IBGE — Censo 2022 (conferidos em 2026-11-14): renda do responsável e agregados básicos (população e área).
+_CENSO = "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022"
+_RENDA = f"{_CENSO}/Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel"
+IBGE_RENDA_SETORES_URL = f"{_RENDA}/Agregados_por_setores_renda_responsavel_BR_20260508_csv.zip"
+IBGE_RENDA_BAIRROS_URL = f"{_RENDA}/Agregados_por_bairros_renda_responsavel_BR_20260508_csv.zip"
+IBGE_RENDA_MUN_URL = f"{_RENDA}/Agregados_por_municipios_renda_responsavel_BR_20260508_csv.zip"
+IBGE_CENSO_BASICO_MUN_URL = (
+    f"{_CENSO}/Agregados_por_Setores_Censitarios/Agregados_por_Municipio_csv/Agregados_por_municipios_basico_BR_20260520.zip"
+)
+
+# Ministério da Saúde — CNES (OpenDataSUS), atualizado diariamente; fonte principal dos tipos com source = cnes.
+CNES_URL = "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/CNES/cnes_estabelecimentos_csv.zip"
+
 # Receita Federal — dados abertos do CNPJ. Desde 2025 publicados num compartilhamento Nextcloud;
 # o WebDAV público usa o token do compartilhamento como usuário (senha vazia).
 RFB_SHARE_TOKEN = "YggdBLfdninEJX9"

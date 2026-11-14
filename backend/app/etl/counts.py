@@ -11,6 +11,7 @@ def refresh_views(conn) -> None:
     # CONCURRENTLY: a API continua lendo a versão anterior enquanto atualiza.
     conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY neighborhood_type_counts"))
     conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY neighborhood_coverage"))
+    conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY municipality_type_counts"))
 
 
 STATUS_SQL = text(

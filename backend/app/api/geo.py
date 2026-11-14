@@ -1,7 +1,9 @@
 import json
+from collections import OrderedDict
+from threading import Lock
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -122,3 +124,51 @@ def states_geo(request: Request, db: Session = Depends(get_db)):
 @router.get("/municipalities.geojson")
 def municipalities_geo(request: Request, uf: str = Query(min_length=2, max_length=2), db: Session = Depends(get_db)):
     return cached(request, municipalities_geojson(db, uf), GEOJSON, max_age=DAY)
+
+
+# --- Tiles vetoriais dos municípios (ranking de cidades; ver docs/PERFORMANCE.md) --------------------
+# Geometria pré-simplificada por faixa de zoom (census.TOLERANCE); só id, nome, UF e população no tile: cor e número
+# vêm do ranking (feature-state e fonte de pontos no frontend).
+TILE_SQL = {
+    col: text(
+        f"""
+        WITH b AS (SELECT ST_TileEnvelope(:z, :x, :y) AS env)
+        SELECT ST_AsMVT(t, 'munis', 4096, 'geom', 'id') FROM (
+          SELECT m.ibge AS id, m.name, m.uf, m.population, ST_AsMVTGeom({col}, b.env, 4096, 64, true) AS geom
+          FROM municipalities m, b WHERE {col} && b.env
+        ) t WHERE geom IS NOT NULL
+        """
+    )
+    for col in ("geom_low", "geom_mid", "geom_high")
+}
+TILE_FORMAT = 2  # suba ao mudar as colunas do tile: invalida o cache do navegador (a URL leva ?v=)
+_tiles: OrderedDict = OrderedDict()
+_tiles_lock = Lock()
+TILE_CACHE_SIZE = 4096
+
+
+def tile_column(z: int) -> str:
+    return "geom_low" if z <= 5 else "geom_mid" if z <= 8 else "geom_high"
+
+
+@router.get("/tiles/municipalities/{z}/{x}/{y}.pbf")
+def municipality_tile(request: Request, z: int = Path(ge=0, le=14), x: int = Path(ge=0), y: int = Path(ge=0),
+                      db: Session = Depends(get_db)):
+    if x >= 2**z or y >= 2**z:
+        raise HTTPException(404, {"code": "not_found", "message": "Tile fora da grade."})
+    with _tiles_lock:
+        body = _tiles.get((z, x, y))
+    if body is None:
+        body = bytes(db.execute(TILE_SQL[tile_column(z)], {"z": z, "x": x, "y": y}).scalar() or b"")
+        with _tiles_lock:
+            _tiles[(z, x, y)] = body
+            if len(_tiles) > TILE_CACHE_SIZE:
+                _tiles.popitem(last=False)
+    # O frontend pede ?v=<versão da malha>: cache longo é seguro.
+    return cached(request, body, "application/vnd.mapbox-vector-tile", max_age=7 * DAY)
+
+
+@router.get("/tiles/version")
+def tiles_version(db: Session = Depends(get_db)):
+    v = db.execute(text("SELECT done_at FROM etl_progress WHERE uf = 'BR' AND step = 'census'")).scalar()
+    return {"version": f"{TILE_FORMAT}-{v.isoformat()}" if v else None}

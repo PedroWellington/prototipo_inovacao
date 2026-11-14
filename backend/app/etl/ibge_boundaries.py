@@ -5,9 +5,13 @@
     * cada aglomerado nomeado pelo IBGE (povoado, aldeia, núcleo) vira uma área com o nome oficial;
     * os demais setores urbanos do distrito formam "<distrito> – área urbana";
     * os demais setores rurais formam "<distrito> – área rural" (massas d'água ficam de fora).
-  Aliases (sem ambiguidade, documentados em docs/DATA.md): "centro" -> área urbana do distrito-sede;
-  "zona rural" -> área rural, só quando o município tem uma única área rural.
+  Aliases (sem ambiguidade, documentados em docs/DATA.md; o locate só usa alias único na cidade):
+    * nome oficial do distrito -> área urbana do distrito (ex.: "Pinheiros" em São Paulo);
+    * "centro" -> área urbana do distrito-sede, que é o distrito com o MESMO NOME do município (sem ele, não há alias);
+    * "zona rural" -> área rural, só quando o município tem uma única área rural.
 """
+import re
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
@@ -20,6 +24,12 @@ from app.etl.sources import IBGE_BAIRROS_URL, IBGE_SETORES_URL, download
 # Tolerância de simplificação para o mapa: 0,0001 grau ≈ 11 m. A área usa a geometria original.
 SIMPLIFY_TOLERANCE = 0.0001
 WATER = "9"  # CD_SIT 9 = massas d'água
+
+
+def norm(s: str) -> str:
+    """Mesmo critério do norm_text do banco: sem acento, minúsculo, só letras/dígitos."""
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", s).split())
 
 
 def read(path: Path, fields: list[str], munis: list[int]):
@@ -37,7 +47,7 @@ def bairro_rows(path: Path, munis: list[int]) -> list[dict]:
 
 
 def area_rows(path: Path, munis: list[int]) -> list[dict]:
-    fields = ["CD_MUN", "CD_DIST", "NM_DIST", "SITUACAO", "CD_SIT", "CD_AGLOM", "NM_AGLOM"]
+    fields = ["CD_SETOR", "CD_MUN", "NM_MUN", "CD_DIST", "NM_DIST", "SITUACAO", "CD_SIT", "CD_AGLOM", "NM_AGLOM"]
     rows = []
     for r in read(path, fields, munis):
         if str(r["CD_SIT"]) == WATER:
@@ -50,15 +60,17 @@ def area_rows(path: Path, munis: list[int]) -> list[dict]:
         else:
             code, name, part = f"{dist}-R", f"{r['NM_DIST']} – área rural", "rural"
         rows.append({"mun": mun, "code": "A" + code, "name": name, "kind": "area", "part": part,
-                     "is_sede": dist == f"{mun}05", "aliases": [], "wkb": r["wkb"]})
+                     # Sede = distrito com o nome do município. O código "05" não serve: em São Paulo, o 05 é Artur Alvim.
+                     "is_sede": norm(str(r["NM_DIST"])) == norm(str(r["NM_MUN"])), "dist_name": str(r["NM_DIST"]),
+                     "aliases": [], "wkb": r["wkb"], "setor": str(r["CD_SETOR"])})
     # Aliases só quando não há ambiguidade dentro do município.
     rural_codes = defaultdict(set)
     for r in rows:
         if r["part"] == "rural":
             rural_codes[r["mun"]].add(r["code"])
     for r in rows:
-        if r["part"] == "urban" and r["is_sede"]:
-            r["aliases"] = ["centro"]
+        if r["part"] == "urban":
+            r["aliases"] = [norm(r["dist_name"])] + (["centro"] if r["is_sede"] else [])
         elif r["part"] == "rural" and len(rural_codes[r["mun"]]) == 1:
             r["aliases"] = ["zona rural"]
     return rows
@@ -66,8 +78,13 @@ def area_rows(path: Path, munis: list[int]) -> list[dict]:
 
 def load(conn, uf: str, munis: list[int], bairros_path: str | None = None, setores_path: str | None = None) -> dict:
     raw_dir = DATA_DIR / "raw" / "ibge"
-    bp = Path(bairros_path) if bairros_path else download(IBGE_BAIRROS_URL.format(uf=uf), raw_dir / f"{uf}_bairros_CD2022.gpkg")
-    rows = bairro_rows(bp, munis)
+    try:
+        bp = Path(bairros_path) if bairros_path else download(IBGE_BAIRROS_URL.format(uf=uf), raw_dir / f"{uf}_bairros_CD2022.gpkg")
+        rows = bairro_rows(bp, munis)
+    except RuntimeError as e:
+        if "(404)" not in str(e):
+            raise
+        rows = []  # o IBGE não publica malha de bairros para esta UF (DF e TO em 2026-11): só áreas por setor
     with_bairros = {r["mun"] for r in rows}
     without = [m for m in munis if m not in with_bairros]
     if without:
@@ -110,4 +127,9 @@ def load(conn, uf: str, munis: list[int], bairros_path: str | None = None, setor
         ),
         {"m": munis},
     )
+    # Setor -> área: base da renda aproximada das áreas (census.update_neighborhood_income).
+    conn.execute(text("DELETE FROM census_tracts WHERE municipality_ibge = ANY(:m)"), {"m": munis})
+    tracts = [{"c": r["setor"], "m": r["mun"], "u": r["code"]} for r in rows if r["kind"] == "area"]
+    if tracts:
+        conn.execute(text("INSERT INTO census_tracts VALUES (:c, :m, :u) ON CONFLICT (code) DO NOTHING"), tracts)
     return {"with_bairros": len(with_bairros), "with_areas": len(without), "units": len({(r["mun"], r["code"]) for r in rows})}
