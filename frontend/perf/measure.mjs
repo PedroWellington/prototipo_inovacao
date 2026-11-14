@@ -18,6 +18,7 @@ const stats = (xs) => {
 
 // Observa LCP e CLS desde o início de cada carregamento.
 await ctx.addInitScript(() => {
+  performance.setResourceTimingBufferSize(20000); // os tiles dos municípios enchem o buffer padrão (250)
   window.__cls = 0;
   window.__lcp = 0;
   new PerformanceObserver((l) => l.getEntries().forEach((e) => !e.hadRecentInput && (window.__cls += e.value))).observe({ type: 'layout-shift', buffered: true });
@@ -46,16 +47,19 @@ await ctx.request.put(`${BASE}/api/profile`, {
   },
 });
 
-// 3) Explorador: abre direto no Recife (sede). Tempo até o mapa colorido.
+// 3) Explorador: "Sim, tenho uma cidade em mente" abre direto no Recife (sede). Tempo até o mapa colorido.
+const chooseCity = () => page.locator('[data-start="city"]').click();
 await page.goto('about:blank'); // só trocar o hash não recarrega o app, que ainda guarda o usuário deslogado
 const t0 = Date.now();
 await page.goto(`${BASE}/#/explorer`);
+await chooseCity();
 await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
 out.explorer_first_colored_ms = Date.now() - t0;
 await page.waitForTimeout(1500); // termina a animação de câmera
 
 // 4) Geometria na segunda visita (recarrega a página: cache HTTP)
 await page.reload();
+await chooseCity();
 await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
 out.geojson_second_visit = await page.evaluate(() => {
   const r = performance.getEntriesByType('resource').find((e) => e.name.includes('neighborhoods.geojson'));
@@ -143,12 +147,101 @@ await page.getByRole('heading', { name: 'Minha conta' }).waitFor();
 out.nav_explorer_to_account_ms = Date.now() - t;
 t = Date.now();
 await page.evaluate(() => (location.hash = '#/explorer'));
+await chooseCity();
 await page.waitForFunction(() => document.querySelector('.ex-head h1')?.textContent === 'Recife', null, { timeout: 15000 });
 out.nav_account_to_explorer_ms = Date.now() - t;
 t = Date.now();
 await page.getByRole('button', { name: 'Pernambuco' }).click();
 await page.getByText('Escolha uma cidade').waitFor();
 out.level_change_panel_ms = Date.now() - t;
+
+// 9) Ranking de cidades ("Não"): Brasil inteiro, primeira coloração, recálculo e fluidez com ~5.570 municípios.
+await page.getByRole('button', { name: 'Início' }).click();
+await page.locator('[data-start="discover"]').click();
+const cityRank = async (action) => {
+  await page.evaluate(() => performance.clearMeasures('app:city-recolor'));
+  const start = await page.evaluate(() => performance.now());
+  await action();
+  await page.waitForFunction(() => performance.getEntriesByName('app:city-recolor').length > 0, null, { timeout: 20000 });
+  return page.evaluate((s) => {
+    const rec = performance.getEntriesByName('app:city-recolor').at(-1);
+    const net = performance.getEntriesByType('resource').filter((r) => r.name.endsWith('/api/cities/rank')).at(-1);
+    return { recolor: rec.duration, net: net.responseEnd - net.requestStart, total: rec.startTime + rec.duration - s };
+  }, start);
+};
+t = Date.now();
+await cityRank(() => page.locator('[data-scope="br"]').click());
+out.cities_br_first_colored_ms = Date.now() - t;
+await page.waitForTimeout(1500);
+for (const [label, minPop] of [['min_20k', null], ['min_0', 0]]) {
+  if (minPop !== null) {
+    await cityRank(async () => {
+      await page.locator('[data-min-pop]').fill(String(minPop));
+    });
+  }
+  const net = [], rec = [], tot = [];
+  for (let i = 0; i < 10; i++) {
+    const m = await cityRank(() =>
+      page.evaluate((w) => {
+        const el = document.querySelector('[data-weight="0"]');
+        el.value = String(w);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }, (i % 5) + 1),
+    );
+    net.push(m.net);
+    rec.push(m.recolor);
+    tot.push(m.total);
+  }
+  out[`cities_recalc_${label}`] = {
+    analyzed: await page.evaluate(() => document.querySelector('.analyzed strong')?.textContent),
+    rank_network_ms: stats(net),
+    recolor_after_response_ms: stats(rec),
+    slider_to_recolored_ms_incl_250ms_debounce: stats(tot),
+  };
+}
+const rankBr = await ctx.request.post(`${BASE}/api/cities/rank`, {
+  headers,
+  data: { criteria: [{ business_type_key: 'hospital', direction: 'attract', weight: 3 }], min_population: 0 },
+});
+out.cities_rank_payload_kb_min_0 = Math.round((await rankBr.body()).length / 1024);
+// Tamanho dos tiles: medido no servidor (o MapLibre baixa tiles em web workers, fora do Resource Timing da página).
+// FPS arrastando e com zoom sobre o Brasil inteiro (tiles + feature-state de ~5.570 municípios)
+const mbox = await page.locator('[data-map]').boundingBox();
+await page.evaluate(() => {
+  window.__frames = [];
+  window.__stop = false;
+  let last = performance.now();
+  const loop = (t) => {
+    window.__frames.push(t - last);
+    last = t;
+    if (!window.__stop) requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+const mx = mbox.x + mbox.width / 2, my = mbox.y + mbox.height / 2;
+for (let k = 0; k < 3; k++) {
+  await page.mouse.move(mx, my);
+  await page.mouse.down();
+  for (let i = 0; i < 40; i++) await page.mouse.move(mx + Math.sin(i / 6) * 200, my + Math.cos(i / 6) * 120, { steps: 2 });
+  await page.mouse.up();
+  for (let i = 0; i < 6; i++) {
+    await page.mouse.wheel(0, k % 2 ? 240 : -240);
+    await page.waitForTimeout(60);
+  }
+}
+await page.waitForTimeout(500);
+const cframes = await page.evaluate(() => {
+  window.__stop = true;
+  return window.__frames.slice(2);
+});
+const cavg = cframes.reduce((a, b) => a + b, 0) / cframes.length;
+out.cities_map_interaction = {
+  frames: cframes.length,
+  avg_fps: +(1000 / cavg).toFixed(1),
+  frames_over_33ms: cframes.filter((f) => f > 33.4).length,
+  frames_over_50ms: cframes.filter((f) => f > 50).length,
+  worst_frame_ms: +Math.max(...cframes).toFixed(1),
+};
 
 await ctx.request.delete(`${BASE}/api/account`, { headers });
 await browser.close();

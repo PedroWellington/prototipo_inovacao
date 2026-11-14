@@ -6,6 +6,7 @@ const ROUTES = {
   '/register': { load: () => import('./views/auth.js').then((m) => m.register), public: true },
   '/termos': { load: () => import('./views/legal.js').then((m) => m.terms), public: true, open: true },
   '/privacidade': { load: () => import('./views/legal.js').then((m) => m.privacy), public: true, open: true },
+  '/como-calculamos': { load: () => import('./views/legal.js').then((m) => m.method), public: true, open: true },
   '/onboarding': { load: () => import('./views/onboarding.js').then((m) => m.render) },
   '/explorer': { load: () => import('./views/explorer.js').then((m) => m.render) },
   '/conta': { load: () => import('./views/account.js').then((m) => m.render) },

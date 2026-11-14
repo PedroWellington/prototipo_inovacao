@@ -7,7 +7,11 @@ const LEVEL_LAYERS = {
   state: ['states-fill', 'states-line'],
   city: ['munis-fill', 'munis-line'],
   result: ['hoods-fill', 'hoods-line', 'badges-top', 'badges-rest'],
+  cities: ['cities-fill', 'cities-line', 'city-badges-top', 'city-badges-rest'],
 };
+// Municípios do Brasil em tiles vetoriais (ST_AsMVT no backend): feature-state precisa da camada do tile.
+const VECTOR = { cities: 'munis' };
+const target = (source, id) => (VECTOR[source] ? { source, sourceLayer: VECTOR[source], id } : { source, id });
 const ALL_LAYERS = Object.values(LEVEL_LAYERS).flat();
 const CAMERA = { duration: 800, padding: 48, essential: true };
 
@@ -35,13 +39,19 @@ function baseStyle() {
 
 const hover = (on, off) => ['case', ['boolean', ['feature-state', 'hover'], false], on, off];
 
-function addLayers(map) {
+function addLayers(map, opts) {
   const accent = css('--color-accent');
   const stops = [1, 2, 3, 4, 5].map((i) => css(`--score-${i}`));
   const text = css('--color-text');
-  for (const id of ['regions', 'states', 'munis', 'hoods', 'labels']) {
+  for (const id of ['regions', 'states', 'munis', 'hoods', 'labels', 'cityLabels']) {
     map.addSource(id, { type: 'geojson', data: EMPTY, promoteId: 'id' });
   }
+  map.addSource('cities', {
+    type: 'vector',
+    tiles: [`${location.origin}/api/geo/tiles/municipalities/{z}/{x}/{y}.pbf?v=${encodeURIComponent(opts.tilesVersion || '')}`],
+    minzoom: 0,
+    maxzoom: 12, // acima disso o MapLibre amplia o tile 12 (geometria já simplificada a ~30 m)
+  });
   map.addLayer({ id: 'regions-fill', type: 'fill', source: 'regions', paint: { 'fill-color': accent, 'fill-opacity': hover(0.38, 0.16) } });
   map.addLayer({ id: 'regions-line', type: 'line', source: 'regions', paint: { 'line-color': accent, 'line-width': 1.2 } });
   map.addLayer({ id: 'states-fill', type: 'fill', source: 'states', paint: { 'fill-color': accent, 'fill-opacity': hover(0.4, 0.14) } });
@@ -85,12 +95,38 @@ function addLayers(map) {
       'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, ['boolean', ['feature-state', 'hover'], false], 2, 0.8],
     },
   });
+  const scoreFill = [
+    'case',
+    ['==', ['typeof', ['feature-state', 'score']], 'number'],
+    ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
+    css('--score-none'),
+  ];
+  map.addLayer({
+    id: 'cities-fill',
+    type: 'fill',
+    source: 'cities',
+    'source-layer': 'munis',
+    paint: {
+      'fill-color': scoreFill,
+      'fill-opacity': ['case', ['==', ['typeof', ['feature-state', 'score']], 'number'], hover(0.92, 0.75), hover(0.25, 0.12)],
+    },
+  });
+  map.addLayer({
+    id: 'cities-line',
+    type: 'line',
+    source: 'cities',
+    'source-layer': 'munis',
+    paint: {
+      'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], text, '#ffffff'],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.15, 7, 0.6, 10, 1.2],
+    },
+  });
   // Número da posição: ícones desenhados em canvas (não depende de servidor de fontes).
-  const badge = (id, filter, minzoom) =>
+  const badge = (id, filter, minzoom, source = 'labels') =>
     map.addLayer({
       id,
       type: 'symbol',
-      source: 'labels',
+      source,
       minzoom,
       filter,
       layout: {
@@ -102,6 +138,8 @@ function addLayers(map) {
     });
   badge('badges-top', ['<=', ['get', 'rank'], 10], 0);
   badge('badges-rest', ['>', ['get', 'rank'], 10], 12.4);
+  badge('city-badges-top', ['<=', ['get', 'rank'], 10], 0, 'cityLabels');
+  badge('city-badges-rest', ['>', ['get', 'rank'], 10], 6.5, 'cityLabels');
 }
 
 function drawBadge(n) {
@@ -128,7 +166,7 @@ function drawBadge(n) {
   return { image: g.getImageData(0, 0, w, h), ratio };
 }
 
-export function createMap(container, handlers) {
+export function createMap(container, handlers, opts = {}) {
   const map = new maplibregl.Map({
     container,
     style: baseStyle(),
@@ -143,7 +181,7 @@ export function createMap(container, handlers) {
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-  const ready = new Promise((resolve) => map.on('load', resolve)).then(() => addLayers(map));
+  const ready = new Promise((resolve) => map.on('load', resolve)).then(() => addLayers(map, opts));
   map.on('styleimagemissing', (e) => {
     const m = /^rank-(\d+)$/.exec(e.id);
     if (!m || map.hasImage(e.id)) return;
@@ -153,20 +191,20 @@ export function createMap(container, handlers) {
 
   // Hover por feature-state, sem rede e sem re-render.
   const hovered = {};
-  const sourceOf = { 'regions-fill': 'regions', 'states-fill': 'states', 'munis-fill': 'munis', 'hoods-fill': 'hoods' };
+  const sourceOf = { 'regions-fill': 'regions', 'states-fill': 'states', 'munis-fill': 'munis', 'hoods-fill': 'hoods', 'cities-fill': 'cities' };
   for (const [layer, source] of Object.entries(sourceOf)) {
     map.on('mousemove', layer, (e) => {
       const f = e.features[0];
       if (hovered[source] !== f.id) {
-        if (hovered[source] != null) map.setFeatureState({ source, id: hovered[source] }, { hover: false });
+        if (hovered[source] != null) map.setFeatureState(target(source, hovered[source]), { hover: false });
         hovered[source] = f.id;
-        map.setFeatureState({ source, id: f.id }, { hover: true });
+        map.setFeatureState(target(source, f.id), { hover: true });
       }
       map.getCanvas().style.cursor = 'pointer';
       handlers.onHover?.(source, f, e.point);
     });
     map.on('mouseleave', layer, () => {
-      if (hovered[source] != null) map.setFeatureState({ source, id: hovered[source] }, { hover: false });
+      if (hovered[source] != null) map.setFeatureState(target(source, hovered[source]), { hover: false });
       hovered[source] = null;
       map.getCanvas().style.cursor = '';
       handlers.onHover?.(source, null);
@@ -176,6 +214,7 @@ export function createMap(container, handlers) {
 
   let selected = null;
   let hoodIds = [];
+  let rankedCities = [];
 
   const api = {
     ready,
@@ -230,6 +269,26 @@ export function createMap(container, handlers) {
       if (selected != null) map.setFeatureState({ source: 'hoods', id: selected }, { selected: false });
       selected = id;
       if (id != null) map.setFeatureState({ source: 'hoods', id }, { selected: true });
+    },
+    // Ranking de cidades: cor por feature-state nos tiles e números na fonte de pontos (nada é recriado).
+    async applyCityRank(cities) {
+      await ready;
+      const now = new Set(cities.map((c) => c.ibge));
+      for (const id of rankedCities) if (!now.has(id)) map.setFeatureState(target('cities', id), { score: null });
+      for (const c of cities) map.setFeatureState(target('cities', c.ibge), { score: c.score });
+      rankedCities = [...now];
+      map.getSource('cityLabels').setData({
+        type: 'FeatureCollection',
+        features: cities
+          .filter((c) => c.label)
+          .map((c) => ({ type: 'Feature', id: c.ibge, properties: { id: c.ibge, rank: c.rank }, geometry: { type: 'Point', coordinates: c.label } })),
+      });
+    },
+    async clearCityRank() {
+      await ready;
+      for (const id of rankedCities) map.setFeatureState(target('cities', id), { score: null });
+      rankedCities = [];
+      map.getSource('cityLabels').setData(EMPTY);
     },
     resize: () => map.resize(),
     destroy: () => map.remove(),
