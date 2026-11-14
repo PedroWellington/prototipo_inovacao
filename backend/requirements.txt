@@ -8,4 +8,5 @@ email-validator==2.2.0
 httpx==0.28.1
 pyogrio==0.10.0
 shapely==2.0.6
+Pillow==11.0.0
 pytest==8.3.4

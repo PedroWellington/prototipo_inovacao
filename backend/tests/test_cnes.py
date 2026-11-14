@@ -4,7 +4,7 @@ from sqlalchemy import text
 from app.db import engine
 from app.scoring import rank as rank_module
 from app.scoring import rank_cities
-from tests.helpers import login_new_user, seed_minimal_catalog
+from tests.helpers import grant, login_new_user, seed_minimal_catalog, unlock_city, unlock_search
 
 RECIFE = 2611606
 HOSPITAL = {"business_type_key": "hospital", "direction": "attract", "weight": 3}
@@ -41,6 +41,9 @@ def setup_city():
 def test_hospital_counts_come_from_cnes_with_cnpj_as_complement(client):
     setup_city()
     csrf = login_new_user(client)
+    grant("ana@example.com", 1)  # cidade + busca = 2 créditos
+    unlock_city(client, csrf, RECIFE)
+    unlock_search(client, csrf, uf="PE")
     res = client.post(f"/api/cities/{RECIFE}/rank", json={"criteria": [HOSPITAL]}, headers={"X-CSRF-Token": csrf}).json()
     assert res["status"] == "ok" and res["criteria"][0]["source"] == "cnes"
     by = {n["name"]: n["criteria"][0] for n in res["neighborhoods"]}
@@ -57,6 +60,7 @@ def test_hospital_counts_come_from_cnes_with_cnpj_as_complement(client):
 def test_cnes_type_without_mapping_is_no_data(client):
     setup_city()
     csrf = login_new_user(client)
+    unlock_city(client, csrf, RECIFE)
     with engine.begin() as c:
         c.execute(text("DELETE FROM business_type_cnes"))
     try:

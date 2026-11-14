@@ -14,7 +14,7 @@ from sqlalchemy import text
 
 from app.db import engine
 from app.scoring import rank as rank_module
-from tests.helpers import login_new_user, seed_minimal_catalog
+from tests.helpers import login_new_user, seed_minimal_catalog, unlock_city
 
 RECIFE = 2611606
 HOSPITAL = {"business_type_key": "hospital", "direction": "attract", "weight": 3}
@@ -64,6 +64,7 @@ def city():
 
 
 def do_rank(client, csrf, criteria):
+    unlock_city(client, csrf, RECIFE)  # 1ª vez usa o crédito grátis do cadastro; depois, reabrir não cobra
     r = client.post(f"/api/cities/{RECIFE}/rank", json={"criteria": criteria}, headers={"X-CSRF-Token": csrf})
     assert r.status_code == 200, r.text
     return r.json()
@@ -144,7 +145,7 @@ def test_no_network_during_ranking(client, monkeypatch):
 
 
 def test_geojson_has_ids(client):
-    login_new_user(client)
+    unlock_city(client, login_new_user(client), RECIFE)  # o mapa de bairros exige a cidade liberada
     r = client.get(f"/api/cities/{RECIFE}/neighborhoods.geojson")
     fc = r.json()
     assert r.headers["etag"] and len(fc["features"]) == 4

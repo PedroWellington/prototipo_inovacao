@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app import credits
 from app.auth import rate_limit
 from app.auth.deps import CurrentUser, current_user
 from app.auth.security import hash_password, new_token, token_hash, verify_password
@@ -70,6 +71,8 @@ def register(body: RegisterIn, response: Response, db: Session = Depends(get_db)
     except IntegrityError:
         db.rollback()
         raise HTTPException(409, {"code": "email_taken", "message": "Já existe uma conta com este e-mail. Tente entrar."})
+    # Todo cadastro novo ganha a cidade grátis (valor em credit_settings).
+    credits.grant(db, user_id, credits.settings(db)["signup_grant"], "cadastro", reason="signup")
     start_session(db, response, user_id)
     return {"ok": True}
 

@@ -14,7 +14,7 @@ from sqlalchemy import text
 
 from app.db import engine
 from app.scoring import rank_cities as rc
-from tests.helpers import login_new_user, seed_minimal_catalog
+from tests.helpers import login_new_user, seed_minimal_catalog, unlock_search
 
 CITIES = {  # nome: (ibge, população, área, hospitais, renda)
     "Alfa": (2699901, 100_000, 100, 10, 3000),
@@ -58,6 +58,7 @@ def cities():
 
 
 def do_rank(client, csrf, **body):
+    unlock_search(client, csrf, uf="PE")  # a busca no alcance PE usa o crédito grátis; repetir não cobra
     r = client.post("/api/cities/rank", json={"uf": "PE", "criteria": [HOSPITAL], **body}, headers={"X-CSRF-Token": csrf})
     assert r.status_code == 200, r.text
     return r.json()

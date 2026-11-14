@@ -25,3 +25,24 @@ def login_new_user(client, email="ana@example.com") -> str:
         json={"name": "Ana", "email": email, "password": "senha-forte-1", "accept_terms": True},
     )
     return client.get("/api/auth/me").json()["csrf_token"]
+
+
+def unlock_city(client, csrf, ibge: int):
+    """Libera a cidade pela API (o servidor decide e cobra; reabrir dentro do prazo é grátis)."""
+    r = client.post(f"/api/credits/cities/{ibge}", headers={"X-CSRF-Token": csrf})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def unlock_search(client, csrf, **scope):
+    r = client.post("/api/credits/searches", json=scope, headers={"X-CSRF-Token": csrf})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def grant(email: str, amount: int) -> None:
+    from app import credits
+
+    with engine.begin() as c:
+        uid = c.execute(text("SELECT id FROM users WHERE lower(email) = lower(:e)"), {"e": email}).scalar()
+        credits.grant(c, uid, amount, "teste")
