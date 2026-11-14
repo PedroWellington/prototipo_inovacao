@@ -86,6 +86,8 @@ def main() -> None:
     with engine.begin() as conn:
         seed_localities(conn)
         seed_catalog_tables(conn)
+        # As contagens dependem do mapeamento tipo -> CNAE: editar o CSV exige recontar.
+        conn.execute(text("REFRESH MATERIALIZED VIEW neighborhood_type_counts"))
 
 
 if __name__ == "__main__":
