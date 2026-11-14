@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.auth.deps import CurrentUser, current_user
-from app.config import SESSION_COOKIE
+from app.config import PRODUCT_NAME, SESSION_COOKIE
 from app.db import get_db
 
 router = APIRouter(prefix="/api/account", tags=["account"])
@@ -24,7 +24,7 @@ def export(user: CurrentUser = Depends(current_user), db: Session = Depends(get_
     return Response(
         content=json.dumps(data, ensure_ascii=False, default=str, indent=2),
         media_type="application/json",
-        headers={"Content-Disposition": 'attachment; filename="locus-meus-dados.json"'},
+        headers={"Content-Disposition": f'attachment; filename="{PRODUCT_NAME.lower()}-meus-dados.json"'},
     )
 
 

@@ -7,7 +7,7 @@ from argon2.exceptions import InvalidHashError, VerifyMismatchError
 # PasswordHasher usa argon2id por padrão (parâmetros recomendados pela RFC 9106).
 _hasher = PasswordHasher()
 # Hash fixo para gastar o mesmo tempo quando o e-mail não existe (não revela existência pelo tempo).
-_DUMMY_HASH = _hasher.hash("locus-dummy-password")
+_DUMMY_HASH = _hasher.hash("dummy-password-for-timing")
 
 
 def hash_password(password: str) -> str:

@@ -1,4 +1,5 @@
 import { html, mount } from '../html.js';
+import { PRODUCT_NAME } from '../brand.js';
 import { icon, logo } from '../icons.js';
 
 const DRAFT = 'Texto provisório, sujeito a revisão jurídica antes de uso real.';
@@ -22,10 +23,10 @@ export function terms(root) {
   page(
     root,
     'Termos de uso',
-    html`<p>O LOCUS organiza dados públicos para apoiar a sua decisão sobre onde abrir um negócio. A decisão é sempre sua.</p>
-      <h2>O que o LOCUS faz</h2>
+    html`<p>O ${PRODUCT_NAME} organiza dados públicos para apoiar a sua decisão sobre onde abrir um negócio. A decisão é sempre sua.</p>
+      <h2>O que o ${PRODUCT_NAME} faz</h2>
       <p>Mostra e ordena bairros conforme os critérios que você define, com a fonte e a data de cada dado.</p>
-      <h2>O que o LOCUS não faz</h2>
+      <h2>O que o ${PRODUCT_NAME} não faz</h2>
       <p>Não recomenda bairros, não promete lucro, faturamento ou sucesso e não faz projeções financeiras. As informações têm caráter informativo e não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.</p>
       <h2>Dados ausentes</h2>
       <p>Quando um dado não existe para uma área, a plataforma informa que ele não foi encontrado, sem estimar valores.</p>`,

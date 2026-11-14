@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import text
 
 from app.auth import rate_limit
+from app.config import SESSION_COOKIE
 
 USER = {"name": "Ana", "email": "ana@example.com", "password": "senha-forte-1", "accept_terms": True}
 
@@ -31,7 +32,7 @@ def test_register_sets_httponly_cookie_and_hashes_with_argon2id(client):
         pw_hash = c.execute(text("SELECT password_hash FROM users")).scalar_one()
         token_hash = c.execute(text("SELECT token_hash FROM sessions")).scalar_one()
     assert pw_hash.startswith("$argon2id$")
-    assert len(token_hash) == 64 and client.cookies["locus_session"] not in token_hash
+    assert len(token_hash) == 64 and client.cookies[SESSION_COOKIE] not in token_hash
 
     me = client.get("/api/auth/me").json()
     assert me["email"] == USER["email"] and me["csrf_token"] and me["onboarding_completed"] is False

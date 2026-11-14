@@ -1,6 +1,6 @@
 import os
 
-# Os testes usam o banco locus_test; precisa vir antes de qualquer import de app.*
+# Os testes usam o banco <POSTGRES_DB>_test; precisa vir antes de qualquer import de app.*
 os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
 
 import pytest  # noqa: E402

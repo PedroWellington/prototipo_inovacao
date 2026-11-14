@@ -3,7 +3,10 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install --no-audit --no-fund
 COPY . .
-RUN npm run build
+# Nome do produto vem do .env (via docker-compose); o Vite injeta em import.meta.env e no index.html.
+ARG PRODUCT_NAME
+ENV PRODUCT_NAME=${PRODUCT_NAME}
+RUN test -n "$PRODUCT_NAME" && npm run build
 
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf

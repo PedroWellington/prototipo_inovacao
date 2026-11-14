@@ -1,4 +1,5 @@
-import { raw } from './html.js';
+import { PRODUCT_NAME } from './brand.js';
+import { escape, raw } from './html.js';
 
 // Ícones SVG inline (traço 1.75, 24x24). Herdam a cor do texto via currentColor.
 const PATHS = {
@@ -32,5 +33,5 @@ export function icon(name, size = 18, label) {
 
 export const logo = () =>
   raw(
-    `<span class="logo" aria-label="LOCUS"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--color-accent)"/><path d="M16 7c-4 0-7 3-7 7 0 5 7 11 7 11s7-6 7-11c0-4-3-7-7-7z" fill="var(--color-on-accent)"/><circle cx="16" cy="14" r="2.6" fill="var(--color-accent)"/></svg><span class="logo-word">LOCUS</span></span>`,
+    `<span class="logo" aria-label="${escape(PRODUCT_NAME)}"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--color-accent)"/><path d="M16 7c-4 0-7 3-7 7 0 5 7 11 7 11s7-6 7-11c0-4-3-7-7-7z" fill="var(--color-on-accent)"/><circle cx="16" cy="14" r="2.6" fill="var(--color-accent)"/></svg><span class="logo-word">${escape(PRODUCT_NAME)}</span></span>`,
   );
