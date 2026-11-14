@@ -5,13 +5,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api import catalog, geo
+from app.api import account, catalog, geo
+from app.auth import routes as auth_routes
 from app.db import get_db
 
 app = FastAPI(title="LOCUS API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-app.include_router(catalog.router)
-app.include_router(geo.router)
+for module in (auth_routes, account, catalog, geo):
+    app.include_router(module.router)
 
 
 # Erros sempre no mesmo formato: {"error": {"code", "message", "details"?}}

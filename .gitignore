@@ -22,3 +22,6 @@ frontend/perf/results/
 .idea/
 Thumbs.db
 .DS_Store
+
+# Artefatos de testes de navegador
+.playwright-mcp/

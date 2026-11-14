@@ -1,0 +1,82 @@
+/* Tokens visuais do LOCUS. Para trocar o visual, edite só este arquivo. */
+:root {
+  /* Superfícies e texto */
+  --color-bg: #f5f4f0;
+  --color-surface: #ffffff;
+  --color-surface-2: #efeee9;
+  --color-surface-3: #e7e5df;
+  --color-border: #dfdcd5;
+  --color-border-strong: #c9c5bc;
+  --color-text: #1b1f22;
+  --color-text-muted: #596066;
+  --color-text-subtle: #6a7076; /* ≥ 4.5:1 sobre branco */
+
+  /* Acento (verde-petróleo) */
+  --color-accent: #0f5c5a;
+  --color-accent-hover: #0b4a48;
+  --color-accent-soft: #e2eeec;
+  --color-on-accent: #ffffff;
+  --color-focus: #1f7a77;
+
+  /* Estados */
+  --color-danger: #b3261e;
+  --color-danger-soft: #fbeae8;
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fdf3dc;
+  --color-info-soft: #e8f0f7;
+  --color-demo: #b3261e;
+
+  /* Escala do ranking: verde = combina mais → vermelho = combina menos (5 paradas) */
+  --score-5: #1a9850;
+  --score-4: #91cf60;
+  --score-3: #f2d06b;
+  --score-2: #fc8d59;
+  --score-1: #d73027;
+  --score-none: #c9c5bc;
+
+  /* Tipografia: fontes do sistema (zero download, melhor LCP) */
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif;
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.875rem;
+  --text-2xl: 2.5rem;
+  --leading-tight: 1.2;
+  --leading: 1.5;
+  --weight-medium: 550;
+  --weight-semibold: 620;
+  --weight-bold: 700;
+
+  /* Espaçamento (base 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Forma e profundidade */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgb(20 24 28 / 0.06);
+  --shadow: 0 1px 2px rgb(20 24 28 / 0.06), 0 4px 14px rgb(20 24 28 / 0.07);
+  --shadow-lg: 0 2px 6px rgb(20 24 28 / 0.08), 0 16px 40px rgb(20 24 28 / 0.12);
+
+  /* Movimento */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+
+  /* Layout */
+  --panel-width: 380px;
+  --control-h: 40px;
+}
