@@ -1,0 +1,29 @@
+business_type_key,cnae,description,verified
+farmacia,4771701,"Comércio varejista de produtos farmacêuticos, sem manipulação de fórmulas",true
+farmacia,4771702,"Comércio varejista de produtos farmacêuticos, com manipulação de fórmulas",true
+farmacia,4771703,Comércio varejista de produtos farmacêuticos homeopáticos,true
+academia,9313100,Atividades de condicionamento físico,true
+hospital,8610101,"Atividades de atendimento hospitalar, exceto pronto-socorro e unidades para atendimento a urgências",true
+hospital,8610102,Atividades de atendimento em pronto-socorro e unidades hospitalares para atendimento a urgências,true
+clinica,8630501,Atividade médica ambulatorial com recursos para realização de procedimentos cirúrgicos,true
+clinica,8630502,Atividade médica ambulatorial com recursos para realização de exames complementares,true
+clinica,8630503,Atividade médica ambulatorial restrita a consultas,true
+laboratorio,8640202,Laboratórios clínicos,true
+nutricionista,8650002,Atividades de profissionais da nutrição,true
+fisioterapia,8650004,Atividades de fisioterapia,true
+otica,4774100,Comércio varejista de artigos de óptica,true
+restaurante,5611201,Restaurantes e similares,true
+lanchonete,5611203,"Lanchonetes, casas de chá, de sucos e similares",true
+lanchonete,4721102,Padaria e confeitaria com predominância de revenda,true
+lanchonete,1091102,Fabricação de produtos de padaria e confeitaria com predominância de produção própria,true
+supermercado,4711301,"Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - hipermercados",true
+supermercado,4711302,"Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - supermercados",true
+supermercado,4712100,"Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - minimercados, mercearias e armazéns",true
+escola,8513900,Ensino fundamental,true
+escola,8520100,Ensino médio,true
+faculdade,8531700,Educação superior - graduação,true
+faculdade,8532500,Educação superior - graduação e pós-graduação,true
+faculdade,8533300,Educação superior - pós-graduação e extensão,true
+hotel,5510801,Hotéis,true
+hotel,5510802,Apart-hotéis,true
+suplementos,4729699,Comércio varejista de produtos alimentícios em geral ou especializado em produtos alimentícios não especificados anteriormente,true

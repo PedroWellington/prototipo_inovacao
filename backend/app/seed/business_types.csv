@@ -1,0 +1,16 @@
+key,name,name_plural,precision,note,selectable
+farmacia,Farmácia,Farmácias,exact,,true
+academia,Academia,Academias,exact,,true
+hospital,Hospital,Hospitais,exact,Inclui pronto-socorro.,true
+clinica,Clínica / consultório médico,Clínicas e consultórios,exact,Atividade médica ambulatorial; não inclui odontologia.,true
+laboratorio,Laboratório de análises clínicas,Laboratórios,exact,,true
+nutricionista,Nutricionista,Nutricionistas,exact,,true
+fisioterapia,Fisioterapia,Clínicas de fisioterapia,exact,,true
+otica,Ótica,Óticas,exact,,true
+restaurante,Restaurante,Restaurantes,exact,,true
+lanchonete,Lanchonete / padaria,Lanchonetes e padarias,exact,,true
+supermercado,Supermercado / mercado,Supermercados e mercados,exact,"Inclui hipermercados, supermercados, minimercados e mercearias.",true
+escola,Escola,Escolas,exact,Ensino fundamental e médio.,true
+faculdade,Faculdade,Faculdades,exact,Educação superior (graduação e pós).,true
+hotel,Hotel,Hotéis,exact,Hotéis e apart-hotéis; não inclui motéis.,true
+suplementos,Loja de suplementos,Lojas de suplementos (aprox.),approx,Aproximado pelo CNAE; não distingue suplementos de outros produtos.,true

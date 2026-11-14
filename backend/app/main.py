@@ -5,10 +5,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api import catalog, geo
 from app.db import get_db
 
 app = FastAPI(title="LOCUS API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.include_router(catalog.router)
+app.include_router(geo.router)
 
 
 # Erros sempre no mesmo formato: {"error": {"code", "message", "details"?}}
