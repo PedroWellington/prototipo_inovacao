@@ -10,7 +10,7 @@ export async function render(root) {
     root,
     html`<div class="page">
       <header class="page-header">
-        <a href="#/explorer" aria-label="Ir para o mapa">${logo()}</a>
+        <a href="#/home" aria-label="Início">${logo()}</a>
         <a class="btn btn-ghost btn-sm" href="#/explorer">${icon('back', 16)} Voltar ao mapa</a>
       </header>
       <h1>Minha conta</h1>

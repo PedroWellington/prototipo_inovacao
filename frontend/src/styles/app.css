@@ -72,10 +72,11 @@ textarea {
 #app.view-enter {
   animation: view-in var(--dur) var(--ease-out);
 }
+/* Só opacidade: um deslocamento vertical fazia a barra de rolagem aparecer e sumir na entrada de telas da
+   altura da janela, recentrando o conteúdo (salto de layout). */
 @keyframes view-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
 }
 @media (prefers-reduced-motion: reduce) {

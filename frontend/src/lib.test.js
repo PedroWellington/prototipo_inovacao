@@ -54,7 +54,8 @@ describe('roteamento', () => {
   const fresh = { onboarding_completed: false };
   it('sem sessão vai para o login', () => expect(resolve('/explorer', null)).toBe('/login'));
   it('primeiro acesso força onboarding', () => expect(resolve('/explorer', fresh)).toBe('/onboarding'));
-  it('logado não vê login', () => expect(resolve('/login', done)).toBe('/explorer'));
+  it('logado não vê login: vai para o início', () => expect(resolve('/login', done)).toBe('/home'));
+  it('raiz leva ao início', () => expect(resolve('/', done)).toBe('/home'));
   it('termos abrem para todos', () => expect(resolve('/termos', null)).toBe('/termos'));
 });
 
@@ -101,5 +102,18 @@ describe('countText', () => {
       '2 unidades ativas no CNES (Ministério da Saúde); complemento: 4 locais com CNPJ de atividade principal de hospital',
     );
     expect(countText(3, 3, { name: 'Farmácia', source: 'cnpj' })).toBe('3 estabelecimentos com atividade principal de farmácia');
+  });
+});
+
+describe('conta', () => {
+  it('iniciais da empresa', async () => {
+    const { initials } = await import('./lib.js');
+    expect(initials('Farmácia do Bairro')).toBe('FB');
+    expect(initials('ana')).toBe('A');
+    expect(initials('')).toBe('?');
+  });
+  it('confirmação de gasto', async () => {
+    const { spendText } = await import('./lib.js');
+    expect(spendText(1, 3)).toBe('Isto usa 1 crédito. Restam 3 (depois desta análise: 2).');
   });
 });

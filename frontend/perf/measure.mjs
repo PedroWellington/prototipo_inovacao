@@ -1,6 +1,7 @@
 // Mede as metas de fluidez (docs/PERFORMANCE.md) no build de produção servido pelo nginx.
 //   cd frontend; npm run perf            (abre o Edge instalado; HEADLESS=1 para sem janela)
 // Pré-requisito: docker compose up -d e Recife carregado (load_city).
+import { execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright-core';
 
@@ -46,6 +47,22 @@ await ctx.request.put(`${BASE}/api/profile`, {
     ],
   },
 });
+
+// Créditos do usuário descartável (comando de concessão manual) e liberações feitas antes de medir:
+// a confirmação de gasto é testada à parte; aqui medimos só a fluidez.
+execSync(`docker compose run --rm -T backend python -m app.credits grant --email ${email} --amount 5 --note medicao`, {
+  cwd: new URL('../../', import.meta.url),
+  stdio: 'ignore',
+});
+await ctx.request.post(`${BASE}/api/credits/cities/${RECIFE}`, { headers });
+await ctx.request.post(`${BASE}/api/credits/searches`, { headers, data: {} });
+
+// 2b) Tela inicial pós-login: LCP e CLS (carregamento completo)
+await page.goto('about:blank');
+await page.goto(`${BASE}/#/home`);
+await page.locator('.analysis').first().waitFor();
+await page.waitForTimeout(500);
+out.home = await page.evaluate(() => ({ lcp_ms: Math.round(window.__lcp), cls: +window.__cls.toFixed(4) }));
 
 // 3) Explorador: "Sim, tenho uma cidade em mente" abre direto no Recife (sede). Tempo até o mapa colorido.
 const chooseCity = () => page.locator('[data-start="city"]').click();
@@ -100,8 +117,9 @@ for (let i = 0; i < 60; i++) {
 const hover = await page.evaluate((b) => ({
   tooltip: performance.getEntriesByName('app:tooltip').map((e) => e.duration),
   network_requests_during_hover: performance.getEntriesByType('resource').slice(b).filter((r) => r.name.includes('/api/')).length,
+  hover_urls: performance.getEntriesByType('resource').slice(b).filter((r) => r.name.includes('/api/')).map((r) => r.name.replace(location.origin, '')),
 }), before);
-out.hover = { tooltip_ms: stats(hover.tooltip), network_requests_during_hover: hover.network_requests_during_hover };
+out.hover = { tooltip_ms: stats(hover.tooltip), network_requests_during_hover: hover.network_requests_during_hover, urls: hover.hover_urls };
 
 // 7) FPS durante arrastar e zoom (quadros medidos por requestAnimationFrame)
 await page.evaluate(() => {
@@ -154,6 +172,35 @@ t = Date.now();
 await page.getByRole('button', { name: 'Pernambuco' }).click();
 await page.getByText('Escolha uma cidade').waitFor();
 out.level_change_panel_ms = Date.now() - t;
+
+// 8b) Recolher e abrir o painel lateral: quadros durante a transição (só transform, sem resize do mapa)
+await page.evaluate(() => {
+  window.__frames = [];
+  window.__stop = false;
+  let last = performance.now();
+  const loop = (t) => {
+    window.__frames.push(t - last);
+    last = t;
+    if (!window.__stop) requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+for (let i = 0; i < 6; i++) {
+  await page.locator('[data-toggle-panel]').click();
+  await page.waitForTimeout(260);
+}
+const pframes = await page.evaluate(() => {
+  window.__stop = true;
+  return window.__frames.slice(2);
+});
+const pavg = pframes.reduce((a, b) => a + b, 0) / pframes.length;
+out.panel_toggle = {
+  frames: pframes.length,
+  avg_fps: +(1000 / pavg).toFixed(1),
+  frames_over_33ms: pframes.filter((f) => f > 33.4).length,
+  worst_frame_ms: +Math.max(...pframes).toFixed(1),
+  cls_after: await page.evaluate(() => +window.__cls.toFixed(4)),
+};
 
 // 9) Ranking de cidades ("Não"): Brasil inteiro, primeira coloração, recálculo e fluidez com ~5.570 municípios.
 await page.getByRole('button', { name: 'Início' }).click();

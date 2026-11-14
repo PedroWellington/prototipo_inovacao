@@ -3,6 +3,10 @@ import { fmt, html, mount } from '../html.js';
 import { icon, logo } from '../icons.js';
 import { bbox, brl, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
 import { createMap } from '../map/mapView.js';
+import { analysesList, companyCard, creditsCard } from '../components/account.js';
+import { cityActive, creditsState, ensureCity, ensureSearch, loadCredits, onCredits } from '../credits.js';
+import { loadUser } from '../session.js';
+import '../styles/components.css';
 import '../styles/explorer.css';
 
 const BRAZIL = [[-74, -34], [-34, 5.5]];
@@ -17,6 +21,7 @@ const UNITS = {
 const NO_DATA = (item) => `Não foi possível encontrar dados de ${item} desta área.`;
 const INCOME_DIR = { attract: 'poder de compra acima da mediana', repel: 'poder de compra abaixo da mediana' };
 const DEFAULT_MIN_POP = 20000;
+const PANEL_KEY = 'explorer-panel'; // preferência só deste navegador (aberto/recolhido)
 const METHOD_LINK = () => html`<a href="#/como-calculamos" target="_blank" rel="noopener">Como calculamos</a>`;
 const DISCLAIMER =
   'Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.';
@@ -26,15 +31,18 @@ export async function render(root) {
     root,
     html`<div class="explorer">
       <header class="ex-top">
-        <a href="#/explorer" class="ex-logo" aria-label="Início">${logo()}</a>
+        <button type="button" class="btn btn-ghost btn-sm btn-icon panel-toggle" data-toggle-panel aria-controls="ex-panel" aria-expanded="true"
+          aria-label="Recolher ou abrir o painel">${icon('panel', 18)}</button>
+        <a href="#/home" class="ex-logo" aria-label="Início">${logo()}</a>
         <nav class="crumbs" aria-label="Navegação por nível" data-crumbs></nav>
         <div class="ex-top-actions">
-          <a class="btn btn-ghost btn-sm" href="#/onboarding">${icon('sliders', 16)}<span class="hide-sm">Editar perfil</span></a>
+          <a class="btn btn-ghost btn-sm" href="#/home"><span class="hide-sm">Início</span></a>
           <a class="btn btn-ghost btn-sm" href="#/conta">${icon('user', 16)}<span class="hide-sm">Minha conta</span></a>
         </div>
       </header>
-      <aside class="ex-panel" aria-label="Painel">
+      <aside class="ex-panel" id="ex-panel" aria-label="Painel">
         <div class="ex-loading" data-loading hidden><span></span></div>
+        <div class="ex-account" data-account></div>
         <div data-panel></div>
       </aside>
       <section class="ex-map" aria-label="Mapa">
@@ -85,17 +93,47 @@ export async function render(root) {
     hoods: new Map(), // id -> { name, bounds, label }
   };
 
-  const [types, profile, regions, regionsGeo, tiles] = await Promise.all([
+  const [types, profile, regions, regionsGeo, tiles, user] = await Promise.all([
     getCached('/api/catalog/business-types'),
     get('/api/profile'),
     getCached('/api/geo/regions'),
     getCached('/api/geo/regions.geojson'),
     getCached('/api/geo/tiles/version'),
+    loadUser(),
+    loadCredits(true),
   ]);
   const typeByKey = Object.fromEntries(types.map((t) => [t.key, t]));
   s.criteria = profile.criteria.map((c) => ({ ...c }));
 
   const map = createMap($('[data-map]'), { onHover, onClick }, { tilesVersion: tiles.version });
+
+  // ---------- Painel lateral: blocos da conta + recolher (só transform: o mapa não muda de tamanho) ----------
+  const accountBox = $('[data-account]');
+  function renderAccount(st = creditsState()) {
+    mount(accountBox, html`${companyCard(profile.profile, user, { compact: true })}${creditsCard(st, { compact: true })}${analysesList(st, { compact: true, limit: 3 })}`);
+  }
+  renderAccount();
+  const offCredits = onCredits(renderAccount);
+
+  const overlayPanel = () => matchMedia('(min-width: 861px)').matches; // no celular o painel fica abaixo do mapa
+  const panelWidth = () => $('[data-account]').closest('.ex-panel').offsetWidth;
+  function setPanel(open, { animate = true } = {}) {
+    root.querySelector('.explorer').classList.toggle('is-collapsed', !open);
+    $('[data-toggle-panel]').setAttribute('aria-expanded', String(open));
+    if (overlayPanel()) map.setInset(open ? panelWidth() : 0, { animate });
+    try {
+      localStorage.setItem(PANEL_KEY, open ? 'open' : 'closed');
+    } catch {
+      /* sem armazenamento: só não lembra a preferência */
+    }
+  }
+  let panelPref = 'open';
+  try {
+    panelPref = localStorage.getItem(PANEL_KEY) || 'open';
+  } catch {
+    /* idem */
+  }
+  setPanel(panelPref === 'open', { animate: false });
   map.setData('regions', regionsGeo);
   map.setLevel('region');
 
@@ -145,6 +183,7 @@ export async function render(root) {
   }
 
   async function goCities(scope) {
+    if (!(await ensureSearch(scope))) return; // o servidor cobra; aqui só confirma com o usuário
     Object.assign(s, { level: 'cities', mode: 'discover', scope, city: null, showAllCities: false, cityRankError: null });
     hideTooltip();
     renderAll();
@@ -213,6 +252,7 @@ export async function render(root) {
   }
 
   async function goResult(city) {
+    if (!(await ensureCity(city))) return; // confirmação "Isto usa 1 crédito. Restam X." (reabrir no prazo é grátis)
     Object.assign(s, { level: 'result', city, rank: null, rankError: null, cityStatus: null, selectedId: null, showAll: false });
     hideTooltip();
     renderAll();
@@ -759,9 +799,26 @@ export async function render(root) {
     return goResult({ id: c.ibge, name: c.name, has_data: true });
   }
 
+  // "Minhas análises" e links da tela inicial: abre a cidade com o contexto (região/estado) para o "Voltar".
+  async function openCityDirect(ibge) {
+    const c = creditsState()?.cities.find((x) => x.ibge === ibge);
+    const status = c ? null : await get(`/api/cities/${ibge}/status`);
+    const uf = c?.uf || status.uf;
+    const states = await getCached('/api/geo/states');
+    const st = states.find((x) => x.uf === uf);
+    Object.assign(s, { mode: 'city', region: regions.find((r) => r.id === st.region_id), state: st });
+    return goResult({ id: ibge, name: c?.name || status.name, has_data: true });
+  }
+
+  function openSearchDirect(key) {
+    const scope = key === 'BR' ? scopeOf('br') : /^R\d$/.test(key) ? scopeOf('region', Number(key.slice(1))) : scopeOf('uf', key);
+    return scope.then(goCities);
+  }
+
   const prefetched = new Set();
   function prefetchCity(c) {
-    if (!c?.has_data || prefetched.has(c.id)) return;
+    // Só pré-carrega cidades já liberadas: a geometria das demais o servidor só entrega depois do crédito.
+    if (!c?.has_data || prefetched.has(c.id) || !cityActive(c.id)) return;
     prefetched.add(c.id);
     loadHoods(c.id).catch(() => prefetched.delete(c.id));
   }
@@ -771,6 +828,9 @@ export async function render(root) {
     const b = e.target.closest('button');
     if (!b) return;
     const d = b.dataset;
+    if (d.togglePanel !== undefined) return setPanel(b.getAttribute('aria-expanded') !== 'true');
+    if (d.openCity) return openCityDirect(Number(d.openCity));
+    if (d.openSearch) return openSearchDirect(d.openSearch);
     if (d.crumb)
       return { start: goStart, scope: goScope, cities: backToCities, region: goRegion, state: () => goState(s.region), city: () => goCity(s.state) }[d.crumb]();
     if (d.back !== undefined)
@@ -877,11 +937,17 @@ export async function render(root) {
 
   // ---------- Início: "Você já tem uma cidade em mente?" (a sede pré-seleciona a cidade no "Sim") ----------
   renderAll();
+  // Vindo da tela inicial: #/explorer?city=<ibge> ou ?search=<alcance>
+  const query = new URLSearchParams(location.hash.split('?')[1] || '');
+  history.replaceState(null, '', '#/explorer'); // recarregar a página não repete a abertura
+  if (query.get('city')) openCityDirect(Number(query.get('city')));
+  else if (query.get('search')) openSearchDirect(query.get('search'));
 
   return () => {
     ac.abort();
     rankCtrl?.abort();
     cityCtrl?.abort();
+    offCredits();
     scheduleRank.cancel();
     map.destroy();
   };

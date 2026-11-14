@@ -18,14 +18,15 @@ export class ApiError extends Error {
 
 async function request(method, path, { body, signal } = {}) {
   const headers = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const binary = body instanceof Blob; // upload de imagem: corpo bruto, o servidor valida o conteúdo
+  if (body !== undefined) headers['Content-Type'] = binary ? body.type || 'application/octet-stream' : 'application/json';
   if (method !== 'GET' && csrfToken) headers['X-CSRF-Token'] = csrfToken;
   let res;
   try {
     res = await fetch(path, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : binary ? body : JSON.stringify(body),
       credentials: 'same-origin',
       signal,
     });

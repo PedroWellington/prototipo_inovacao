@@ -214,6 +214,7 @@ export function createMap(container, handlers, opts = {}) {
 
   let selected = null;
   let hoodIds = [];
+  let inset = 0; // largura do painel sobre o mapa (desktop): o enquadramento desconta essa faixa
   let rankedCities = [];
 
   const api = {
@@ -238,7 +239,14 @@ export function createMap(container, handlers, opts = {}) {
       for (const id of ids) map.setFeatureState({ source: 'munis', id }, { hasData: true });
     },
     fit(bounds, opts = {}) {
-      map.fitBounds(bounds, { ...CAMERA, ...opts });
+      const pad = CAMERA.padding;
+      map.fitBounds(bounds, { ...CAMERA, padding: { top: pad, right: pad, bottom: pad, left: pad + inset }, ...opts });
+    },
+    // Painel recolhido/aberto: o mapa não muda de tamanho (sem resize por quadro); só a câmera desliza meia faixa.
+    setInset(px, { animate = true } = {}) {
+      const delta = px - inset;
+      inset = px;
+      if (delta && animate) map.panBy([-delta / 2, 0], { duration: 180, easing: (t) => 1 - Math.pow(1 - t, 3) });
     },
     async setHoods(fc) {
       await ready;

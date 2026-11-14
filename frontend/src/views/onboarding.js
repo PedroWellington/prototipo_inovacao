@@ -1,19 +1,14 @@
-import { get, getCached, put } from '../api.js';
+import { del, get, getCached, put } from '../api.js';
+import { avatar } from '../components/account.js';
+import '../styles/components.css';
 import { showError } from '../forms.js';
 import { html, mount } from '../html.js';
 import { icon, logo } from '../icons.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
+import { initials } from '../lib.js';
+import { REVENUE } from '../lib.js';
 
-const REVENUE = [
-  ['ate_81k', 'Até R$ 81 mil'],
-  ['81k_360k', 'R$ 81 mil a R$ 360 mil'],
-  ['360k_4_8m', 'R$ 360 mil a R$ 4,8 milhões'],
-  ['4_8m_30m', 'R$ 4,8 milhões a R$ 30 milhões'],
-  ['30m_200m', 'R$ 30 milhões a R$ 200 milhões'],
-  ['acima_200m', 'Acima de R$ 200 milhões'],
-  ['nao_informar', 'Prefiro não informar'],
-];
 const MAX = 3;
 const STEPS = 6;
 const DEFAULT_WEIGHT = 3;
@@ -27,8 +22,12 @@ export async function render(root) {
   const typeName = Object.fromEntries(types.map((t) => [t.key, t.name]));
   const p = current.profile;
   const s = {
-    step: p ? STEPS : 1, // quem já fez o onboarding começa pelo resumo
-    returnToSummary: Boolean(p),
+    step: p?.onboarding_completed_at ? STEPS : 1, // quem já fez o onboarding começa pelo resumo
+    returnToSummary: Boolean(p?.onboarding_completed_at),
+    company_name: p?.company_name || '',
+    logo_url: p?.logo_url || null,
+    logoError: '',
+    logoBusy: false,
     segment_key: p?.segment_key || '',
     segment_other_text: p?.segment_other_text || '',
     revenue_band: p?.revenue_band || '',
@@ -113,6 +112,41 @@ export async function render(root) {
     5: () => s.repel.map((k) => typeName[k]).join(', ') || 'Nenhum',
   };
 
+  // Nome e logo da empresa (opcionais). A imagem é validada e recodificada no servidor; aqui só um aviso rápido.
+  const ACCEPT = ['image/png', 'image/jpeg', 'image/webp'];
+  function identity() {
+    return html`<section class="identity" aria-label="Sua empresa">
+      <div class="identity-avatar" data-avatar>${avatar({ logo_url: s.logo_url, company_name: s.company_name }, null, 72)}</div>
+      <div class="identity-fields">
+        <div class="field"><label class="label" for="company">Nome da empresa <span class="muted">(opcional)</span></label>
+          <input class="input" id="company" data-input="company_name" value="${s.company_name}" maxlength="80" autocomplete="organization" /></div>
+        <div class="identity-actions">
+          <label class="btn btn-secondary btn-sm file-btn" ${s.logoBusy ? 'aria-busy="true"' : ''}>${icon('image', 15)} ${s.logo_url ? 'Trocar foto ou logo' : 'Enviar foto ou logo'}
+            <input type="file" class="sr-only" accept="${ACCEPT.join(',')}" data-logo /></label>
+          ${s.logo_url ? html`<button type="button" class="btn btn-ghost btn-sm" data-remove-logo>Remover</button>` : ''}
+        </div>
+        <p class="small muted">PNG, JPG ou WebP, até 2 MB. Opcional: sem imagem, mostramos as iniciais (${initials(s.company_name)}).</p>
+        ${s.logoError ? html`<p class="small field-error" role="alert">${s.logoError}</p>` : ''}
+      </div>
+    </section>`;
+  }
+
+  async function uploadLogo(file) {
+    s.logoError = '';
+    if (!ACCEPT.includes(file.type)) s.logoError = 'Envie uma imagem PNG, JPG ou WebP (SVG não é aceito).';
+    else if (file.size > 2 * 1024 * 1024) s.logoError = 'A imagem pode ter no máximo 2 MB.';
+    if (s.logoError) return draw();
+    s.logoBusy = true;
+    draw();
+    try {
+      s.logo_url = (await put('/api/profile/logo', file)).profile.logo_url;
+    } catch (e) {
+      s.logoError = e.message; // a palavra final é do servidor (conteúdo real do arquivo)
+    }
+    s.logoBusy = false;
+    draw();
+  }
+
   const SCREENS = {
     1: () => ({
       title: 'Qual é o ramo da sua empresa?',
@@ -164,7 +198,7 @@ export async function render(root) {
     6: () => ({
       title: 'Confira suas respostas',
       help: 'Todos os critérios começam com o mesmo peso. No mapa, você ajusta a importância de cada um.',
-      body: html`<ul class="summary">
+      body: html`${identity()}<ul class="summary">
           ${[1, 2, 3, 4, 5].map(
             (n) => html`<li>
               <div><span class="summary-label">${['Ramo', 'Faturamento anual', 'Sede', 'Quero perto', 'Não quero perto'][n - 1]}</span>
@@ -204,7 +238,7 @@ export async function render(root) {
             <div class="ob-actions-right">
               ${scr.skippable ? html`<button type="button" class="btn btn-secondary" data-skip>Pular</button>` : ''}
               <button type="submit" class="btn btn-primary" ${valid[s.step]() ? '' : 'disabled'}>
-                ${scr.final ? html`Ir para o mapa ${icon('chevron', 16)}` : s.returnToSummary ? 'Voltar ao resumo' : 'Continuar'}
+                ${scr.final ? html`Salvar e continuar ${icon('chevron', 16)}` : s.returnToSummary ? 'Voltar ao resumo' : 'Continuar'}
               </button>
             </div>
           </div>
@@ -233,6 +267,7 @@ export async function render(root) {
       ...s.repel.map((k) => ({ business_type_key: k, direction: 'repel', weight: s.weights[k] || DEFAULT_WEIGHT })),
     ];
     await put('/api/profile', {
+      company_name: s.company_name.trim() || null,
       segment_key: s.segment_key,
       segment_other_text: s.segment_key === 'outro' ? s.segment_other_text.trim() : null,
       revenue_band: s.revenue_band,
@@ -243,7 +278,7 @@ export async function render(root) {
       criteria,
     });
     await loadUser(true);
-    go('/explorer');
+    go('/home');
   }
 
   // ---------- Eventos (delegados; removidos ao sair da tela) ----------
@@ -268,6 +303,9 @@ export async function render(root) {
     } else if (t.dataset.skip !== undefined) {
       s[s.step === 4 ? 'attract' : 'repel'] = [];
       goTo(s.returnToSummary ? STEPS : s.step + 1);
+    } else if (t.dataset.removeLogo !== undefined) {
+      s.logo_url = (await del('/api/profile/logo')).profile.logo_url;
+      draw();
     } else if (t.dataset.edit) {
       s.returnToSummary = true;
       goTo(Number(t.dataset.edit));
@@ -283,6 +321,7 @@ export async function render(root) {
   }, opts);
 
   root.addEventListener('change', async (e) => {
+    if (e.target.dataset.logo !== undefined && e.target.files[0]) return uploadLogo(e.target.files[0]);
     if (e.target.dataset.input === 'hq_uf') {
       s.hq_municipality_ibge = '';
       await loadCities(s.hq_uf);

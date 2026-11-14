@@ -105,3 +105,27 @@ export function countText(n, nCnpj, type) {
   const main = n === 1 ? '1 unidade ativa no CNES' : `${fmtN(n)} unidades ativas no CNES`;
   return `${main} (Ministério da Saúde); complemento: ${nCnpj === 1 ? '1 local' : `${fmtN(nCnpj)} locais`} com CNPJ de atividade principal de ${type.name.toLowerCase()}`;
 }
+
+// Faixas de faturamento (as mesmas do onboarding). Só exibidas; não entram em nenhum cálculo.
+export const REVENUE = [
+  ['ate_81k', 'Até R$ 81 mil'],
+  ['81k_360k', 'R$ 81 mil a R$ 360 mil'],
+  ['360k_4_8m', 'R$ 360 mil a R$ 4,8 milhões'],
+  ['4_8m_30m', 'R$ 4,8 milhões a R$ 30 milhões'],
+  ['30m_200m', 'R$ 30 milhões a R$ 200 milhões'],
+  ['acima_200m', 'Acima de R$ 200 milhões'],
+  ['nao_informar', 'Prefiro não informar'],
+];
+export const REVENUE_LABEL = Object.fromEntries(REVENUE);
+
+// Iniciais para o avatar sem logo: primeira letra das duas primeiras palavras significativas.
+export function initials(name) {
+  const words = (name || '').split(/\s+/).filter((w) => w && !/^(de|da|do|das|dos|e|&)$/i.test(w));
+  return (words.slice(0, 2).map((w) => w[0]).join('') || '?').toUpperCase();
+}
+
+// Texto da confirmação de gasto (o servidor é quem cobra; isto só informa).
+export function spendText(cost, balance) {
+  const c = cost === 1 ? '1 crédito' : `${cost} créditos`;
+  return `Isto usa ${c}. Restam ${balance} (depois desta análise: ${balance - cost}).`;
+}

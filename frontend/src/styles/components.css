@@ -1,0 +1,257 @@
+/* Componentes da conta (cartão da empresa, créditos, minhas análises), diálogo, tela inicial e identidade.
+   Só tokens de tokens.css: para trocar o visual, mude os tokens ou este arquivo, sem mexer na estrutura (JS). */
+
+/* ---------- Cartões ---------- */
+.acc-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.acc-card.is-compact {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--color-surface-2);
+  border-color: transparent;
+}
+.acc-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.skeleton-block {
+  min-height: 72px;
+  background: var(--color-surface-2);
+  border-color: transparent;
+}
+
+/* Avatar: tamanho fixo (sem salto de layout) */
+.avatar {
+  flex: none;
+  width: var(--avatar, 56px);
+  height: var(--avatar, 56px);
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--color-surface-2);
+}
+img.avatar {
+  width: auto;
+  aspect-ratio: 1;
+}
+.avatar-initials {
+  display: grid;
+  place-items: center;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: var(--weight-bold);
+  font-size: calc(var(--avatar, 56px) * 0.36);
+  letter-spacing: 0.02em;
+}
+
+.company-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.company-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.company.is-compact .small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credits {
+  align-items: flex-start;
+}
+.credits-icon {
+  display: grid;
+  place-items: center;
+  color: var(--color-accent);
+}
+.credits p {
+  margin: var(--space-1) 0 0;
+}
+
+.analyses {
+  display: block;
+}
+.analyses-list {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+.analysis {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast);
+}
+.analysis:hover {
+  background: var(--color-surface-3);
+}
+.analysis:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+.analysis-icon {
+  color: var(--color-accent);
+  display: grid;
+}
+.analysis-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.analysis-days {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.analysis.is-expired .analysis-name,
+.analysis.is-expired .analysis-days {
+  color: var(--color-text-subtle);
+}
+
+/* ---------- Diálogo de confirmação ---------- */
+.dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.dialog[open] {
+  animation: dialog-in var(--dur) var(--ease-out);
+}
+.dialog::backdrop {
+  background: rgb(20 24 28 / 0.35);
+}
+.dialog-body {
+  padding: var(--space-5);
+}
+.dialog-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-md);
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+/* ---------- Tela inicial ---------- */
+.home {
+  min-height: 100dvh;
+  background: var(--color-bg);
+}
+.home-top {
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-6);
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+.home-main,
+.home-side {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+.home-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+.btn-cta {
+  justify-self: start;
+  min-height: 56px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+  gap: var(--space-2);
+}
+.home .analyses {
+  min-height: 140px;
+}
+@media (max-width: 860px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-5) var(--space-4);
+  }
+  .btn-cta {
+    justify-self: stretch;
+  }
+}
+
+/* ---------- Identidade no onboarding (nome + logo) ---------- */
+.identity {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.identity-avatar {
+  flex: none;
+  width: 72px;
+  height: 72px;
+}
+.identity-fields {
+  display: grid;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+.identity-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.file-btn {
+  cursor: pointer;
+}
+.file-btn:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

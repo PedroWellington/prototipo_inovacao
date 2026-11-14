@@ -28,6 +28,21 @@ def main():
     c.post("/api/auth/register", json={"name": "Perf", "email": email, "password": "perf-senha-123", "accept_terms": True}).raise_for_status()
     csrf = c.get("/api/auth/me").json()["csrf_token"]
     h = {"X-CSRF-Token": csrf}
+    # Créditos para o usuário descartável (concessão manual) e liberação da cidade e da busca Brasil.
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from sqlalchemy import text
+
+    from app import credits
+    from app.db import engine
+
+    with engine.begin() as conn:
+        uid = conn.execute(text("SELECT id FROM users WHERE email = :e"), {"e": email}).scalar()
+        credits.grant(conn, uid, 5, "medição")
+    c.post(f"/api/credits/cities/{args.ibge}", headers=h).raise_for_status()
+    c.post("/api/credits/searches", json={}, headers=h).raise_for_status()
 
     combos = list(itertools.product(range(1, 6), repeat=3))  # 125 combinações de pesos
     def body(w):

@@ -39,7 +39,7 @@ function shell(title, subtitle, form) {
 
 async function enter() {
   await loadUser(true);
-  go('/'); // o roteador decide: onboarding (primeiro acesso) ou explorador
+  go('/'); // o roteador decide: onboarding (primeiro acesso) ou tela inicial
 }
 
 export function login(root) {

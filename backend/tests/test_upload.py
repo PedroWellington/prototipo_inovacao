@@ -3,8 +3,15 @@ from io import BytesIO
 
 from PIL import Image
 
+import pytest
+
 from app import logos
 from tests.helpers import login_new_user, seed_minimal_catalog
+
+
+@pytest.fixture(autouse=True)
+def uploads_dir(tmp_path, monkeypatch):
+    monkeypatch.setattr(logos, "DIR", tmp_path / "logos")  # testes não sujam data/uploads
 
 
 def image_bytes(fmt: str, size=(1200, 800), exif=False) -> bytes:
