@@ -5,13 +5,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api import account, catalog, geo, profile
+from app.api import account, catalog, cities, geo, profile
 from app.auth import routes as auth_routes
+from app.config import PRODUCT_NAME
 from app.db import get_db
 
-app = FastAPI(title="LOCUS API", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title=f"{PRODUCT_NAME} API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-for module in (auth_routes, account, catalog, geo, profile):
+for module in (auth_routes, account, catalog, cities, geo, profile):
     app.include_router(module.router)
 
 
