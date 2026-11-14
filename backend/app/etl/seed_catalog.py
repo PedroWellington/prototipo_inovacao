@@ -54,17 +54,26 @@ def seed_localities(conn) -> None:
 
 
 def seed_catalog_tables(conn) -> None:
-    # Catálogo é a cópia exata dos CSVs: apaga e recarrega (edite os CSVs, rode de novo).
-    conn.execute(text("TRUNCATE segment_defaults, business_type_cnae, business_types, segments"))
+    # Catálogo = cópia exata dos CSVs (edite os CSVs e rode de novo). Upsert porque perfis referenciam segmentos.
     segments = read_csv("segments.csv")
     types = read_csv("business_types.csv")
     cnaes = read_csv("business_type_cnae.csv")
     defaults = read_csv("segment_defaults.csv")
-    conn.execute(text("INSERT INTO segments VALUES (:key, :name, :sort)"), segments)
+    conn.execute(text("DELETE FROM segment_defaults; DELETE FROM business_type_cnae"))
     conn.execute(
-        text("INSERT INTO business_types VALUES (:key, :name, :name_plural, :precision, nullif(:note, ''), :selectable)"),
+        text("INSERT INTO segments VALUES (:key, :name, :sort) ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, sort=EXCLUDED.sort"),
+        segments,
+    )
+    conn.execute(text("DELETE FROM segments WHERE key <> ALL(:k)"), {"k": [s["key"] for s in segments]})
+    conn.execute(
+        text(
+            "INSERT INTO business_types VALUES (:key, :name, :name_plural, :precision, nullif(:note, ''), :selectable) "
+            "ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, name_plural=EXCLUDED.name_plural, "
+            "precision=EXCLUDED.precision, note=EXCLUDED.note, selectable=EXCLUDED.selectable"
+        ),
         [{**t, "selectable": t["selectable"] == "true"} for t in types],
     )
+    conn.execute(text("DELETE FROM business_types WHERE key <> ALL(:k)"), {"k": [t["key"] for t in types]})
     conn.execute(
         text("INSERT INTO business_type_cnae VALUES (:business_type_key, :cnae, :description, :verified)"),
         [{**c, "verified": c["verified"] == "true"} for c in cnaes],
