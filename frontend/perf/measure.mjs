@@ -1,0 +1,158 @@
+// Mede as metas de fluidez (docs/PERFORMANCE.md) no build de produção servido pelo nginx.
+//   cd frontend; npm run perf            (abre o Edge instalado; HEADLESS=1 para sem janela)
+// Pré-requisito: docker compose up -d e Recife carregado (load_city).
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { chromium } from 'playwright-core';
+
+const BASE = process.env.APP_URL || 'http://localhost:8080';
+const RECIFE = 2611606;
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || 'msedge', headless: process.env.HEADLESS === '1' });
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const page = await ctx.newPage();
+const out = {};
+const stats = (xs) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const at = (p) => s[Math.min(s.length - 1, Math.round((p / 100) * (s.length - 1)))];
+  return { n: s.length, p50: +at(50).toFixed(1), p95: +at(95).toFixed(1), max: +s[s.length - 1].toFixed(1) };
+};
+
+// Observa LCP e CLS desde o início de cada carregamento.
+await ctx.addInitScript(() => {
+  window.__cls = 0;
+  window.__lcp = 0;
+  new PerformanceObserver((l) => l.getEntries().forEach((e) => !e.hadRecentInput && (window.__cls += e.value))).observe({ type: 'layout-shift', buffered: true });
+  new PerformanceObserver((l) => l.getEntries().forEach((e) => (window.__lcp = e.startTime))).observe({ type: 'largest-contentful-paint', buffered: true });
+});
+
+// 1) Tela de login: LCP e CLS (cache frio)
+await page.goto(`${BASE}/#/login`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(500);
+out.login = await page.evaluate(() => ({ lcp_ms: Math.round(window.__lcp), cls: +window.__cls.toFixed(4), js_kb: Math.round(performance.getEntriesByType('resource').filter((r) => r.name.endsWith('.js')).reduce((a, r) => a + r.transferSize, 0) / 1024) }));
+
+// 2) Usuário descartável com onboarding concluído (farmácia, sede em Recife)
+const email = `perf-${Date.now()}@example.com`;
+await ctx.request.post(`${BASE}/api/auth/register`, { data: { name: 'Perf', email, password: 'perf-senha-123', accept_terms: true } });
+const { csrf_token } = await (await ctx.request.get(`${BASE}/api/auth/me`)).json();
+const headers = { 'X-CSRF-Token': csrf_token };
+await ctx.request.put(`${BASE}/api/profile`, {
+  headers,
+  data: {
+    segment_key: 'farmacia', revenue_band: 'nao_informar', has_hq: true, hq_uf: 'PE', hq_municipality_ibge: RECIFE,
+    criteria: [
+      { business_type_key: 'hospital', direction: 'attract', weight: 3 },
+      { business_type_key: 'clinica', direction: 'attract', weight: 3 },
+      { business_type_key: 'farmacia', direction: 'repel', weight: 3 },
+    ],
+  },
+});
+
+// 3) Explorador: abre direto no Recife (sede). Tempo até o mapa colorido.
+await page.goto('about:blank'); // só trocar o hash não recarrega o app, que ainda guarda o usuário deslogado
+const t0 = Date.now();
+await page.goto(`${BASE}/#/explorer`);
+await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
+out.explorer_first_colored_ms = Date.now() - t0;
+await page.waitForTimeout(1500); // termina a animação de câmera
+
+// 4) Geometria na segunda visita (recarrega a página: cache HTTP)
+await page.reload();
+await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
+out.geojson_second_visit = await page.evaluate(() => {
+  const r = performance.getEntriesByType('resource').find((e) => e.name.includes('neighborhoods.geojson'));
+  return r && { duration_ms: Math.round(r.duration), transfer_kb: Math.round(r.transferSize / 1024), from_cache: r.transferSize === 0 };
+});
+const geo = await ctx.request.get(`${BASE}/api/cities/${RECIFE}/neighborhoods.geojson`, { headers: { 'Accept-Encoding': 'gzip' } });
+out.geojson_size = { raw_kb: Math.round((await geo.body()).length / 1024) };
+await page.waitForTimeout(1500);
+
+// 5) Recalcular: mexe no peso e mede rede (rank) e recoloração após a resposta
+const recolor = [], rankNet = [], total = [];
+for (let i = 0; i < 12; i++) {
+  await page.evaluate(() => performance.clearMeasures('app:recolor'));
+  const start = await page.evaluate((w) => {
+    const el = document.querySelector('[data-weight="0"]');
+    el.value = String(w);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return performance.now();
+  }, (i % 5) + 1 === 3 ? 4 : (i % 5) + 1);
+  await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 10000 });
+  const m = await page.evaluate((s) => {
+    const rec = performance.getEntriesByName('app:recolor').at(-1);
+    const net = performance.getEntriesByType('resource').filter((r) => r.name.includes('/rank')).at(-1);
+    return { recolor: rec.duration, net: net.responseEnd - net.requestStart, total: rec.startTime + rec.duration - s };
+  }, start);
+  recolor.push(m.recolor);
+  rankNet.push(m.net);
+  total.push(m.total);
+}
+out.recalc = { rank_network_ms: stats(rankNet), recolor_after_response_ms: stats(recolor), slider_to_recolored_ms_incl_250ms_debounce: stats(total) };
+
+// 6) Hover: tooltip sem rede
+const box = await page.locator('[data-map]').boundingBox();
+const before = await page.evaluate(() => performance.getEntriesByType('resource').length);
+for (let i = 0; i < 60; i++) {
+  await page.mouse.move(box.x + box.width * (0.3 + 0.4 * Math.random()), box.y + box.height * (0.3 + 0.4 * Math.random()));
+}
+const hover = await page.evaluate((b) => ({
+  tooltip: performance.getEntriesByName('app:tooltip').map((e) => e.duration),
+  network_requests_during_hover: performance.getEntriesByType('resource').slice(b).filter((r) => r.name.includes('/api/')).length,
+}), before);
+out.hover = { tooltip_ms: stats(hover.tooltip), network_requests_during_hover: hover.network_requests_during_hover };
+
+// 7) FPS durante arrastar e zoom (quadros medidos por requestAnimationFrame)
+await page.evaluate(() => {
+  window.__frames = [];
+  let last = performance.now();
+  const loop = (t) => {
+    window.__frames.push(t - last);
+    last = t;
+    if (window.__frames.length < 100000 && !window.__stop) requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+});
+const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+for (let k = 0; k < 3; k++) {
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let i = 0; i < 40; i++) await page.mouse.move(cx + Math.sin(i / 6) * 200, cy + Math.cos(i / 6) * 120, { steps: 2 });
+  await page.mouse.up();
+  for (let i = 0; i < 6; i++) {
+    await page.mouse.wheel(0, k % 2 ? 240 : -240);
+    await page.waitForTimeout(60);
+  }
+}
+await page.waitForTimeout(500);
+const frames = await page.evaluate(() => {
+  window.__stop = true;
+  return window.__frames.slice(2);
+});
+const avg = frames.reduce((a, b) => a + b, 0) / frames.length;
+out.map_interaction = {
+  frames: frames.length,
+  avg_fps: +(1000 / avg).toFixed(1),
+  frames_over_33ms: frames.filter((f) => f > 33.4).length,
+  frames_over_50ms: frames.filter((f) => f > 50).length,
+  worst_frame_ms: +Math.max(...frames).toFixed(1),
+};
+out.explorer_cls = await page.evaluate(() => +window.__cls.toFixed(4));
+
+// 8) Troca de tela (hash) e de nível
+let t = Date.now();
+await page.evaluate(() => (location.hash = '#/conta'));
+await page.getByRole('heading', { name: 'Minha conta' }).waitFor();
+out.nav_explorer_to_account_ms = Date.now() - t;
+t = Date.now();
+await page.evaluate(() => (location.hash = '#/explorer'));
+await page.waitForFunction(() => document.querySelector('.ex-head h1')?.textContent === 'Recife', null, { timeout: 15000 });
+out.nav_account_to_explorer_ms = Date.now() - t;
+t = Date.now();
+await page.getByRole('button', { name: 'Pernambuco' }).click();
+await page.getByText('Escolha uma cidade').waitFor();
+out.level_change_panel_ms = Date.now() - t;
+
+await ctx.request.delete(`${BASE}/api/account`, { headers });
+await browser.close();
+
+mkdirSync(new URL('./results/', import.meta.url), { recursive: true });
+writeFileSync(new URL(`./results/${new Date().toISOString().replace(/[:.]/g, '-')}.json`, import.meta.url), JSON.stringify(out, null, 2));
+console.log(JSON.stringify(out, null, 2));
