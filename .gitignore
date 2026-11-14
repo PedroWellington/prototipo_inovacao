@@ -25,3 +25,9 @@ Thumbs.db
 
 # Artefatos de testes de navegador
 .playwright-mcp/
+
+# Arquivos enviados por usuários (logos) e dumps do banco: nunca no Git (repositório público)
+data/uploads/
+*.dump
+*.sql.gz
+*.backup

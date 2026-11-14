@@ -71,6 +71,13 @@ docker compose --profile dev up frontend-dev                                  # 
   - nunca recriar camadas ou fontes.
 - **Atalhos com limite conhecido:** marque com `# shortcut: <limite>, <quando trocar>`.
 
+## Versionamento (responsabilidade do agente, sem precisar pedir)
+
+- **Commit a cada etapa coerente** (uma funcionalidade, uma correção, uma migration), mensagem clara em português, e **push para `origin main`** logo em seguida. Sem `origin`: `git remote add origin https://github.com/PedroWellington/prototipo_inovacao.git`.
+- **Antes do primeiro push e sempre que o `.gitignore` mudar:** conferir que não vai segredo nem peso (`.env`, chaves, `data/raw/`, `data/uploads/`, dumps do banco, imagens de usuários, qualquer arquivo > 50 MB). Achou algo: parar e avisar. O repositório é público.
+- **Push falhou** (credencial, rede): informar o erro exato e seguir com commits locais.
+- **Fim de cada resposta:** uma linha com o último commit e se o push foi feito.
+
 ## Fora do escopo desta etapa (só gancho documentado em EXTENSIONS.md)
 
 - Landing page.
