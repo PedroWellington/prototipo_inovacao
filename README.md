@@ -86,6 +86,18 @@ cd frontend; npm run perf                         # fluidez: abre o Edge e mede 
 docker compose run --rm backend python scripts/perf_rank.py   # tempo do ranking (p50/p95) e tamanho da geometria
 ```
 
+## Créditos (sem pagamento nesta etapa)
+
+Todo cadastro novo ganha 1 crédito. 1 crédito = analisar 1 cidade por 30 dias; o ranking de cidades usa 1 crédito por
+busca (um alcance: Brasil, uma região ou um estado). As regras ficam na tabela `credit_settings`. Para conceder créditos:
+
+```powershell
+docker compose run --rm backend python -m app.credits grant --email ana@exemplo.com --amount 5 --note "teste"
+docker compose run --rm backend python -m app.credits balance --email ana@exemplo.com
+```
+
+As logos enviadas ficam em `data\uploads\logos` (fora do Git), já recodificadas em WebP.
+
 ## Auditoria dos dados (só desenvolvimento, não é exposto no site)
 
 ```powershell

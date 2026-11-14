@@ -29,6 +29,11 @@ Cada item abaixo diz onde encaixar a extensão sem mexer no motor de ranking.
 
 ## Pagamentos, planos e cotas
 
+- **Hoje:** créditos sem pagamento. `credit_ledger` guarda concessões e gastos; `credit_settings` guarda as regras; a concessão é manual (`python -m app.credits grant`).
+- **Para cobrar:** o webhook do gateway grava uma concessão (`reason = 'grant'`, com o id do pagamento em `note`) em `credit_ledger`. Nada no motor muda.
+
+### Plano original (PDF)
+
 - **Fora do MVP.** O PDF (seção 8) prevê os planos Essencial, Profissional e Rede, cobrança mensal por gateway (Mercado Pago ou Stripe) com webhooks e cotas lidas de uma tabela de configuração.
 - **Onde encaixar:**
   - tabelas `plans`, `subscriptions` e `usage_counters`;

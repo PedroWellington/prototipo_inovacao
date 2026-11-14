@@ -13,6 +13,9 @@ O documento do produto não fixa números. As metas abaixo seguem referências p
 | Mexer no peso até o mapa recolorido | ≤ 500 ms, já contando os 250 ms de debounce |
 | Tooltip ao passar o mouse | sem nenhuma chamada de rede |
 | Arrastar e dar zoom no mapa (bairros e ~5.570 municípios) | média ≥ 60 fps |
+| Recolher/abrir o painel lateral | ≥ 60 fps, sem quadro acima de 33 ms |
+| Salto de layout (CLS) em login, início e explorador | zero |
+| Transições de interface | 150 a 200 ms (`--dur-fast` 150 ms, `--dur` 180 ms) |
 | Geometria na segunda visita | sai do cache do navegador |
 
 ## Como medir
@@ -65,6 +68,29 @@ Medição de 14/11/2026, com o Brasil inteiro carregado: 5.570 cidades, 53.905 b
 A rede vista pelo navegador no ranking de cidades (p50 ~24 ms) mede, em boa parte, respostas do cache, porque o teste repete pesos. O número sem cache é o do servidor, na tabela acima.
 
 **Ponto aberto:** o caso extremo, Brasil inteiro e sem população mínima, fica em p95 234 ms na primeira vez de cada combinação. Ele cai para 20 ms quando repetido. O padrão (mínimo de 20 mil) e qualquer região ou estado ficam dentro da meta. Se for preciso, o próximo passo é pré-calcular por município e tipo o valor normalizado e o percentil por alcance.
+
+### Início, painel lateral e créditos (rodada final desta etapa)
+
+| O quê | Medido | Meta |
+|---|---|---|
+| Login: LCP / CLS | 228 ms / 0 | ✅ |
+| Tela inicial (`#/home`): LCP / CLS | 116 ms / 0 | ✅ |
+| Explorador: CLS | 0 | ✅ |
+| Recolher e abrir o painel 6 vezes | média de 144 fps; 0 de 258 quadros acima de 33 ms (o pior teve 7 ms); CLS 0 | ✅ |
+| Mapa de bairros ao arrastar e dar zoom | média de 141 fps | ✅ |
+| Mapa do Brasil (municípios) ao arrastar e dar zoom | média de 142 fps; 0 quadros acima de 33 ms | ✅ |
+| Slider até bairros recoloridos (com debounce) | p95 284 ms | ✅ |
+| Slider até cidades recoloridas, 1.710 / 5.570 | p95 310 ms / 353 ms | ✅ |
+| Servidor: ranking de bairros (1ª vez, com checagem de liberação) | p50 31 ms, p95 36 ms | ✅ |
+| Servidor: ranking de cidades, mínimo de 20 mil (1ª vez) | p95 106 ms | ✅ |
+| Servidor: ranking de cidades sem mínimo (1ª vez) | p95 243 ms | ❌ (ponto aberto, abaixo) |
+
+Achados desta rodada:
+- **Salto de layout de 0,003 na tela inicial.** A animação de entrada das telas usava `translateY(4px)`. Em telas da altura da janela, isso criava uma barra de rolagem por 180 ms; quando ela sumia, o conteúdo recentrava 7,5 px. Agora a entrada é só opacidade.
+- **Reservar a barra na raiz não serve.** Tanto `scrollbar-gutter: stable` quanto `overflow-y: scroll` no `html` fazem o Edge deixar de emitir FCP e LCP. Não foram usados.
+- **A primeira tela não tem fade.** Começar com opacidade 0 também suprimia o FCP e atrasava o conteúdo. O fade (180 ms) fica só nas trocas de tela.
+- **O painel não redimensiona o mapa.** Painel e mapa ocupam a mesma área. O painel recolhe por `transform` (compositor), a legenda acompanha por `transform`, e o mapa só desloca a câmera meia largura (`panBy`, 180 ms). O enquadramento desconta o painel aberto (`setInset`).
+- **A tela inicial é desenhada uma vez só.** Perfil, usuário e créditos chegam em paralelo, e o avatar tem tamanho fixo.
 
 ## O que sustenta esses números
 

@@ -28,7 +28,8 @@ O VICUS ajuda o dono de um negócio a comparar bairros pelos critérios dele: o 
 ```
 backend/   FastAPI + SQLAlchemy Core (SQL explícito) + Alembic
   app/auth     sessão (cookie httpOnly + hash SHA-256 no banco), CSRF, argon2id, limite de tentativas
-  app/api      catalog, geo (malhas do IBGE com cache), profile, cities (status/geojson/rank), account (LGPD)
+  app/api      catalog, geo (malhas do IBGE com cache), profile (+ logo), cities (status/geojson/rank), credits, account (LGPD)
+  app/credits.py  única autoridade de saldo e liberação (regras em credit_settings); app/logos.py valida e recodifica imagens
   app/scoring  rank.py (bairros) e rank_cities.py (cidades): o mesmo motor em SQL
   app/etl      seed_catalog, ibge_boundaries (bairros ou áreas por setor), cnpj, locate, counts, census, cnes, load_city/load_uf/load_br, report
   app/seed     CSVs também definem a fonte de cada tipo (business_types.source: cnpj|cnes) e tipo -> TP_UNIDADE do CNES
@@ -55,6 +56,7 @@ docker compose run --rm backend python -m app.etl.seed_catalog                # 
 docker compose run --rm backend pytest                                        # testes do backend (banco locus_test)
 cd frontend; npx vitest run                                                   # testes do frontend
 docker compose run --rm backend alembic revision -m "descricao"               # nova migration (escreva o SQL à mão)
+docker compose run --rm backend python -m app.credits grant --email X --amount 5  # concede créditos (sem pagamento)
 docker compose --profile dev up frontend-dev                                  # Vite com HMR em http://localhost:5173
 ```
 
@@ -69,6 +71,9 @@ docker compose --profile dev up frontend-dev                                  # 
   - recolorir = `setFeatureState`;
   - números = `setData` na fonte de pontos;
   - nunca recriar camadas ou fontes.
+- **Créditos:** a cobrança é decidida só no servidor (`app/credits.py`); o frontend só confirma e mostra. Regras em `credit_settings`, nunca no código.
+- **Uploads:** nunca SVG; validar o conteúdo real, recodificar e guardar em `data/uploads/` (fora do Git).
+- **Frontend:** componentes da conta em `src/components/`, estilo em `styles/components.css` só com tokens (o visual final ainda vai mudar).
 - **Atalhos com limite conhecido:** marque com `# shortcut: <limite>, <quando trocar>`.
 
 ## Versionamento (responsabilidade do agente, sem precisar pedir)
