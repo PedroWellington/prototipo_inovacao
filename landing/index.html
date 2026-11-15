@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#20282d" />
+  <title>VICUS — Expanda com inteligência territorial</title>
+  <meta name="description" content="Diga o que quer por perto e o que quer longe. A VICUS mostra como cada cidade e cada bairro do Brasil se encaixam nos critérios que você definiu, com dados abertos, fonte e data." />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="VICUS" />
+  <meta property="og:title" content="VICUS — Expanda com inteligência territorial" />
+  <meta property="og:description" content="Cidades e bairros que mais combinam com os critérios que você definiu. Dados abertos da Receita Federal, do CNES e do IBGE, com fonte e data. A decisão é sua." />
+  <link rel="icon" href="assets/icone.svg" type="image/svg+xml" />
+  <link rel="preload" href="data/manifest.json" as="fetch" crossorigin="anonymous" />
+  <link rel="stylesheet" href="css/landing.css" />
+  <script type="module" src="js/landing.js"></script>
+</head>
+<body>
+  <a class="skip" href="#produto">Pular animação e conhecer a plataforma</a>
+  <header class="navbar" id="navbar">
+    <a class="brand" href="#inicio" aria-label="VICUS — Início">
+      <svg width="37" height="37" viewBox="0 0 42 42" fill="none" aria-hidden="true"><path d="m5 24 16 8 16-8M5 30l16 8 16-8" stroke="#d7b895" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 18 21 25l15-7-15-7z" stroke="#d7b895" stroke-width="2.4" stroke-linejoin="round"/><path d="M21 5c-4 0-7 3-7 7 0 5 7 11 7 11s7-6 7-11c0-4-3-7-7-7Z" fill="#d5b28f" stroke="#293339" stroke-width="1.4"/><circle cx="21" cy="12" r="2.3" fill="#343b40"/></svg>
+      <strong>VICUS</strong>
+    </a>
+    <nav class="nav-links" aria-label="Navegação principal"><a href="#inicio" class="is-active">Início</a><a href="#produto">Como funciona</a><a href="#fontes">Dados e fontes</a><a href="#final">A plataforma</a></nav>
+    <div class="nav-actions"><a class="text-link" href="#produto">Conhecer</a><a class="nav-cta" href="#final">Explorar VICUS <span aria-hidden="true">↗</span></a></div>
+  </header>
+
+  <main>
+    <section class="story" id="inicio" aria-label="Jornada pelo território, do Brasil a um bairro do Recife">
+      <div class="stage" id="stage">
+        <div class="stage-bg" aria-hidden="true"></div>
+        <canvas id="mapCanvas" role="img" aria-label="Mapa animado do Brasil ao Nordeste, a Pernambuco, ao Recife e aos bairros do Recife, desenhado com as malhas territoriais do IBGE. Se os arquivos não carregarem, a tela avisa que a visualização é ilustrativa."></canvas>
+        <div class="map-light" aria-hidden="true"></div>
+        <div class="store-backdrop" id="storeBackdrop" aria-hidden="true"></div>
+        <!-- Loja: ilustração conceitual, não um endereço real. Cresce a partir do ponto do bairro. -->
+        <div class="store-reveal" id="storeReveal">
+          <picture id="storePicture">
+            <source type="image/webp" srcset="assets/loja-esquina-960.webp 960w, assets/loja-esquina-1280.webp 1280w, assets/loja-esquina-1672.webp 1672w" sizes="100vw" />
+            <img id="storeImg" src="assets/loja-esquina-1280.jpg" srcset="assets/loja-esquina-960.jpg 960w, assets/loja-esquina-1280.jpg 1280w, assets/loja-esquina-1672.jpg 1672w" sizes="100vw" width="1672" height="941" alt="Ilustração de uma loja de esquina numa rua arborizada, ao entardecer. Imagem conceitual, não é um estabelecimento real." decoding="async" fetchpriority="low" />
+          </picture>
+        </div>
+        <div class="store-vignette" aria-hidden="true"></div>
+        <div class="ambient-lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+        <div class="eyebrow" id="eyebrow"><span class="eyebrow-line"></span> DO TERRITÓRIO À RUA</div>
+        <div class="geo-pill" id="geoPill" aria-hidden="true"><span class="geo-pulse"></span><span id="geoPillText">Brasil</span></div>
+        <div class="geo-pill secondary" id="geoPill2" aria-hidden="true"><span class="geo-dot"></span><span id="geoPillText2">Boa Viagem · Recife</span></div>
+
+        <div class="chapters" id="chapters">
+          <article class="chapter align-left" data-start="0" data-end=".15">
+            <div class="chapter-kicker">01 <span></span> O COMEÇO DE TUDO</div>
+            <h1>Expanda com <em>inteligência territorial.</em></h1>
+            <p>Diga o que quer por perto e o que quer longe. A VICUS mostra como cada cidade e cada bairro do Brasil se encaixam nos seus critérios.</p>
+            <a class="chapter-button" href="#produto">Conheça a plataforma <b>↗</b></a>
+          </article>
+          <article class="chapter align-right" data-start=".15" data-end=".29">
+            <div class="chapter-kicker">02 <span></span> REGIÕES</div>
+            <h2>Do Brasil ao <em>Nordeste.</em></h2>
+            <p>Dados abertos da Receita Federal, do IBGE e do Censo 2022 cobrem o país inteiro, de região em região.</p>
+          </article>
+          <article class="chapter align-left" data-start=".29" data-end=".43">
+            <div class="chapter-kicker">03 <span></span> ESTADOS</div>
+            <h2>Pernambuco entra <em>em foco.</em></h2>
+            <p>Cada aproximação revela mais detalhe, sempre no mesmo mapa e com os limites oficiais do IBGE.</p>
+          </article>
+          <article class="chapter align-right" data-start=".43" data-end=".57">
+            <div class="chapter-kicker">04 <span></span> CIDADES</div>
+            <h2>Chegamos a <em>Recife.</em></h2>
+            <p>Em cada cidade, você vê quantos estabelecimentos de cada tipo existem, com fonte e data de referência.</p>
+          </article>
+          <article class="chapter align-left" data-start=".57" data-end=".70">
+            <div class="chapter-kicker">05 <span></span> BAIRROS</div>
+            <h2>Recife, bairro <em>por bairro.</em></h2>
+            <p>Os bairros são ordenados pelos critérios e pesos que você definiu. Cada um traz sua posição e os números por trás dela.</p>
+            <div class="floating-criteria"><span>⊕ Perto</span><span>⊖ Longe</span><span>☷ Peso 1 a 5</span></div>
+          </article>
+          <article class="chapter align-right" data-start=".70" data-end=".81">
+            <div class="chapter-kicker">06 <span></span> DO BAIRRO AO PONTO</div>
+            <h2>Agora, imagine <em>sua unidade aqui.</em></h2>
+            <p>A câmera chega a um bairro, e uma unidade ilustrativa começa a ganhar forma.</p>
+          </article>
+          <article class="chapter align-left" data-start=".81" data-end=".91">
+            <div class="chapter-kicker">07 <span></span> A UNIDADE GANHA VIDA</div>
+            <h2>Um bairro. <em>Uma nova unidade.</em></h2>
+            <p>A fachada aparece aos poucos, como uma possibilidade, não como uma recomendação.</p>
+          </article>
+          <article class="chapter align-left chapter-final" data-start=".91" data-end="1">
+            <div class="chapter-kicker">08 <span></span> A DECISÃO CONTINUA SUA</div>
+            <h2>O próximo capítulo <em>é você quem escreve.</em></h2>
+            <p>A VICUS organiza dados e comparações. Você escolhe o caminho da sua expansão.</p>
+            <a class="chapter-button" href="#produto">Descubra como funciona <b>↗</b></a>
+          </article>
+        </div>
+
+        <div class="scene-scale" id="sceneScale" aria-hidden="true"><span class="scale-tick"></span><span id="sceneName">BRASIL</span><b>·</b><span id="sceneNumber">01</span></div>
+        <div class="scene-stepper" aria-hidden="true"><i class="active"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="stage-bottom"><div class="scroll-instruction"><div class="mouse" aria-hidden="true"><span></span></div><div><b>ROLE PARA EXPLORAR</b><small>O movimento acompanha você</small></div></div><div class="stage-footer-right"><div class="geo-source loading" id="geoSource" role="status">Carregando limites geográficos…</div><div class="progress-line"><span id="progressLine"></span></div></div></div>
+        <div class="stage-mobile-caption">Role para mergulhar no território ↓</div>
+      </div>
+    </section>
+
+    <section class="product" id="produto">
+      <div class="product-shell">
+        <div class="section-meta"><span>VICUS / O QUE A PLATAFORMA ENTREGA</span><span>01 — 03</span></div>
+        <div class="product-intro"><div><div class="subheading">O território é só o começo</div><h2>Agora, <em>coloque os seus critérios no mapa.</em></h2></div><p>Dentro da VICUS, você define o que importa: o que quer perto, o que quer longe e o peso de cada critério. Nós mostramos os dados e de onde eles vêm.</p></div>
+        <div class="preview-card">
+          <div class="preview-titlebar"><span class="preview-logo">◈ &nbsp; VICUS</span><span class="breadcrumb">Brasil <b>›</b> Pernambuco <b>›</b> Recife</span><span class="preview-tag">EXEMPLO ILUSTRATIVO</span></div>
+          <div class="preview-body">
+            <div class="preview-filter"><div class="preview-filter-top"><div class="filter-overline">SEUS CRITÉRIOS</div><h3>O que importa para o seu negócio?</h3></div><div class="filter-row"><span>Hospitais</span><b>PERTO</b></div><div class="mini-range" role="img" aria-label="Peso 4 de 5"><span style="width:80%"></span></div><div class="filter-row"><span>Clínicas</span><b>PERTO</b></div><div class="mini-range" role="img" aria-label="Peso 3 de 5"><span style="width:60%"></span></div><div class="filter-row"><span>Farmácias</span><b>LONGE</b></div><div class="mini-range" role="img" aria-label="Peso 2 de 5"><span style="width:40%"></span></div><div class="filter-note">Critérios de exemplo. Na plataforma, você escolhe os tipos e dá a cada um um peso de 1 a 5.</div><div class="filter-bottom">Personalizar critérios <span>↗</span></div></div>
+            <div class="preview-map"><div class="preview-map-label" id="previewGeoLabel">RECIFE · LIMITES DOS BAIRROS</div>
+              <canvas id="previewOfficialMap" class="preview-official-map" role="img" aria-label="Contornos dos bairros do Recife, sem classificação nem resultado"></canvas>
+              <div class="preview-map-state" id="previewMapState">Carregando os limites dos bairros…</div>
+              <div class="preview-map-caption">A prévia mostra só os contornos dos bairros, não classificações nem resultados de análise.</div>
+            </div>
+            <div class="preview-info"><div class="filter-overline">TRANSPARÊNCIA</div><h3>Informação que você pode conferir.</h3><div class="info-line"><span>◈</span> Fonte e data de referência</div><div class="info-line"><span>◌</span> Cobertura de dados por área</div><div class="info-line"><span>↗</span> Renda do Censo 2022 como indicador de poder de compra</div><p>Sem previsão de lucro, de faturamento ou de chance de sucesso.</p></div>
+          </div>
+        </div>
+        <div class="benefits"><div class="benefit"><span>01 /</span><b>Explore</b><p>Brasil, regiões, estados, cidades e bairros em um fluxo contínuo.</p></div><div class="benefit"><span>02 /</span><b>Configure</b><p>O que quer perto e longe, pesos de 1 a 5 e sugestões conforme o seu ramo.</p></div><div class="benefit"><span>03 /</span><b>Compare</b><p>Bairros ordenados pelos seus critérios e, se ainda não tiver cidade em mente, também as cidades.</p></div></div>
+      </div>
+    </section>
+    <section class="sources" id="fontes"><div class="sources-inner"><span>DADOS & FONTES</span><h2>Um mapa bonito chama atenção. <em>Dados transparentes sustentam a análise.</em></h2><p>A VICUS usa dados abertos: estabelecimentos da Receita Federal (CNPJ), unidades de saúde do CNES e, do IBGE, limites territoriais, população e renda do Censo 2022. Cada informação mostra fonte e data. Cadastro não é prédio e pode estar desatualizado, por isso mostramos a cobertura de dados de cada área. A loja da animação é uma ilustração, não um estabelecimento real.</p><p>Os limites da animação: Malha Municipal 2022 e Malha de Bairros do Censo 2022, ambas do IBGE (<a href="data/FONTES.md">detalhes e datas</a>).</p><div class="source-links"><a href="https://www.ibge.gov.br/" target="_blank" rel="noopener noreferrer">IBGE <span>↗</span></a><a href="https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj" target="_blank" rel="noopener noreferrer">Receita Federal · dados abertos do CNPJ <span>↗</span></a><a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener noreferrer">CNES / DATASUS <span>↗</span></a><a href="https://dados.recife.pe.gov.br/dataset/mapas-de-limites-e-divisoes-territoriais" target="_blank" rel="noopener noreferrer">Dados Abertos do Recife <span>↗</span></a></div></div></section>
+    <section class="end-section" id="final"><div class="end-inner"><div><div class="subheading">VICUS · INTELIGÊNCIA TERRITORIAL</div><h2>Explore o território.<br /><em>A decisão é sua.</em></h2><p>Cidades e bairros que mais combinam com os critérios que você definiu.</p></div><div class="end-actions"><a class="end-cta" href="#final" data-app-route="#/register">Criar conta <span aria-hidden="true">↗</span></a><a class="end-cta secondary" href="#final" data-app-route="#/login">Entrar <span aria-hidden="true">↗</span></a><a class="end-cta ghost" href="#inicio">Rever a experiência <span aria-hidden="true">↑</span></a></div></div></section>
+  </main>
+  <footer class="footer"><span>© 2026 VICUS</span><span class="disclaimer">Informações de caráter informativo. Não substituem análise própria ou profissional.</span></footer>
+</body>
+</html>

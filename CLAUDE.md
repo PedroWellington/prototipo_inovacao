@@ -39,6 +39,7 @@ frontend/  Vite + JS puro (ES modules), roteador por hash, MapLibre só no explo
   src/styles/tokens.css  todas as cores, fontes e espaçamentos (troque o visual por aqui)
   src/map/mapView.js     mapa: fontes criadas uma vez, feature-state para cor e hover
 docs/      DATA, SCORING, PERFORMANCE, EXTENSIONS
+landing/   landing estática (HTML/CSS/JS puro, Canvas 2D); limites do IBGE pré-gerados em landing/data (ver landing/README.md)
 data/raw/  downloads do IBGE e da Receita (não versionado)
 ```
 
@@ -58,6 +59,8 @@ cd frontend; npx vitest run                                                   # 
 docker compose run --rm backend alembic revision -m "descricao"               # nova migration (escreva o SQL à mão)
 docker compose run --rm backend python -m app.credits grant --email X --amount 5  # concede créditos (sem pagamento)
 docker compose --profile dev up frontend-dev                                  # Vite com HMR em http://localhost:5173
+cd landing; npm install; npm run serve                                        # landing em http://localhost:4173 (nunca por file://)
+cd landing; npm run build-geo                                                 # regenera landing/data (IBGE + bairros do banco)
 ```
 
 ## Convenções
@@ -85,7 +88,6 @@ docker compose --profile dev up frontend-dev                                  # 
 
 ## Fora do escopo desta etapa (só gancho documentado em EXTENSIONS.md)
 
-- Landing page.
 - Planos, cotas e pagamento.
 - Agente de IA.
 - Relatório em PDF.
