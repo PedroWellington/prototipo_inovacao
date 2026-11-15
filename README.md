@@ -46,7 +46,7 @@ Ao final, a carga imprime a cobertura por UF. Detalhe de uma cidade, com os 20 t
 
 Toda cidade com dados carregados fica clicável no explorador automaticamente. Cidades sem bairros na malha do IBGE usam **áreas por setor censitário**, e a tela avisa isso.
 
-Abra **http://localhost:8080**, crie uma conta e responda as perguntas iniciais. O explorador pergunta **"Você já tem uma cidade em mente?"**:
+Abra **http://localhost:8080** (a landing; o app fica em **http://localhost:8080/app/**), crie uma conta e responda as perguntas iniciais. O explorador pergunta **"Você já tem uma cidade em mente?"**:
 - **Sim:** região → estado → cidade → bairros (por exemplo, Nordeste → Pernambuco → Recife).
 - **Não:** escolha o alcance (Brasil, uma região ou um estado) e veja as cidades que mais combinam com os seus critérios. Clique numa cidade para ver os bairros dela.
 
@@ -72,10 +72,11 @@ docker compose run --rm backend python -m app.etl.seed_catalog   # depois de edi
 
 | O quê | Onde |
 |---|---|
-| Aplicação | http://localhost:8080 |
+| Landing | http://localhost:8080/ |
+| Aplicação | http://localhost:8080/app/ |
 | Documentação da API | http://localhost:8000/api/docs |
 | Banco (cliente SQL) | `localhost:5433`, usuário e senha do `.env` |
-| Frontend com HMR (desenvolvimento) | `docker compose --profile dev up frontend-dev`, depois http://localhost:5173 |
+| Frontend com HMR (desenvolvimento) | `docker compose --profile dev up frontend-dev`, depois http://localhost:5173 (landing em `/`, app em `/app/`) |
 
 ## Testes
 

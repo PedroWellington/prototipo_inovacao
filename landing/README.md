@@ -6,7 +6,7 @@ Página estática: HTML, CSS e JS puro (ES modules), sem framework. Os limites d
 index.html            página
 css/landing.css       visual (paleta grafite, ardósia, areia e cobre)
 js/landing.js         câmera, mapa (Canvas 2D), textos e loja
-js/config.js          APP_URL: endereço do app (rotas #/register e #/login)
+js/config.js          APP_URL (/app/, mesmo endereço) e SESSION_URL (sessão, para "Ir para a plataforma")
 js/fallback-geo.js    geometria ESQUEMÁTICA, só usada se um arquivo de data/ falhar (a tela avisa)
 assets/               imagem da loja (WebP e JPG; 960, 1280 e 1672 px) e ícone
 data/                 limites geográficos (TopoJSON em Web Mercator, 2 ou 3 níveis de detalhe) + FONTES.md
@@ -25,7 +25,7 @@ npm install
 npm run serve          # http://localhost:4173  (PORT=xxxx para trocar)
 ```
 
-Antes de publicar, troque `APP_URL` em `js/config.js` pelo endereço definitivo do app.
+Em produção a landing é servida pelo nginx do app (`docker compose up`): landing em `/`, app em `/app/` (ver `frontend/nginx.conf`). No `npm run serve` os botões do app só funcionam com o app no mesmo endereço.
 
 ## Regenerar os dados geográficos
 

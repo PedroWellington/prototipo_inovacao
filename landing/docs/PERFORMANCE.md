@@ -46,6 +46,32 @@ Resultados brutos: `perf/results/*.json` (fora do Git; gere de novo com os coman
 - Testamos desligar, um de cada vez: blur do fundo (`backdrop-filter`), capítulos, camadas da loja, fundos estáticos e o próprio canvas. Nenhum explica sozinho; cada um soma um pouco.
 - Numa tela de 60 Hz (16,7 ms por quadro) esse custo cabe no orçamento. Mas isso é dedução, ainda não medição.
 
+## Depois da integração com o app (nginx: landing em `/`, app em `/app/`)
+
+Mesmo método e mesmo dia (2026-11-14), depois de reiniciar a máquina.
+- **Antes:** código commitado antes da integração (`881e53c`), no servidor estático `npm run serve`.
+- **Depois:** código integrado no nginx do `docker compose`, com estes acréscimos: menu com item ativo, seção de planos, fonte Inter local e consulta de sessão quando o navegador fica ocioso.
+- **Linha de base do ambiente** (`perf/baseline.html`): 6,9 ms constantes e nenhum quadro acima de 50 ms. O ambiente estava limpo.
+
+| Cenário | Métrica | Antes | Depois |
+|---|---|---|---|
+| Desktop | Thread principal por quadro, p95 / máx. | 1,5 / 2,6 ms | 1,6 / 2,4 ms |
+| Desktop | JS por quadro, p95 / máx. | 0,5 / 0,9 ms | 0,5 / 0,9 ms |
+| Desktop | Intervalo entre quadros, p95 / máx. | 20,8 / 41,7 ms | 20,9 / 41,8 ms |
+| Desktop | Quadros > 50 ms | 0 | **0** |
+| Desktop CPU 4× | Thread principal por quadro, p95 / máx. | 7,3 / 11,0 ms | 7,0 / 9,9 ms |
+| Desktop CPU 4× | fps médio / quadros > 50 ms | 81,2 / 0 | 83,2 / **0** |
+| Celular CPU 4× | Thread principal por quadro, p95 / máx. | 8,2 / 13,8 ms | 7,6 / 11,6 ms |
+| Celular CPU 4× | JS por quadro, p95 / máx. | 2,3 / 5,8 ms | 2,2 / 4,0 ms |
+| Celular CPU 4× | Quadros > 50 ms (3 rodadas de cada) | 0, 4, 5 | 1, 4, 3 |
+| Todos | Tarefas longas | 0 | 0 |
+| Todos | LCP | 160–476 ms | 236–456 ms |
+| Todos | CLS | 0,0004 | 0,0005 |
+
+- **O nginx não mudou a fluidez.** Os arquivos chegam com gzip e `Cache-Control: no-cache`, revalidados por ETag, com resposta 304 quando não mudaram. Imagens e fonte ficam 1 dia em cache, e os arquivos do app com hash ficam 1 ano. O LCP continua abaixo de 0,5 s em localhost.
+- **Uma regressão foi achada e corrigida durante a medição.** A correção do texto borrado tinha tirado o `will-change` dos capítulos. Sem ele, o navegador criava e desfazia a camada de cada capítulo a cada troca. Isso gerou de 2 a 3 quadros acima de 50 ms no desktop, exatamente nas fronteiras dos capítulos (p ≈ 0,14, 0,28 e 0,42). Com `will-change: opacity, transform` de volta, o desktop voltou a 0, e a nitidez do texto não mudou (ver `TEXTO-NITIDO.md`).
+- **O celular emulado varia de uma rodada para outra:** de 0 a 5 quadros acima de 50 ms tanto no código antigo quanto no novo. É ruído da GPU emulada, não diferença de código. A medição num aparelho real continua pendente ("O que falta").
+
 ## O que mudou e quanto pesou
 
 1. **Geometria pré-processada** (`scripts/build-geo.mjs`): Web Mercator e LOD por zoom já vêm prontos. O navegador decodifica cada arquivo **uma vez** em `Path2D`. A câmera é só `ctx.setTransform`: **nenhum vértice é reprojetado por quadro**. Isso tirou ~85% do JS por quadro (p95 de 13 para 2 ms com CPU 4×).

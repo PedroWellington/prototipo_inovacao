@@ -46,7 +46,7 @@ data/raw/  downloads do IBGE e da Receita (não versionado)
 ## Comandos (PowerShell, na raiz)
 
 ```powershell
-docker compose up -d --build                                                  # sobe db, backend e frontend (http://localhost:8080)
+docker compose up -d --build                                                  # sobe db, backend e frontend: landing em http://localhost:8080/, app em /app/
 docker compose run --rm backend python -m app.etl.load_br                     # Brasil inteiro, retomável (uma leitura do CNPJ)
 docker compose run --rm backend python -m app.etl.load_uf --uf PE             # carga do estado inteiro (uma leitura do CNPJ)
 docker compose run --rm backend python -m app.etl.load_city --ibge 2611606    # carga de um município
