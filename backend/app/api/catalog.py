@@ -43,3 +43,12 @@ def segment_defaults(key: str, request: Request, db: Session = Depends(get_db)):
         {"k": key},
     ).mappings().all()
     return cached(request, [dict(r) for r in rows])
+
+
+@router.get("/sources")
+def sources(request: Request, db: Session = Depends(get_db)):
+    """Fontes com data de referência (data_sources) e quantas cidades têm dados carregados: o bloco
+    "Dados e fontes" da tela inicial. A cobertura de cada cidade vem de /api/cities/{ibge}/status."""
+    rows = db.execute(text("SELECT key, name, url, reference_date FROM data_sources ORDER BY name")).mappings().all()
+    with_data = db.execute(text("SELECT count(*) FROM city_data_status")).scalar()
+    return cached(request, {"sources": [dict(r) for r in rows], "cities_with_data": with_data}, max_age=0)

@@ -52,6 +52,7 @@ async function route() {
     root.classList.add('view-enter');
   }
   firstView = false;
+  window.scrollTo(0, 0); // cada tela começa do topo (a seção pedida, se houver, rola depois)
   cleanup = (await view(root)) || null;
   document.querySelector('[autofocus]')?.focus();
 }

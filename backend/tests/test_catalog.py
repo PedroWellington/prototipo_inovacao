@@ -21,3 +21,18 @@ def test_seed_csvs_are_consistent():
         assert d["direction"] in ("attract", "repel") and 1 <= int(d["weight"]) <= 5
     per_direction = Counter((d["segment_key"], d["direction"]) for d in defaults)
     assert max(per_direction.values()) <= 3
+
+
+def test_sources_lists_reference_dates_and_cities_with_data(client):
+    from sqlalchemy import text
+
+    from app.db import engine
+
+    with engine.begin() as c:
+        c.execute(text("DELETE FROM city_data_status"))
+        c.execute(text("INSERT INTO data_sources VALUES ('teste_fonte', 'Fonte de teste', 'https://exemplo.gov.br', '2026-10', NULL) "
+                       "ON CONFLICT (key) DO UPDATE SET reference_date = '2026-10'"))
+    body = client.get("/api/catalog/sources").json()
+    src = next(s for s in body["sources"] if s["key"] == "teste_fonte")
+    assert src == {"key": "teste_fonte", "name": "Fonte de teste", "url": "https://exemplo.gov.br", "reference_date": "2026-10"}
+    assert body["cities_with_data"] == 0

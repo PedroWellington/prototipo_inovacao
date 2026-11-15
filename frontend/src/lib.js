@@ -129,3 +129,15 @@ export function spendText(cost, balance) {
   const c = cost === 1 ? '1 crédito' : `${cost} créditos`;
   return `Isto usa ${c}. Restam ${balance} (depois desta análise: ${balance - cost}).`;
 }
+
+// Primeiro nome capitalizado para a saudação ("ana MARIA" -> "Ana").
+export function firstName(name) {
+  const w = (name || '').trim().split(/\s+/)[0] || '';
+  return w ? w[0].toLocaleUpperCase('pt-BR') + w.slice(1).toLocaleLowerCase('pt-BR') : '';
+}
+
+// Última cidade analisada (a liberada mais recentemente, vencida ou não) e as cidades ainda no prazo.
+export function lastCity(state) {
+  return [...(state?.cities || [])].sort((a, b) => b.unlocked_at.localeCompare(a.unlocked_at))[0] || null;
+}
+export const activeCities = (state) => (state?.cities || []).filter((c) => c.active);

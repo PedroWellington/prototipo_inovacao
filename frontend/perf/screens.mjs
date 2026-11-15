@@ -9,7 +9,7 @@ const BASE = process.env.BASE || 'http://localhost:8080';
 const RECIFE = 2611606;
 mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || 'msedge', headless: true });
-const shot = (page, name) => page.screenshot({ path: `${OUT}/${LABEL}-${name}.png` });
+const shot = (page, name, fullPage = false) => page.screenshot({ path: `${OUT}/${LABEL}-${name}.png`, fullPage });
 const settle = (page, ms = 900) => page.waitForTimeout(ms);
 
 async function onboarding(page) {
@@ -50,7 +50,7 @@ for (const [device, viewport] of [['desktop', { width: 1440, height: 900 }], ['c
   await page.click('dialog .btn-primary');
   await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
   await settle(page, 2500); await shot(page, d('recife'));
-  await page.goto(`${BASE}/app/#/home`); await settle(page, 2000); await shot(page, d('inicio-com-analise'));
+  await page.goto(`${BASE}/app/#/home`); await settle(page, 2000); await shot(page, d('inicio-com-analise')); await shot(page, d('inicio-pagina-inteira'), true);
   await page.goto(`${BASE}/app/#/conta`); await settle(page); await shot(page, d('conta'));
   await page.goto(`${BASE}/app/#/termos`); await settle(page); await shot(page, d('termos'));
   await ctx.close();

@@ -1,6 +1,7 @@
 import { del, post } from '../api.js';
 import { html, mount } from '../html.js';
-import { aboutLink, icon, logo } from '../icons.js';
+import { topbar } from '../components/topbar.js';
+import { icon } from '../icons.js';
 import { go } from '../router.js';
 import { clearUser, loadUser } from '../session.js';
 
@@ -8,11 +9,7 @@ export async function render(root) {
   const user = await loadUser();
   mount(
     root,
-    html`<div class="page">
-      <header class="page-header">
-        <a href="#/home" class="logo-link" aria-label="Início">${logo()}</a>
-        <span class="header-actions">${aboutLink()}<a class="btn btn-ghost btn-sm" href="#/explorer">${icon('back', 16)} Voltar ao mapa</a></span>
-      </header>
+    html`<div class="app-shell">${topbar({ active: null, user })}<div class="page">
       <h1>Minha conta</h1>
       <section class="card">
         <dl class="dl">
@@ -33,7 +30,7 @@ export async function render(root) {
         </div>
         <div class="alert alert-error" role="alert" aria-live="assertive" data-error></div>
       </section>
-    </div>`,
+    </div></div>`,
   );
 
   root.querySelector('[data-logout]').addEventListener('click', async () => {

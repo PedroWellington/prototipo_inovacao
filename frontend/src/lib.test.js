@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bbox, debounce, establishmentsText, normalize, scoreColor } from './lib.js';
+import { activeCities, bbox, debounce, establishmentsText, firstName, lastCity, normalize, scoreColor } from './lib.js';
 import { resolve } from './router.js';
 
 const STOPS = ['#d73027', '#fc8d59', '#f2d06b', '#91cf60', '#1a9850'];
@@ -115,5 +115,24 @@ describe('conta', () => {
   it('confirmação de gasto', async () => {
     const { spendText } = await import('./lib.js');
     expect(spendText(1, 3)).toBe('Isto usa 1 crédito. Restam 3 (depois desta análise: 2).');
+  });
+});
+
+describe('dashboard', () => {
+  it('saudação com o primeiro nome capitalizado', () => {
+    expect(firstName('ana MARIA silva')).toBe('Ana');
+    expect(firstName('  élida ')).toBe('Élida');
+    expect(firstName('')).toBe('');
+  });
+  it('última cidade analisada e cidades no prazo', () => {
+    const st = {
+      cities: [
+        { ibge: 1, name: 'Olinda', unlocked_at: '2026-09-01T00:00:00', active: false },
+        { ibge: 2, name: 'Recife', unlocked_at: '2026-11-01T00:00:00', active: true },
+      ],
+    };
+    expect(lastCity(st).name).toBe('Recife');
+    expect(activeCities(st).map((c) => c.ibge)).toEqual([2]);
+    expect(lastCity({ cities: [] })).toBeNull();
   });
 });

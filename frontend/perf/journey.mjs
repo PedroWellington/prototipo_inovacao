@@ -81,8 +81,8 @@ await step('cadastro -> onboarding', async () => {
 });
 await step('onboarding (6 passos) -> tela inicial', async () => {
   for (let i = 0; i < 8 && !/#\/home/.test(page.url()); i++) {
-    await page.waitForSelector('.ob-card, .home', { timeout: 10000 });
-    if (await page.$('.home')) break;
+    await page.waitForSelector('.ob-card, [data-dashboard]', { timeout: 10000 });
+    if (await page.$('[data-dashboard]')) break;
     const h1 = await page.textContent('.ob-card h1');
     if (/sede/i.test(h1)) await page.click('.tile[data-value="false"]');
     else if (await page.$('.tile[aria-checked="false"]') && !(await page.$('.tile[aria-checked="true"]'))) await page.click('.tile >> nth=0');
@@ -99,7 +99,7 @@ await step('tela inicial: logo volta para #/home e há "Conhecer a VICUS"', asyn
 });
 await step('recarregar /app/#/home mantém a tela', async () => {
   await page.reload({ waitUntil: 'load' });
-  await page.waitForSelector('.home');
+  await page.waitForSelector('[data-dashboard]');
 });
 await step('explorador abre e o mapa aparece', async () => {
   await page.goto(`${BASE}/app/#/explorer`);
@@ -116,7 +116,7 @@ await step('"Conhecer a VICUS" -> landing mostra "Ir para a plataforma"', async 
 });
 await step('"Ir para a plataforma" -> /app/#/home', async () => {
   await page.click('.end-actions [data-app-route="#/home"]');
-  await page.waitForURL(/\/app\/#\/home/); await page.waitForSelector('.home');
+  await page.waitForURL(/\/app\/#\/home/); await page.waitForSelector('[data-dashboard]');
 });
 await ctx.close();
 

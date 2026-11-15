@@ -43,7 +43,7 @@ export function creditsCard(state, { compact = false } = {}) {
   </section>`;
 }
 
-const daysText = (x) => (x.active ? (x.days_left === 1 ? 'vence em 1 dia' : `vence em ${x.days_left} dias`) : 'vencida');
+export const daysText = (x) => (x.active ? (x.days_left === 1 ? 'vence em 1 dia' : `vence em ${x.days_left} dias`) : 'vencida');
 
 export function analysesList(state, { compact = false, limit = Infinity } = {}) {
   if (!state) return html`<section class="acc-card analyses skeleton-block" aria-busy="true"></section>`;
