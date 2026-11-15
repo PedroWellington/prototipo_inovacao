@@ -91,6 +91,7 @@ cd landing; npm run build-geo                                                 # 
 - **Antes do primeiro push e sempre que o `.gitignore` mudar:** conferir que não vai segredo nem peso (`.env`, chaves, `data/raw/`, `data/uploads/`, dumps do banco, imagens de usuários, qualquer arquivo > 50 MB). Achou algo: parar e avisar. O repositório é público.
 - **Push falhou** (credencial, rede): informar o erro exato e seguir com commits locais.
 - **Fim de cada resposta:** uma linha com o último commit e se o push foi feito.
+- **Atualizar `docs/PROGRESSO.md` ao fim de cada fase e antes de qualquer pausa; commit e push logo em seguida.**
 
 ## Fora do escopo desta etapa (só gancho documentado em EXTENSIONS.md)
 
