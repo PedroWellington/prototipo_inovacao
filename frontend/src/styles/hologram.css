@@ -63,3 +63,9 @@
     margin-left: -42px;
   }
 }
+/* Movimento reduzido: inclinação instantânea, quadro fixo e só um fade curto de opacidade (sem subida). */
+@media (prefers-reduced-motion: reduce) {
+  .holo {
+    transition: opacity 160ms linear;
+  }
+}

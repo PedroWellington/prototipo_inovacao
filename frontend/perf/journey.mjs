@@ -262,6 +262,23 @@ await step('prefers-reduced-motion: sem entrada escalonada e ranking sem FLIP', 
   await p.waitForFunction((n) => performance.getEntriesByName('app:recolor').length > n, n0);
   const flips = await p.evaluate(() => document.getAnimations().filter((a) => a.effect?.target?.closest?.('[data-rank-list]')).length);
   expect(flips === 0, `${flips} animações de ranking com movimento reduzido`);
+  // Holograma: inclinação instantânea e quadro fixo (sem giro).
+  const pr = await p.evaluate(async () => {
+    const L = document.querySelector('[data-holo]');
+    const [id] = L.holoState().top;
+    const pt = L.holoPoint(id);
+    const c = document.querySelector('.maplibregl-canvas'), r = c.getBoundingClientRect();
+    const o = { bubbles: true, clientX: r.left + pt.x, clientY: r.top + pt.y + 8, button: 0, view: window };
+    for (const t of ['mousedown', 'mouseup', 'click']) c.dispatchEvent(new MouseEvent(t, o));
+    await new Promise((d) => requestAnimationFrame(() => requestAnimationFrame(d)));
+    const pitch = L.holoState().pitch;
+    await new Promise((d) => setTimeout(d, 600));
+    const p1 = L.holoStats().paints;
+    await new Promise((d) => setTimeout(d, 1500));
+    return { pitch, paints: L.holoStats().paints - p1 };
+  });
+  expect(Math.round(pr.pitch) === 40, `inclinação não foi instantânea: pitch ${pr.pitch}`);
+  expect(pr.paints === 0, `o holograma girou com movimento reduzido (${pr.paints} quadros)`);
   await m.close();
 });
 await step('"Conhecer a VICUS" -> landing mostra "Ir para a plataforma"', async () => {
