@@ -10,7 +10,7 @@ function page(root, title, body, draft = true) {
     html`${draft ? html`<div class="banner-draft" role="note">${DRAFT}</div>` : ''}
       <div class="page">
         <header class="page-header">
-          <a href="#/" class="logo-link" aria-label="Início">${logo()}</a>
+          <a href="#/" class="logo-link">${logo()}</a>
           <span class="header-actions">${aboutLink()}<a class="btn btn-ghost btn-sm" href="#/">${icon('back', 16)} Voltar</a></span>
         </header>
         <h1>${title}</h1>

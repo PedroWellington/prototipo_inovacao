@@ -16,7 +16,7 @@ export function topbar({ active, user, profile, slot = '', lead = '' }) {
   const name = profile?.company_name || user?.name || '';
   return html`<header class="topbar on-dark">
     ${lead}
-    <a href="#/home" class="logo-link" aria-label="Visão geral">${logo()}</a>
+    <a href="#/home" class="logo-link">${logo()}</a>
     <span class="topbar-sub hide-md">Inteligência territorial</span>
     <nav class="topnav" aria-label="Navegação principal">${NAV.map(
       (n) => html`<a class="topnav-link ${n.key === active ? 'is-active' : ''}" href="${n.href}" ${n.key === active ? 'aria-current="page"' : ''}>${n.label}</a>`,
@@ -24,8 +24,8 @@ export function topbar({ active, user, profile, slot = '', lead = '' }) {
     ${slot}
     <div class="topbar-right">
       <span class="hide-sm">${aboutLink()}</span>
-      <a class="topbar-profile" href="#/conta" aria-label="Minha conta de ${name || PRODUCT_NAME}">
-        <span class="topbar-avatar" aria-hidden="true">${initials(name)}</span><span class="hide-sm">Minha conta</span>
+      <a class="topbar-profile" href="#/conta">
+        <span class="topbar-avatar" aria-hidden="true">${initials(name || PRODUCT_NAME)}</span><span class="sr-only-sm">Minha conta</span>
       </a>
     </div>
   </header>`;

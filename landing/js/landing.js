@@ -272,8 +272,37 @@ function nearest(features) {
   return best;
 }
 
+// --- Cores: todas derivadas da paleta única (shared/design-tokens.css), lidas uma vez -------------------
+const tok = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+const rgbOf = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const tint = (a, b, t) => '#' + rgbOf(a).map((v, i) => Math.round(v + (rgbOf(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
+const rgba = (h, a) => `rgba(${rgbOf(h).join(',')},${a})`;
+const T = {
+  coal: tok('--coal', '#20272d'), coal2: tok('--coal-2', '#313b42'), sage: tok('--sage', '#688c83'), sand: tok('--sand', '#e8e5dc'),
+  copper: tok('--copper', '#ad7651'), copperDark: tok('--copper-dark', '#8f5c3c'), copperSoft: tok('--copper-soft', '#e2c6ae'),
+  paper: tok('--paper', '#fdfcf9'), muted: tok('--muted', '#87908e'),
+};
+const C = {
+  shadow: rgba(tint(T.coal, '#000000', 0.55), 0.22),
+  glow: rgba(T.copperSoft, 0.22),
+  flatFill: rgba(T.muted, 0.16), flatMesh: rgba(T.sand, 0.22),
+  ring: rgba(T.copperSoft, 0.35), halo: rgba(T.copperSoft, 0.18), dot: T.copperSoft, core: T.coal2,
+  // Estados (Nordeste em destaque), Brasil, Nordeste, PE e Recife: tons de sage sobre grafite.
+  ne: tint(T.sage, T.coal, 0.03), ufs: tint(T.sage, T.coal, 0.25), ufSide: tint(T.coal2, T.sage, 0.08), ufBorder: rgba(T.sand, 0.24),
+  br: tint(T.sage, T.coal, 0.1), brSide: T.coal2, brBorder: rgba(T.sand, 0.56),
+  nordeste: tint(T.sage, T.sand, 0.15), nordesteSide: tint(T.coal2, T.sage, 0.3), nordesteBorder: rgba(T.sand, 0.73),
+  pe: tint(T.sage, T.sand, 0.4), peSide: tint(T.coal2, T.sage, 0.4), peBorder: rgba(T.copperSoft, 0.84),
+  recife: tint(T.sage, T.sand, 0.08), recifeSide: tint(T.coal2, T.sage, 0.15), recifeBorder: rgba(T.copperSoft, 0.77),
+  focus: T.copperSoft, focusSide: T.copperDark, focusBorder: rgba(T.paper, 0.82),
+  hoodSide: tint(T.coal2, T.sage, 0.3), hoodBorder: rgba(T.sand, 0.34),
+  mini: tint(T.sage, T.sand, 0.45), miniLine: rgba(T.paper, 0.92),
+};
+// Bairros: oito tons sóbrios entre sage, grafite e areia (só para distinguir vizinhos; não é nota).
+const PALETTE = [tint(T.sage, T.coal, 0.1), tint(T.sage, T.sand, 0.2), tint(T.sage, T.coal, 0.2), tint(T.sand, T.copper, 0.3),
+  tint(T.sage, T.sand, 0.1), tint(T.sage, T.coal, 0.15), tint(T.sage, T.sand, 0.25), tint(T.sand, T.copper, 0.2)];
+
 // --- Desenho -------------------------------------------------------------------------------------------
-const SHADOW = 'rgba(8,12,14,.22)';
+const SHADOW = C.shadow;
 // Camada com volume: sombra única (sem blur), "parede" por cópias deslocadas, topo e borda por feição.
 function drawSolid(obj, alpha, style) {
   if (!obj || alpha < 0.012 || !onScreen(obj.bbox, 200)) return;
@@ -299,14 +328,14 @@ function drawSolid(obj, alpha, style) {
 // Brilho no lugar de shadowBlur: um traço translúcido de 3 px, só no elemento em destaque.
 // (Medido: dois traços largos, de 10 e 4 px, com cantos arredondados geravam quadros acima de 50 ms; ver docs/PERFORMANCE.md.)
 function glow(path, px) {
-  ctx.strokeStyle = 'rgba(227,188,140,.22)'; ctx.lineWidth = 3 * px; ctx.stroke(path);
+  ctx.strokeStyle = C.glow; ctx.lineWidth = 3 * px; ctx.stroke(path);
 }
 // Contexto discreto (municípios vizinhos de PE): preenchimento único e divisas numa só malha.
 function drawFlat(obj, alpha) {
   if (!obj || alpha < 0.012) return;
   useM(0); ctx.globalAlpha = alpha;
-  ctx.fillStyle = 'rgba(126,145,146,.16)'; ctx.fill(obj.all, 'evenodd');
-  ctx.lineWidth = 0.8 / cam.s; ctx.strokeStyle = 'rgba(226,212,192,.22)'; ctx.stroke(obj.mesh);
+  ctx.fillStyle = C.flatFill; ctx.fill(obj.all, 'evenodd');
+  ctx.lineWidth = 0.8 / cam.s; ctx.strokeStyle = C.flatMesh; ctx.stroke(obj.mesh);
 }
 function pointMarker([wx, wy], opacity, rad) {
   if (opacity < 0.01) return;
@@ -314,11 +343,11 @@ function pointMarker([wx, wy], opacity, rad) {
   if (x < -50 || x > size.w + 50 || y < -60 || y > size.h + 60) return;
   ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
   ctx.globalAlpha = opacity;
-  ctx.strokeStyle = 'rgba(227,197,160,.35)'; ctx.lineWidth = 1.5;
+  ctx.strokeStyle = C.ring; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(x, y, rad * 3.2, 0, Math.PI * 2); ctx.stroke();
-  ctx.fillStyle = 'rgba(222,187,148,.18)'; ctx.beginPath(); ctx.arc(x, y, rad * 2, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#eed0ad'; ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#5e625f'; ctx.beginPath(); ctx.arc(x, y, rad * 0.43, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = C.halo; ctx.beginPath(); ctx.arc(x, y, rad * 2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = C.dot; ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = C.core; ctx.beginPath(); ctx.arc(x, y, rad * 0.43, 0, Math.PI * 2); ctx.fill();
 }
 function atmosphere(p) {
   ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
@@ -326,10 +355,10 @@ function atmosphere(p) {
   if (alpha > 0.002) {
     const r = Math.min(size.w * 0.46, size.h * 0.5);
     const g = ctx.createRadialGradient(cam.cx, cam.cy, 5, cam.cx, cam.cy, r);
-    g.addColorStop(0, `rgba(213,193,164,${alpha})`); g.addColorStop(0.55, `rgba(179,157,131,${alpha * 0.19})`); g.addColorStop(1, 'rgba(179,157,131,0)');
+    g.addColorStop(0, rgba(T.copperSoft, alpha)); g.addColorStop(0.55, rgba(T.copper, alpha * 0.19)); g.addColorStop(1, rgba(T.copper, 0));
     ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(cam.cx - r, cam.cy - r, 2 * r, 2 * r);
   }
-  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(220,201,178,.04)';
+  ctx.lineWidth = 1; ctx.strokeStyle = rgba(T.sand, 0.04);
   for (let j = 0; j < 6; j++) {
     ctx.beginPath();
     for (let i = 0; i <= 44; i++) { const x = (i / 44) * size.w, y = size.h * 0.77 + j * 29 + Math.sin(i * 0.25 + j * 0.9 + p * 2) * 7; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
@@ -337,7 +366,6 @@ function atmosphere(p) {
   }
 }
 
-const PALETTE = ['#6e8586', '#8ca4a1', '#5d777b', '#b8aea0', '#839a99', '#667e83', '#94a3a0', '#c3b5a4'];
 function drawTerritory(p) {
   if (p > 0.925) return;
   const op = easeOut(p, 0.83, 0.925);
@@ -347,22 +375,22 @@ function drawTerritory(p) {
     const a = op * easeOut(p, 0.14, 0.28);
     if (br.estados) {
       drawSolid(br.estados, a, { depth: 15, of: (f) => (NE.has(f.props.uf)
-        ? { alpha: 0.98, top: '#688385', side: '#293b3e', border: 'rgba(216,207,190,.24)', depth: 15 }
-        : { alpha: 0.78, top: '#526d71', side: '#293b3e', border: 'rgba(216,207,190,.24)', depth: 15 }) });
-    } else drawSolid(br.brasil, a, { top: '#627f85', side: '#283c41', border: 'rgba(223,216,202,.56)', depth: 21 });
+        ? { alpha: 0.98, top: C.ne, side: C.ufSide, border: C.ufBorder, depth: 15 }
+        : { alpha: 0.78, top: C.ufs, side: C.ufSide, border: C.ufBorder, depth: 15 }) });
+    } else drawSolid(br.brasil, a, { top: C.br, side: C.brSide, border: C.brBorder, depth: 21 });
   }
   if (p > 0.09 && p < 0.52 && br) {
     drawSolid(br.nordesteUFs || br.nordeste, op * easeIn(p, 0.09, 0.19) * easeOut(p, 0.275, 0.342),
-      { top: '#819b9b', side: '#445a61', border: 'rgba(234,220,197,.73)', depth: 18, highlight: p > 0.16 && p < 0.35, outline: br.nordeste?.mesh });
+      { top: C.nordeste, side: C.nordesteSide, border: C.nordesteBorder, depth: 18, highlight: p > 0.16 && p < 0.35, outline: br.nordeste?.mesh });
   }
   if (p > 0.33 && pe) drawFlat(pe.municipios, op * easeIn(p, 0.33, 0.43)); // vizinhos: a câmera nunca fica no vazio
   if (p > 0.275 && p < 0.66 && pe) {
     drawSolid(pe.pernambuco, op * easeIn(p, 0.275, 0.36) * easeOut(p, 0.407, 0.475),
-      { top: '#a4aa9b', side: '#525e61', border: 'rgba(233,211,175,.84)', depth: 19, highlight: p > 0.35 && p < 0.54 });
+      { top: C.pe, side: C.peSide, border: C.peBorder, depth: 19, highlight: p > 0.35 && p < 0.54 });
   }
   if (p > 0.45 && p < 0.82 && rec) {
     drawSolid(rec.cidade, op * easeIn(p, 0.405, 0.485) * easeOut(p, 0.61, 0.745),
-      { top: '#7a9696', side: '#33464b', border: 'rgba(233,215,191,.77)', depth: 12 });
+      { top: C.recife, side: C.recifeSide, border: C.recifeBorder, depth: 12 });
   }
   if (p > 0.55 && rec?.bairros) {
     const a = op * easeIn(p, 0.56, 0.665), rise = easeIn(p, 0.66, 0.8);
@@ -371,8 +399,8 @@ function drawTerritory(p) {
       const isFocus = name ? f.props.name === name : f === focus;
       const depth = 3 + (f.index % 5) * 1.1 + rise * (isFocus ? 18 : 7);
       return isFocus
-        ? { alpha: 1, top: '#d6bb99', side: '#917657', border: 'rgba(255,228,194,.82)', depth, highlight: p > 0.66 }
-        : { alpha: 0.91, top: PALETTE[f.index % PALETTE.length], side: '#45565d', border: 'rgba(213,210,197,.34)', depth };
+        ? { alpha: 1, top: C.focus, side: C.focusSide, border: C.focusBorder, depth, highlight: p > 0.66 }
+        : { alpha: 0.91, top: PALETTE[f.index % PALETTE.length], side: C.hoodSide, border: C.hoodBorder, depth };
     } });
     pointMarker(DEST, a * easeIn(p, 0.68, 0.78), 6);
   }
@@ -538,8 +566,8 @@ function drawMiniMap() {
   }
   const [x0, y0, x1, y1] = obj.bbox, s = Math.min((w * 0.72) / (x1 - x0), (h * 0.77) / (y1 - y0));
   c.setTransform(k * s, 0, 0, k * s, k * (w / 2 - s * (x0 + x1) / 2), k * (h * 0.45 - s * (y0 + y1) / 2));
-  c.fillStyle = '#a9b8b5'; c.fill(obj.all, 'evenodd');
-  c.lineWidth = 1.1 / s; c.strokeStyle = 'rgba(255,255,255,.92)'; c.stroke(obj.mesh);
+  c.fillStyle = C.mini; c.fill(obj.all, 'evenodd');
+  c.lineWidth = 1.1 / s; c.strokeStyle = C.miniLine; c.stroke(obj.mesh);
   state.textContent = `${obj.features.length} bairros · Malha de Bairros do Censo 2022 (IBGE)`;
   tag.textContent = 'RECIFE · LIMITES DOS BAIRROS';
   state.classList.add('official');

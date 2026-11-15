@@ -48,7 +48,7 @@ export async function render(root) {
               <button type="button" class="view-toggle" aria-pressed="true" data-relief="off">2D</button>
               <button type="button" class="view-toggle" aria-pressed="false" data-relief="on">Relevo</button>
             </div>
-            <a class="ex-chip ex-overview" href="#/home">${icon('back', 15)}<span>Visão geral</span></a>
+            <a class="ex-chip ex-overview" href="#/home">${icon('back', 15)}<span class="sr-only-sm">Visão geral</span></a>
           </div>
           <div class="legend" data-legend hidden>
             <div class="legend-bar" aria-hidden="true"></div>

@@ -222,7 +222,7 @@ export async function render(root) {
       root,
       html`<div class="ob">
         <header class="ob-top">
-          <a href="#/home" class="logo-link" aria-label="Início">${logo()}</a>
+          <a href="#/home" class="logo-link">${logo()}</a>
           <div class="ob-progress" role="progressbar" aria-label="Progresso" aria-valuemin="1" aria-valuemax="${STEPS}" aria-valuenow="${s.step}">
             <span style="transform: scaleX(${s.step / STEPS})"></span>
           </div>

@@ -51,6 +51,17 @@ textarea {
   flex: none;
   display: block;
 }
+/* Some da tela só no celular, mas continua sendo o nome do link ou botão para leitores de tela. */
+@media (max-width: 860px) {
+  .sr-only-sm {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -434,11 +445,13 @@ textarea {
   width: 100%;
   max-width: 400px;
 }
-.auth-card .logo {
+.auth-card .logo-link {
+  display: inline-block;
   margin-bottom: var(--space-8);
 }
+/* No desktop a marca já está no painel grafite: o link some inteiro (nada de link vazio na tabulação). */
 @media (min-width: 960px) {
-  .auth-card .logo {
+  .auth-card .logo-link {
     display: none;
   }
 }

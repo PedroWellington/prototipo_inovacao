@@ -15,7 +15,7 @@ function shell(title, subtitle, form) {
   return html`
     <div class="auth">
       <aside class="auth-aside">
-        ${ART} <a href="#/" class="logo-link" aria-label="Início">${logo()}</a>
+        ${ART} <a href="#/" class="logo-link">${logo()}</a>
         <div>
           <h1>Compare bairros pelos critérios que você define.</h1>
           <ul>
@@ -28,7 +28,7 @@ function shell(title, subtitle, form) {
       </aside>
       <main class="auth-main">
         <div class="auth-card">
-          <a href="#/" class="logo-link" aria-label="Início">${logo()}</a>
+          <a href="#/" class="logo-link">${logo()}</a>
           <h2>${title}</h2>
           <p>${subtitle}</p>
           ${form}
