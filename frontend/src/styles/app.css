@@ -140,9 +140,15 @@ textarea {
   color: var(--color-text);
   text-decoration: none;
 }
+.logo-mark {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
 .logo-word {
-  font: var(--weight-bold) var(--text-md) / 1 var(--font-display);
-  letter-spacing: 0.08em;
+  font: 600 var(--text-md) / 1 var(--font-display);
+  letter-spacing: 0.16em;
+  margin-right: -0.16em; /* o espaçamento depois do S não conta como margem */
 }
 
 /* ---------- Botões ---------- */
@@ -380,22 +386,10 @@ textarea {
     justify-content: space-between;
   }
 }
-/* Logo sobre o grafite: marca em cobre claro, como na barra superior. */
+/* Logo sobre o grafite: nome em off-white (o ícone é o mesmo em qualquer fundo). */
 .on-dark .logo,
 .auth-aside .logo {
   color: var(--color-on-top);
-}
-.on-dark .logo rect,
-.auth-aside .logo rect {
-  fill: var(--color-brand-mark);
-}
-.on-dark .logo path,
-.auth-aside .logo path {
-  fill: var(--color-top);
-}
-.on-dark .logo circle,
-.auth-aside .logo circle {
-  fill: var(--color-brand-mark);
 }
 .auth-aside li .icon,
 .auth-aside h1 em {

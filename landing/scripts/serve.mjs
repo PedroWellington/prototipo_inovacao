@@ -9,6 +9,7 @@ import { gzipSync } from 'node:zlib';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const SHARED = resolve(ROOT, '../shared'); // paleta única do site (/shared/design-tokens.css)
+const BRAND = resolve(ROOT, '../frontend/public/brand'); // marca (/app/brand/), servida pelo app em produção
 const PORT = Number(process.env.PORT || 4173);
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -19,9 +20,9 @@ const COMPRESS = new Set(['.html', '.css', '.js', '.mjs', '.json', '.svg', '.md'
 
 createServer(async (req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  const shared = path.startsWith('/shared/');
-  const dir = shared ? SHARED : ROOT;
-  const file = normalize(join(dir, shared ? path.slice('/shared'.length) : path.endsWith('/') ? `${path}index.html` : path));
+  const shared = path.startsWith('/shared/'), brand = path.startsWith('/app/brand/');
+  const dir = shared ? SHARED : brand ? BRAND : ROOT;
+  const file = normalize(join(dir, shared ? path.slice('/shared'.length) : brand ? path.slice('/app/brand'.length) : path.endsWith('/') ? `${path}index.html` : path));
   // Nada fora da pasta landing/ (ou shared/) nem arquivos de build/dependências.
   if (!file.startsWith(dir + sep) || /[\\/](node_modules|\.build)[\\/]/.test(file)) return res.writeHead(403).end();
   try {

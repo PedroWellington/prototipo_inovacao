@@ -39,7 +39,10 @@ export function icon(name, size = 18, label) {
 // Link discreto para a landing, presente em todas as telas do app.
 export const aboutLink = () => raw(`<a class="about-link" href="${LANDING_URL}">Conhecer a ${escape(PRODUCT_NAME)}</a>`);
 
+// Logo: ícone (frontend/public/brand, gerado por scripts/build-marca.py) + nome em texto, que segue a cor do
+// tema (grafite no claro, off-white no escuro e na barra grafite). Tamanho mínimo do ícone: 20 px.
+const BRAND = `${import.meta.env.BASE_URL}brand/`;
 export const logo = () =>
   raw(
-    `<span class="logo" aria-label="${escape(PRODUCT_NAME)}"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--color-accent)"/><path d="M16 7c-4 0-7 3-7 7 0 5 7 11 7 11s7-6 7-11c0-4-3-7-7-7z" fill="var(--color-on-accent)"/><circle cx="16" cy="14" r="2.6" fill="var(--color-accent)"/></svg><span class="logo-word">${escape(PRODUCT_NAME)}</span></span>`,
+    `<span class="logo"><img class="logo-mark" src="${BRAND}vicus-icone-32.png" srcset="${BRAND}vicus-icone-64.png 2x, ${BRAND}vicus-icone-96.png 3x" width="28" height="28" alt="" decoding="async" /><span class="logo-word">${escape(PRODUCT_NAME)}</span></span>`,
   );
