@@ -1,8 +1,19 @@
 {
-  "count": 360,
-  "width": 511,
-  "height": 411,
-  "pattern": "loja-{i}.webp",
   "version": "2547ded025a6",
-  "note": "Visualização conceitual da unidade: loja genérica, sem endereço nem estabelecimento real."
+  "label": "Visualização conceitual da unidade",
+  "turnSeconds": 12,
+  "stillAngle": 30,
+  "baseline": 0.0,
+  "scale": 1.0,
+  "sets": {
+    "claro": {
+      "dir": "claro/",
+      "pattern": "loja-{i}.webp",
+      "digits": 3,
+      "count": 360,
+      "width": 511,
+      "height": 411
+    }
+  },
+  "note": "Gerado por scripts/build-holograma.py. Visualização conceitual: loja genérica, sem endereço nem estabelecimento real. Ver docs/HOLOGRAMA.md."
 }

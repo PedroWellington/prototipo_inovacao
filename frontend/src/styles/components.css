@@ -3,6 +3,7 @@
 
 /* ---------- Cartões ---------- */
 .acc-card {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -74,6 +75,9 @@ img.avatar {
 .credits {
   align-items: flex-start;
 }
+.credits > div {
+  min-width: 0;
+}
 .credits-icon {
   display: grid;
   place-items: center;
@@ -95,6 +99,7 @@ img.avatar {
 }
 .analysis {
   display: flex;
+  flex-wrap: wrap; /* em painel estreito, os dias descem para a linha de baixo */
   align-items: center;
   gap: var(--space-2);
   width: 100%;
@@ -119,7 +124,7 @@ img.avatar {
   display: grid;
 }
 .analysis-name {
-  flex: 1;
+  flex: 1 1 8em; /* antes de cortar o nome, os dias descem para a linha de baixo */
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -741,7 +746,14 @@ img.avatar {
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
 }
+.ov-criterion > div {
+  min-width: 0;
+}
+.ov-criterion {
+  min-width: 0;
+}
 .ov-criterion strong {
+  overflow-wrap: anywhere;
   font-size: var(--text-sm);
 }
 .ov-criterion small {
@@ -805,8 +817,12 @@ img.avatar {
   line-height: 1.55;
   color: var(--color-text-muted);
 }
+.ov-analyses li {
+  min-width: 0;
+}
 .ov-analysis {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
@@ -857,6 +873,7 @@ img.avatar {
 }
 .ov-source-list li {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-3);
   font-size: var(--text-xs);
@@ -865,8 +882,8 @@ img.avatar {
 .ov-source-list a {
   color: var(--color-text);
 }
-.ov-source-list .tabular {
-  white-space: nowrap;
+.ov-source-list a {
+  overflow-wrap: anywhere;
 }
 .ov-empty {
   margin: 0;

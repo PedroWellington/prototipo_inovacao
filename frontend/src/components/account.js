@@ -19,8 +19,8 @@ export function companyCard(profile, user, { compact = false } = {}) {
   return html`<section class="acc-card company ${compact ? 'is-compact' : ''}" aria-label="Sua empresa">
     ${avatar(p, user, compact ? 40 : 64)}
     <div class="company-info">
-      <strong class="company-name">${p.company_name || user?.name || 'Sua empresa'}</strong>
-      <span class="small muted">${[ramo, sede].filter(Boolean).join(' · ')}</span>
+      <strong class="company-name" title="${p.company_name || user?.name || 'Sua empresa'}">${p.company_name || user?.name || 'Sua empresa'}</strong>
+      <span class="small muted" title="${[ramo, sede].filter(Boolean).join(' · ')}">${[ramo, sede].filter(Boolean).join(' · ')}</span>
       ${compact ? '' : html`<span class="small muted">Faturamento anual: ${REVENUE_LABEL[p.revenue_band] || 'não informado'}</span>`}
     </div>
     <a class="btn btn-ghost btn-sm" href="#/onboarding">${icon('edit', 15)}<span class="${compact ? 'sr-only' : ''}">Editar</span></a>
@@ -59,7 +59,7 @@ export function analysesList(state, { compact = false, limit = Infinity } = {}) 
           (x) => html`<li><button type="button" class="analysis ${x.active ? '' : 'is-expired'}"
               data-open-city="${x.kind === 'city' ? x.ibge : ''}" data-open-search="${x.kind === 'search' ? x.scope_key : ''}">
               <span class="analysis-icon">${icon(x.kind === 'city' ? 'map' : 'list', 16)}</span>
-              <span class="analysis-name">${x.label}</span>
+              <span class="analysis-name" title="${x.label}">${x.label}</span>
               <span class="analysis-days small tabular">${icon('clock', 13)} ${daysText(x)}</span>
             </button></li>`,
         )}</ul>

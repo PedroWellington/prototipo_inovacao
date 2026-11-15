@@ -460,7 +460,7 @@ export async function render(root) {
   // Clicar no fundo ou arrastar não muda o estado. Qualquer clique no meio reverte do ponto atual.
   const labelOf = (id) => s.hoods.get(id)?.label;
   const holoPadding = () => {
-    const ins = map.insets();
+    const ins = { ...map.insets(), ...(wide.matches ? {} : { bottom: right.offsetHeight + 8 }) }; // celular: gaveta aberta
     const reserve = Math.round(Math.min(0.42 * $('.ex-map').clientHeight, wide.matches ? 280 : 200));
     return { top: reserve, right: ins.right, bottom: ins.bottom, left: ins.left };
   };
@@ -471,7 +471,6 @@ export async function render(root) {
   }
   function toInclined(id) {
     const ll = labelOf(id);
-    if (!wide.matches && s.sheetOpen) setSheet(false); // celular: a gaveta recolhe para o holograma caber
     const from = s.holo;
     // Mesmo slot se ele já mostra este bairro (ou está vazio); senão o outro, e o antigo desce.
     const same = holo.anchor(from.slot) === ll || holo.rise(from.slot) < 0.01;
@@ -641,7 +640,9 @@ export async function render(root) {
   }
 
   function cityDetailTab() {
-    return html`<p class="small muted ex-hint">Passe o mouse (ou toque) numa cidade do mapa para ver os números dela; clique para abrir os bairros.</p>
+    const c = s.cityRank?.status === 'ok' && s.focusCity != null ? s.cityRankById.get(s.focusCity) : null;
+    return html`<p class="small muted ex-hint">Passe o mouse numa cidade do mapa para ver os números dela aqui; clique para abrir os bairros.</p>
+      ${c ? html`<div class="detail">${cityDetail(c)}</div>` : ''}
       ${s.cityRank?.status === 'ok' ? html`<p class="small">${s.cityRank.income.note}</p>` : ''}`;
   }
 
@@ -875,11 +876,11 @@ export async function render(root) {
     if (s.level === 'cities')
       return html`<button type="button" class="rank-row" data-city-rank="${x.ibge}" title="Ver os bairros de ${x.name}">
         <span class="rank-pos tabular">${x.rank}</span>
-        <span class="rank-name">${x.name} <span class="muted small">${x.uf}</span>${bar(x.score)}</span>
+        <span class="rank-name" title="${x.name} – ${x.uf}">${x.name} <span class="muted small">${x.uf}</span>${bar(x.score)}</span>
         <span class="rank-score tabular">${fmt.dec(x.score)}</span></button>`;
     return html`<button type="button" class="rank-row ${x.id === s.selectedId ? 'is-selected' : ''}" data-hood="${x.id}" ${x.id === s.selectedId ? 'aria-current="true"' : ''}>
       <span class="rank-pos tabular">${x.rank}</span>
-      <span class="rank-name">${x.name}${bar(x.score)}</span>
+      <span class="rank-name" title="${x.name}">${x.name}${bar(x.score)}</span>
       <span class="rank-score tabular">${fmt.dec(x.score)}</span></button>`;
   }
   function fillRankList(before) {
@@ -952,19 +953,21 @@ export async function render(root) {
 
   function showHover(source, f, point) {
     const key = `${source}:${f.id}:${s.rank?.data_version}:${s.rankVersion}`;
+    // Tooltip compacto: nome, nota e posição (no máximo 2 linhas). Os detalhes ficam na aba Detalhes.
     if (source === 'hoods') {
       const n = s.rank?.status === 'ok' && s.rankById.get(f.id);
-      return showTooltip(() => (n ? hoodDetail(n) : html`<strong>${f.properties.name}</strong>`), point, key);
+      return showTooltip(() => (n ? compact(n.name, n.score, n.rank, s.rank.count) : html`<strong>${f.properties.name}</strong>`), point, key);
     }
     if (source === 'cities') {
       const c = s.cityRank?.status === 'ok' && s.cityRankById.get(f.id);
+      if (c && s.focusCity !== c.ibge) {
+        s.focusCity = c.ibge; // a aba Detalhes mostra a última cidade apontada (com os critérios dela)
+        if (s.tab === 'detail') renderResults();
+      }
       const pop = f.properties.population;
-      const why =
-        pop != null && pop < s.minPop
-          ? `abaixo da população mínima: ${fmt.int(pop)} habitantes`
-          : `fora do alcance escolhido, sem dados carregados${s.income ? ' ou sem dado de renda' : ''}`;
+      const why = pop != null && pop < s.minPop ? 'abaixo da população mínima' : 'fora do alcance ou sem dados';
       return showTooltip(
-        () => (c ? cityDetail(c) : html`<strong>${f.properties.name}</strong> <span class="muted">${f.properties.uf}</span><br /><span class="small muted">Fora do ranking (${why}).</span>`),
+        () => (c ? compact(`${c.name} – ${c.uf}`, c.score, c.rank, s.cityRank.counts.analyzed) : html`<strong>${f.properties.name}</strong> <span class="muted">${f.properties.uf}</span><br /><span class="small muted">Fora do ranking (${why})</span>`),
         point,
         key,
       );
@@ -981,22 +984,29 @@ export async function render(root) {
     showTooltip(() => html`<strong>${f.properties.name}</strong>`, point, key);
   }
 
+  const compact = (name, score, rank, of) =>
+    html`<strong>${name}</strong><br /><span class="small tabular">${fmt.dec(score)}/100 · ${rank} de ${fmt.int(of)}</span>`;
   let tooltipKey = null;
   // key: só remonta o conteúdo quando muda de feição; no mesmo bairro, apenas reposiciona.
   function showTooltip(content, point, key = null) {
     if (key === null || key !== tooltipKey) mount(tooltip, typeof content === 'function' ? content() : content);
     tooltipKey = key;
     tooltip.hidden = false;
-    // Dentro da área livre do mapa (entre os painéis), nunca por cima deles.
+    // Dentro da área livre do mapa (entre os painéis), nunca por cima deles nem do holograma.
     const a = holoArea;
     const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
-    const x = point.x + 16 + w > a.right ? point.x - w - 16 : point.x + 16;
-    const y = Math.max(a.top, Math.min(point.y + 16, a.bottom - h));
+    const hits = (x, y) => holo.bounds().some((b) => x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y);
+    let x = point.x + 14 + w > a.right ? point.x - w - 14 : point.x + 14;
+    let y = Math.max(a.top, Math.min(point.y + 14, a.bottom - h));
+    if (hits(x, y)) x = x > point.x ? point.x - w - 14 : point.x + 14; // troca de lado
+    if (hits(x, y)) y = Math.min(a.bottom - h, point.y + 28); // ou desce
     // Pixels inteiros: a posição do mouse no mapa é fracionária e deixava o texto do tooltip borrado.
-    tooltip.style.transform = `translate(${Math.round(Math.max(a.left, x))}px, ${Math.round(y)}px)`;
+    tooltip.style.translate = `${Math.round(Math.max(a.left, Math.min(x, a.right - w)))}px ${Math.round(y)}px`;
+    tooltip.classList.add('is-on');
   }
 
   function hideTooltip() {
+    tooltip.classList.remove('is-on');
     tooltip.hidden = true;
     tooltipKey = null;
   }
@@ -1016,8 +1026,10 @@ export async function render(root) {
     }
     if (source === 'hoods') {
       // Os números do bairro vão para a aba Detalhes; o tooltip sai para não cobrir o holograma.
+      // Celular (sem hover): o toque seleciona e abre a gaveta de detalhes.
       hideTooltip();
       selectHood(f.id);
+      if (!wide.matches) setSheet(true);
       holoClick(f.id);
     }
   }

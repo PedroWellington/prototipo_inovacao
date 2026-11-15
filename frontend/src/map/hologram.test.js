@@ -52,3 +52,39 @@ describe('holograma: posição', () => {
     expect(layout({ x: 1300, y: 400 }, area, 230, 210, 64).visible).toBe(false);
   });
 });
+
+import { loadOrder, setFor, stillFrame, windowMB } from './hologram.js';
+// Conjuntos falsos: trocar a imagem (N quadros) não muda o código nem a velocidade do giro.
+describe('holograma trocável pelo manifesto (N = 36, 120 e 360)', () => {
+  const sets = [36, 120, 360].map((count) => ({ dir: `t${count}/`, pattern: 'quadro-{i}.webp', count, width: 511, height: 411 }));
+  it('mesmo ângulo no mesmo instante, com qualquer N (velocidade vem do período)', () => {
+    for (const t of [0.5, 3, 7.25, 11.9]) {
+      const angles = sets.map((s) => (frameAt(t, s.count, 12) / s.count) * 360);
+      const step = 360 / 36; // a diferença máxima é um quadro do conjunto mais grosso
+      expect(Math.max(...angles) - Math.min(...angles)).toBeLessThanOrEqual(step);
+    }
+    expect(frameAt(3, 36, 12)).toBe(9);
+    expect(frameAt(3, 120, 12)).toBe(30);
+  });
+  it('janela e ordem de download se adaptam a N, sem repetir quadros', () => {
+    for (const s of sets) {
+      const w = windowOf(5, s.count);
+      expect(new Set(w).size).toBe(w.length);
+      expect(w.length).toBeLessThanOrEqual(s.count);
+      const o = loadOrder(s.count);
+      expect(new Set(o).size).toBe(s.count);
+    }
+    expect(windowOf(0, 1)).toEqual([0]); // imagem única: sem giro
+    expect(windowOf(0, 4).length).toBe(4);
+  });
+  it('memória da janela fica abaixo de 80 MB no maior tamanho exibido (520 px)', () => {
+    for (const s of sets) expect(windowMB(s, 520)).toBeLessThan(80);
+  });
+  it('quadro parado pelo ângulo e conjunto por tema com reserva', () => {
+    expect(stillFrame(30, 360)).toBe(30);
+    expect(stillFrame(30, 36)).toBe(3);
+    const m = { sets: { claro: sets[0] } };
+    expect(setFor(m, 'escuro')).toBe(sets[0]);
+    expect(setFor({ sets: { claro: sets[0], escuro: sets[1] } }, 'escuro')).toBe(sets[1]);
+  });
+});
