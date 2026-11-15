@@ -34,3 +34,6 @@ data/uploads/
 
 # Protótipo de design (referência local, com dados demonstrativos): nunca no produto nem no repositório
 design/dashboard-cinematico/
+# Holograma: PNGs brutos e demonstração (27 MB). Só os WebP otimizados (frontend/public/holograma) vão para o Git.
+design/holograma-360/
+*.zip
