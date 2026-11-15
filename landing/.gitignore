@@ -1,0 +1,5 @@
+node_modules/
+.build/
+perf/results/
+# Referência visual original (arquivo único com a imagem em base64); usada só para medir o "antes"
+VICUS-Recife-Edicao-Urbana.html

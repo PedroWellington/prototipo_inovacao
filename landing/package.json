@@ -1,0 +1,14 @@
+{
+  "name": "vicus-landing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build-geo": "node --max-old-space-size=8192 scripts/build-geo.mjs",
+    "serve": "node scripts/serve.mjs",
+    "perf": "node perf/measure.mjs"
+  },
+  "devDependencies": {
+    "mapshaper": "0.7.84",
+    "playwright-core": "1.49.1"
+  }
+}

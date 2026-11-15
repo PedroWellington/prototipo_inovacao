@@ -1,0 +1,60 @@
+{
+  "generated": "2026-11-15",
+  "crs": "EPSG:3857",
+  "layers": {
+    "brasil": [
+      {
+        "file": "brasil-0.json",
+        "interval": 2500,
+        "bytes": 50089,
+        "gzip": 15226
+      },
+      {
+        "file": "brasil-1.json",
+        "interval": 500,
+        "bytes": 220666,
+        "gzip": 63624
+      }
+    ],
+    "pe": [
+      {
+        "file": "pe-0.json",
+        "interval": 1000,
+        "bytes": 47960,
+        "gzip": 14986
+      },
+      {
+        "file": "pe-1.json",
+        "interval": 200,
+        "bytes": 111364,
+        "gzip": 35192
+      },
+      {
+        "file": "pe-2.json",
+        "interval": 40,
+        "bytes": 266238,
+        "gzip": 87121
+      }
+    ],
+    "recife": [
+      {
+        "file": "recife-0.json",
+        "interval": 40,
+        "bytes": 26115,
+        "gzip": 8666
+      },
+      {
+        "file": "recife-1.json",
+        "interval": 10,
+        "bytes": 49479,
+        "gzip": 16967
+      },
+      {
+        "file": "recife-2.json",
+        "interval": 3,
+        "bytes": 85112,
+        "gzip": 29607
+      }
+    ]
+  }
+}
