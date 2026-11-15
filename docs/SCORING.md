@@ -8,7 +8,7 @@ O ranking mostra os **bairros que mais combinam com os critérios que você defi
 
 ## Bairros e áreas
 
-O motor é o mesmo para qualquer cidade. Onde o IBGE não tem bairros oficiais, as unidades comparadas são **áreas formadas por setores censitários** (ver [DATA.md](DATA.md)). A fórmula não muda; só o vocabulário da tela troca "bairro" por "área", e a tela mostra um aviso. As áreas rurais são grandes, então tendem a ter densidade baixa: a nota é relativa, e isso aparece na frase comparativa e na cobertura.
+O motor é o mesmo para qualquer cidade. Onde a malha do IBGE não tem bairros, as unidades comparadas são **áreas formadas por setores censitários** (ver [DATA.md](DATA.md)). A fórmula não muda; só o vocabulário da tela troca "bairro" por "área", e a tela mostra um aviso. As áreas rurais são grandes, então tendem a ter densidade baixa: a nota é relativa, e isso aparece na frase comparativa e na cobertura.
 
 ## Entrada
 
@@ -25,7 +25,7 @@ O limite é de 3 critérios por direção.
 Para cada bairro `b` da cidade e cada critério `c`:
 
 1. **Densidade:** `d(b,c) = estabelecimentos do tipo c no bairro b / área de b em km²`.
-   - A área vem de `ST_Area(geom::geography)` sobre o limite oficial do IBGE.
+   - A área vem de `ST_Area(geom::geography)` sobre o limite da malha do IBGE (aproximado, ver DATA.md).
    - Um tipo pode reunir vários CNAEs. Por exemplo, farmácia = 4771-7/01 + 4771-7/02 + 4771-7/03. Todos são somados.
    - Conta **estabelecimentos = locais distintos** (mesmo CEP + logradouro + número), não CNPJs: vários CNPJs do tipo no mesmo endereço contam uma vez. Cadastros sem número ou sem CEP contam um a um. Ver [DATA.md](DATA.md), "O que é um estabelecimento".
 2. **Percentil:** `p(b,c) = PERCENT_RANK() OVER (PARTITION BY c ORDER BY d)`, entre 0 e 1.
@@ -91,7 +91,7 @@ Repare em Gama: tem tantos hospitais quanto Alfa, mas o dobro da área. Por isso
 ## Renda no detalhe do bairro e da cidade
 
 - **Valor:** mediana do rendimento nominal mensal das pessoas responsáveis pelo domicílio (Censo 2022, IBGE, variável V06006). Ver [DATA.md](DATA.md).
-- **Bairro oficial:** valor publicado pelo IBGE para o bairro. **Área por setor censitário:** média das medianas dos setores, ponderada pelos responsáveis (V06001), marcada como **aproximado**.
+- **Bairro da malha do IBGE:** valor publicado pelo IBGE para o bairro. **Área por setor censitário:** média das medianas dos setores, ponderada pelos responsáveis (V06001), marcada como **aproximado**.
 - **Comparação por quartis** (no SQL de `rank.py` e de `/api/cities/{ibge}/status`): a mediana do lugar é comparada aos quartis Q1, Q2 e Q3 das medianas da referência (bairros da cidade; para a cidade, os municípios da mesma UF; no ranking de cidades, as cidades analisadas).
 
 | Quartil | Frase mostrada |

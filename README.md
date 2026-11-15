@@ -44,7 +44,7 @@ Ao final, a carga imprime a cobertura por UF. Detalhe de uma cidade, com os 20 t
 `docker compose run --rm backend python -m app.etl.report --ibge 2611606`. Tabela de todas as cidades:
 `docker compose run --rm -T backend python -m app.etl.report --all > docs/COBERTURA.md`.
 
-Toda cidade com dados carregados fica clicável no explorador automaticamente. Cidades sem bairros oficiais no IBGE usam **áreas por setor censitário**, e a tela avisa isso.
+Toda cidade com dados carregados fica clicável no explorador automaticamente. Cidades sem bairros na malha do IBGE usam **áreas por setor censitário**, e a tela avisa isso.
 
 Abra **http://localhost:8080**, crie uma conta e responda as perguntas iniciais. O explorador pergunta **"Você já tem uma cidade em mente?"**:
 - **Sim:** região → estado → cidade → bairros (por exemplo, Nordeste → Pernambuco → Recife).

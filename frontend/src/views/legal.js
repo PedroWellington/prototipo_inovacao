@@ -61,15 +61,15 @@ export function method(root) {
       <ul>
         <li><strong>CNPJ não é prédio.</strong> Um hospital pode ter vários CNPJs (matriz e filiais, serviços terceirizados) ou funcionar com um CNPJ de outra atividade. Agrupar por endereço reduz esse efeito, mas uma sala administrativa ou uma loja registrada com atividade hospitalar continua contando como local.</li>
         <li><strong>O cadastro pode estar desatualizado.</strong> Empresas que fecharam sem dar baixa continuam ativas na base; mudanças de endereço podem demorar a aparecer.</li>
-        <li><strong>O bairro vem do texto do endereço.</strong> O CNPJ não traz coordenadas. Usamos o campo "bairro" escrito no cadastro e o comparamos com os nomes oficiais do IBGE. Grafias diferentes ou nomes populares podem não ser reconhecidos; esses estabelecimentos contam na cidade, mas não em nenhum bairro. Por isso mostramos a cobertura de localização.</li>
-        <li><strong>Cidades sem bairros oficiais</strong> usam áreas formadas por setores censitários do IBGE (área urbana, área rural e povoados de cada distrito).</li>
+        <li><strong>O bairro vem do texto do endereço.</strong> O CNPJ não traz coordenadas. Usamos o campo "bairro" escrito no cadastro e o comparamos com os nomes dos bairros na malha do IBGE. Grafias diferentes ou nomes populares podem não ser reconhecidos; esses estabelecimentos contam na cidade, mas não em nenhum bairro. Por isso mostramos a cobertura de localização.</li>
+        <li><strong>Cidades sem bairros na malha do IBGE</strong> usam áreas formadas por setores censitários do IBGE (área urbana, área rural e povoados de cada distrito).</li>
       </ul>
       <h2>Nota dos bairros</h2>
       <p>Para cada critério, calculamos a densidade (estabelecimentos por km²) de cada bairro e a posição relativa dela entre os bairros da cidade (percentil). Em "quero perto", densidade maior aproxima a nota de 100; em "não quero perto", o contrário. A nota é a média ponderada pelos seus pesos. Empates são desfeitos pelo nome.</p>
       <h2>Ranking de cidades</h2>
       <p>O mesmo cálculo, por município, com a contagem dividida pela população (por 10 mil habitantes, o padrão) ou pela área (por km²), segundo o Censo 2022. Cidades abaixo da população mínima escolhida ficam fora, para que municípios muito pequenos não distorçam a comparação. Só entram cidades com dados carregados.</p>
       <h2>Renda</h2>
-      <p>Usamos a mediana do rendimento nominal mensal das pessoas responsáveis pelo domicílio (Censo 2022, IBGE). Para bairros oficiais, é o valor publicado pelo IBGE para o bairro; para áreas por setor censitário, é a média das medianas dos setores, ponderada pelo número de responsáveis, e por isso aparece como "aproximado". Valores sob sigilo do IBGE aparecem como indisponíveis; nunca estimamos. Renda é um indicador e não determina preferências.</p>
+      <p>Usamos a mediana do rendimento nominal mensal das pessoas responsáveis pelo domicílio (Censo 2022, IBGE). Para bairros da malha do IBGE, é o valor publicado pelo IBGE para o bairro; para áreas por setor censitário, é a média das medianas dos setores, ponderada pelo número de responsáveis, e por isso aparece como "aproximado". Valores sob sigilo do IBGE aparecem como indisponíveis; nunca estimamos. Renda é um indicador e não determina preferências.</p>
       <h2>Falta de dado</h2>
       <p>Quando um dado não existe para uma área, mostramos "Não foi possível encontrar dados de [item] desta área.", sem preencher com estimativas.</p>`,
     false,

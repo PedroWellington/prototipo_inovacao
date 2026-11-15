@@ -31,7 +31,7 @@ def print_uf_table(uf: str) -> None:
     total = sum(r["total_active"] for r in rows)
     located = sum(r["located"] for r in rows)
     bairros = sum(r["division_kind"] == "bairro" for r in rows)
-    print(f"\n{len(rows)} de {n_munis} municípios de {uf} carregados ({bairros} com bairros oficiais, {len(rows) - bairros} com áreas por setor censitário).")
+    print(f"\n{len(rows)} de {n_munis} municípios de {uf} carregados ({bairros} com bairros na malha do IBGE, {len(rows) - bairros} com áreas por setor censitário).")
     thousands = lambda n: f"{n:,}".replace(",", ".")  # noqa: E731
     print(f"Estabelecimentos ativos: {thousands(total)}; localizados: {thousands(located)} ({pct(located, total)}).\n")
     print("| Cidade | IBGE | Divisão | Unidades | Ativos | Localizados | % | Exato | Alias | Trigram |")
@@ -65,7 +65,7 @@ def br_rows(ufs: list[str]):
 def print_br_summary(ufs: list[str]) -> None:
     rows = br_rows(ufs)
     print()
-    print("| UF | Estado | Municípios | Carregados | Com bairros oficiais | Cadastros CNPJ | Localizados | % | Ref. CNPJ |")
+    print("| UF | Estado | Municípios | Carregados | Com bairros na malha do IBGE | Cadastros CNPJ | Localizados | % | Ref. CNPJ |")
     print("|---|---|---|---|---|---|---|---|---|")
     for r in rows:
         print(f"| {r['uf']} | {r['name']} | {r['munis']} | {r['loaded']} | {r['with_bairros']} | {r['total']} | {r['located']} | {pct(r['located'], r['total'])} | {r['month'] or '—'} |")

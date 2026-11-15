@@ -107,7 +107,7 @@ def load_municipal_geometry(conn) -> int:
 
 
 def update_neighborhood_income(conn, munis: list[int]) -> dict:
-    """Bairro oficial: mediana publicada para o bairro. Área: média das medianas dos setores, ponderada pelos
+    """Bairro da malha do IBGE: mediana publicada para o bairro. Área: média das medianas dos setores, ponderada pelos
     responsáveis com valor (aproximado). Sem nenhum setor com valor: nulo ("indisponível")."""
     p = {"m": munis}
     conn.execute(

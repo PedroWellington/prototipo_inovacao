@@ -44,7 +44,11 @@ Regra de ouro: as contagens vêm de dados abertos guardados no banco próprio. N
 - **Loja de suplementos.** Não tem CNAE próprio. Foi aproximada por 4729-6/99 (comércio varejista de produtos alimentícios não especificados), com `precision = approx` e o aviso "Aproximado pelo CNAE; não distingue suplementos de outros produtos" na tela.
 - **Bairros do Recife.** A malha traz 95 feições para o município 2611606; unidas por código, são **94 bairros**, o que bate com o PDF. A área somada é de 214,8 km².
 - **Bairros em Pernambuco.** Só **41 dos 185 municípios** de PE têm bairros na malha do IBGE (660 bairros). Os outros 144 usam "áreas" (abaixo).
-- **Bairros no Brasil.** O IBGE publica a malha de bairros para 25 UFs. **DF e TO não têm o arquivo** (404 no FTP e ausentes da listagem em 14/11/2026). Ali todos os municípios usam áreas por setor censitário, e o ETL trata o 404 como "sem bairros oficiais".
+- **Bairros no Brasil.** O IBGE publica a malha de bairros para 25 UFs. **DF e TO não têm o arquivo** (404 no FTP e ausentes da listagem em 14/11/2026). Ali todos os municípios usam áreas por setor censitário, e o ETL trata o 404 como "sem bairros na malha".
+- **Os limites do IBGE são aproximados (conferido em 15/11/2026).** Por isso o produto e a landing dizem "malha do IBGE", nunca "limites oficiais".
+  - Malha Municipal 2022 (Leia-me): a malha "não pode ser utilizada, em nenhuma hipótese, como sendo uma malha oficial da divisão político-administrativa".
+  - Bairros (publicação "Censo Demográfico 2022: Malha de Setores Censitários", p. 14): bairros são divisões "legalmente instituídos pelo Poder Municipal", representados por setores censitários; "em algumas situações, os limites originais dos bairros precisaram ser aproximados graficamente".
+  - Nenhum dos dois traz licença explícita; citamos "IBGE" como fonte (detalhes em `landing/data/FONTES.md`).
 - **Renda do Censo 2022.** O dicionário dos agregados "básicos" não tem renda. Ela saiu numa publicação própria (Rendimento do Responsável, 08/05/2026), com um arquivo por nível.
   - Sigilo vem como `X`, e ausência de valor vem como `.`: 8.904 setores com `X` e 337 com `.`, de 458.772. Os dois viram **nulo**.
   - Os 5.570 municípios têm mediana.
@@ -66,9 +70,9 @@ Não há CNAE confiável para estes tipos, então eles ficam fora da lista nesta
 ## Como entra no banco
 
 1. **Limites (`ibge_boundaries`).**
-   - Municípios com bairros na malha usam os bairros oficiais (`kind = 'bairro'`).
+   - Municípios com bairros na malha usam esses bairros (`kind = 'bairro'`).
    - Os demais recebem **áreas formadas por setores censitários** (`kind = 'area'`), por distrito:
-     - cada aglomerado nomeado pelo IBGE (povoado, aldeia, comunidade quilombola, núcleo) vira uma área com o nome oficial;
+     - cada aglomerado nomeado pelo IBGE (povoado, aldeia, comunidade quilombola, núcleo) vira uma área com o nome dado pelo IBGE;
      - os demais setores urbanos do distrito formam "‹distrito› – área urbana";
      - os demais setores rurais formam "‹distrito› – área rural";
      - massas d'água (situação 9) ficam de fora.
@@ -84,7 +88,7 @@ Não há CNAE confiável para estes tipos, então eles ficam fora da lista nesta
 3. **Localização (`locate`).** O CNPJ não traz latitude e longitude. Por isso usa o texto do campo BAIRRO (opção B do PDF), sempre dentro do mesmo município e nesta ordem:
    1. **exato**: nome normalizado (minúsculo, sem acento, sem pontuação, espaços colapsados), só quando o nome não se repete na cidade;
    2. **alias**: só em cidades com áreas e sem ambiguidade (o alias tem de ser único na cidade). É uma inferência documentada:
-      - nome oficial do distrito → área urbana daquele distrito (ex.: "PINHEIROS" em São Paulo);
+      - nome do distrito no IBGE → área urbana daquele distrito (ex.: "PINHEIROS" em São Paulo);
       - "CENTRO" → área urbana do distrito-sede, que é o distrito **com o nome do município** (sem ele, não há alias);
       - "ZONA RURAL" → área rural, só quando o município tem **uma única** área rural;
    3. **trigram** (`pg_trgm`): limiar **0,85**, e só quando há **um único** bairro ou área acima dele. Em dúvida, o estabelecimento fica "não localizado".
@@ -99,7 +103,7 @@ Não há CNAE confiável para estes tipos, então eles ficam fora da lista nesta
    - Medianas de setores e bairros vão para `census_income`.
    - A malha municipal vai simplificada em três níveis para os tiles: 1.500 m, 250 m e 30 m de tolerância, em Web Mercator.
    - A renda de cada bairro/área (`census.update_neighborhood_income`) vem assim:
-     - **bairro oficial:** a mediana publicada pelo IBGE para o código do bairro;
+     - **bairro da malha do IBGE:** a mediana publicada pelo IBGE para o código do bairro;
      - **área por setor censitário:** média das medianas dos setores da área (`census_tracts`, gravado pelos limites), ponderada pelos responsáveis com valor. É **aproximado**: uma média de medianas não é a mediana da área;
      - sem nenhum setor com valor: **nulo**, e a tela mostra "Não foi possível encontrar dados de renda desta área."
 6. **Carga nacional (`load_br`).**
@@ -244,7 +248,7 @@ Carga de **14/11/2026**, CNPJ de referência **2026-10**, Censo 2022 e CNES de 1
 |---|---|
 | Municípios no catálogo do IBGE | 5.571 |
 | Cidades carregadas (clicáveis no explorador e no ranking de cidades) | **5.570**. A que falta é Boa Esperança do Norte (MT), criada depois do Censo 2022 e sem malha nem setores. |
-| Com bairros oficiais do IBGE | 895 cidades, 17.575 bairros |
+| Com bairros na malha do IBGE | 895 cidades, 17.575 bairros |
 | Com áreas por setor censitário (aviso na tela) | 4.675 cidades, 36.330 áreas |
 | Cadastros de CNPJ ativos com CNAE do catálogo | 2.740.044 (2.283.544 locais distintos) |
 | Localizados em algum bairro/área | **1.534.146 cadastros (56,0%)** |
@@ -257,7 +261,7 @@ A taxa de cada cidade está em **[COBERTURA.md](COBERTURA.md)**, gerado por `rep
 
 ### Por UF
 
-| UF | Municípios | Com bairros oficiais | Cadastros CNPJ | Localizados | % |
+| UF | Municípios | Com bairros na malha do IBGE | Cadastros CNPJ | Localizados | % |
 |---|---|---|---|---|---|
 | AC | 22 | 8 | 7.835 | 2.594 | 33,1% |
 | AL | 102 | 6 | 32.667 | 25.496 | 78,0% |
@@ -291,15 +295,15 @@ A taxa de cada cidade está em **[COBERTURA.md](COBERTURA.md)**, gerado por `rep
 
 O ranking de **cidades** não depende disso: o município vem do próprio CNPJ. O que fica fraco é o ranking de **bairros** dessas cidades, e a tela mostra a cobertura.
 
-- **Capitais e grandes cidades sem bairros na malha do IBGE.** São Paulo, Campinas, Goiânia, Brasília e Palmas não têm bairros oficiais e usam áreas por distrito.
-  - **São Paulo:** os textos do CNPJ ("PINHEIROS", "VILA MARIANA", "SANTO AMARO"…) são nomes de distritos oficiais. Com o alias "nome do distrito → área urbana do distrito", a cidade passou de **1,0% para 31,8%** localizados.
-  - **Goiânia (0,3%), Brasília (0,3%) e Campinas (9,4%):** os distritos não têm nome de bairro, e os textos do CNPJ ("SETOR BUENO", "ASA NORTE"…) não casam com nada oficial.
+- **Capitais e grandes cidades sem bairros na malha do IBGE.** São Paulo, Campinas, Goiânia, Brasília e Palmas não têm bairros na malha do IBGE e usam áreas por distrito.
+  - **São Paulo:** os textos do CNPJ ("PINHEIROS", "VILA MARIANA", "SANTO AMARO"…) são nomes de distritos da malha do IBGE. Com o alias "nome do distrito → área urbana do distrito", a cidade passou de **1,0% para 31,8%** localizados.
+  - **Goiânia (0,3%), Brasília (0,3%) e Campinas (9,4%):** os distritos não têm nome de bairro, e os textos do CNPJ ("SETOR BUENO", "ASA NORTE"…) não casam com nenhum nome da malha do IBGE.
 - **DF e TO:** o IBGE não publica malha de bairros (404). Todo município usa áreas.
 - **Erro corrigido nesta etapa:** o alias "centro" ia para a área urbana do distrito de código "05", tratado como sede. Em São Paulo o distrito 05 é **Artur Alvim** (zona leste), e 2.088 cadastros com "CENTRO" estavam lá. Agora a sede é o distrito **com o nome do município**. Sem ele, não há alias "centro", e esses cadastros ficam não localizados.
 
 ### Exemplos
 
-- **Recife (94 bairros oficiais):** 21.695 cadastros do catálogo; **21.540 localizados (99,3%)**. Os textos não casados mais comuns são nomes populares sem limite oficial (SITIO DOS PINTOS, POCO DA PANELA, COHAB IBURA DE CIMA) e "CENTRO", que não existe como bairro no Recife e por isso fica não localizado de propósito.
+- **Recife (94 bairros na malha do IBGE):** 21.695 cadastros do catálogo; **21.540 localizados (99,3%)**. Os textos não casados mais comuns são nomes populares sem limite na malha do IBGE (SITIO DOS PINTOS, POCO DA PANELA, COHAB IBURA DE CIMA) e "CENTRO", que não existe como bairro no Recife e por isso fica não localizado de propósito.
 - **Cabrobó (69 áreas):** 267 cadastros; 172 localizados (64,4%), todos por alias ("CENTRO", "ZONA RURAL" e o nome do distrito-sede). Os nomes informais (COHAB, SUBESTACAO, IPSEP…) não existem na malha do IBGE.
 
 ### Decisões em aberto

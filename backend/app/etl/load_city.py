@@ -71,7 +71,7 @@ def run(uf: str, munis: list[int], args) -> list[dict]:
         t = step(f"ibge_boundaries ({uf}, {len(munis)} município(s))")
         with engine.begin() as c:
             r = ibge_boundaries.load(c, uf, munis, args.bairros_path, args.setores_path)
-        done(t, f"{r['with_bairros']} com bairros oficiais, {r['with_areas']} com áreas por setor censitário; {r['units']} bairros/áreas")
+        done(t, f"{r['with_bairros']} com bairros na malha do IBGE, {r['with_areas']} com áreas por setor censitário; {r['units']} bairros/áreas")
 
     if "cnpj" in steps:
         t = step(f"cnpj ({uf}, referência {month})")

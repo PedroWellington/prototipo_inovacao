@@ -136,7 +136,7 @@ def city_context(db: Session, ibge: int):
 
 
 def sources(db: Session, division_kind: str) -> list[dict]:
-    # Só a malha usada pela cidade: bairros oficiais ou setores censitários (áreas).
+    # Só a malha usada pela cidade: bairros da malha do IBGE ou setores censitários (áreas).
     skip = "ibge_setores" if division_kind == "bairro" else "ibge_bairros"
     rows = db.execute(
         text("SELECT key, name, url, reference_date FROM data_sources WHERE key <> :skip ORDER BY key"), {"skip": skip}

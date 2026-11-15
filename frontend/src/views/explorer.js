@@ -460,7 +460,7 @@ export async function render(root) {
   }
 
   function areaNotice() {
-    return html`<div class="alert alert-warning area-notice">${icon('info', 16)}<span>Esta cidade não tem bairros oficiais na malha do IBGE.
+    return html`<div class="alert alert-warning area-notice">${icon('info', 16)}<span>Esta cidade não tem bairros na malha do IBGE.
       Usamos <strong>áreas formadas por setores censitários</strong>: área urbana, área rural e aglomerados (povoados, aldeias) de cada distrito.
       Como o CNPJ não traz coordenadas, muitos estabelecimentos não são localizados nessas áreas; confira a cobertura de cada uma.</span></div>`;
   }

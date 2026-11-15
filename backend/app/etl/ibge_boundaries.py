@@ -1,12 +1,12 @@
 """Limites intramunicipais (IBGE, Censo 2022) -> tabela neighborhoods. Idempotente (upsert por código).
 
-- Município com bairros na Malha de Bairros: usa os bairros oficiais (kind = 'bairro').
+- Município com bairros na Malha de Bairros: usa esses bairros (kind = 'bairro').
 - Município sem bairro formal: monta "áreas" a partir dos setores censitários (kind = 'area'), por distrito:
-    * cada aglomerado nomeado pelo IBGE (povoado, aldeia, núcleo) vira uma área com o nome oficial;
+    * cada aglomerado nomeado pelo IBGE (povoado, aldeia, núcleo) vira uma área com o nome dado pelo IBGE;
     * os demais setores urbanos do distrito formam "<distrito> – área urbana";
     * os demais setores rurais formam "<distrito> – área rural" (massas d'água ficam de fora).
   Aliases (sem ambiguidade, documentados em docs/DATA.md; o locate só usa alias único na cidade):
-    * nome oficial do distrito -> área urbana do distrito (ex.: "Pinheiros" em São Paulo);
+    * nome do distrito no IBGE -> área urbana do distrito (ex.: "Pinheiros" em São Paulo);
     * "centro" -> área urbana do distrito-sede, que é o distrito com o MESMO NOME do município (sem ele, não há alias);
     * "zona rural" -> área rural, só quando o município tem uma única área rural.
 """

@@ -177,7 +177,7 @@ export function decodeTopology(topo) {
   return objects;
 }
 
-// Fallback esquemático (lon/lat) no mesmo formato. Só usado se o arquivo oficial falhar.
+// Fallback esquemático (lon/lat) no mesmo formato. Só usado se o arquivo do IBGE falhar.
 function fromLonLat(rings, props = () => ({})) {
   const features = rings.map((ring, index) => {
     const path = new Path2D(), bbox = [Infinity, Infinity, -Infinity, -Infinity];
@@ -520,7 +520,7 @@ function resize() {
   readScroll();
 }
 
-// --- Prévia do produto: só contornos oficiais dos bairros, sem classificar nem ranquear -------------------
+// --- Prévia do produto: só os contornos dos bairros (malha do IBGE), sem classificar nem ranquear -------------------
 function drawMiniMap() {
   const el = $('previewOfficialMap'), state = $('previewMapState'), tag = $('previewGeoLabel');
   const obj = layers.recife[0]?.objects?.bairros;
