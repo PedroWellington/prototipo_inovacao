@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Laboratório do holograma</title>
+    <!-- Só no servidor de desenvolvimento (npm run dev -> /app/holo-lab.html); o build usa apenas index.html.
+         Testa a camada do holograma fora do mapa: perf/holo-lab.mjs mede giro, memória e quadros. -->
+  </head>
+  <body style="margin: 0; background: var(--color-bg)">
+    <div id="stage" style="position: relative; width: 100vw; height: 100vh"></div>
+    <script type="module">
+      import './src/styles/tokens.css';
+      import { createHologram } from './src/map/hologram.js';
+      const stage = document.getElementById('stage');
+      const layer = document.createElement('div');
+      layer.className = 'holo-layer';
+      stage.append(layer);
+      const point = { x: innerWidth / 2, y: innerHeight * 0.7 };
+      const holo = createHologram(layer, {
+        project: () => point,
+        area: () => ({ left: 0, right: innerWidth, top: 0, bottom: innerHeight }),
+      });
+      window.lab = { holo, point };
+      await holo.load();
+      window.lab.ready = true;
+    </script>
+  </body>
+</html>

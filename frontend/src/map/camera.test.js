@@ -40,3 +40,18 @@ describe('cameraStep', () => {
     expect(Math.abs(at(16.7, 500) - at(6.9, 500))).toBeLessThan(0.15);
   });
 });
+
+import { ease } from './camera.js';
+describe('ease (cubic-bezier .22,1,.36,1)', () => {
+  it('vai de 0 a 1, sem voltar, e acelera no começo', () => {
+    expect(ease(0)).toBe(0);
+    expect(ease(1)).toBe(1);
+    let prev = 0;
+    for (let x = 0.01; x <= 1; x += 0.01) {
+      const v = ease(x);
+      expect(v).toBeGreaterThanOrEqual(prev - 1e-9);
+      prev = v;
+    }
+    expect(ease(0.5)).toBeGreaterThan(0.85); // curva "spring": já perto do fim na metade
+  });
+});
