@@ -26,7 +26,7 @@ export function debounce(fn, ms) {
   return d;
 }
 
-// Interpola a cor da nota (0–100) entre as 5 paradas da escala (vermelho → verde).
+// Interpola a cor da nota (0–100) entre as 5 paradas da escala (combina menos → combina mais).
 export function scoreColor(score, stops) {
   const x = Math.max(0, Math.min(100, score)) / 25; // 0..4
   const i = Math.min(3, Math.floor(x));

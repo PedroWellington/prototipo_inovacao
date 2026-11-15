@@ -1,0 +1,55 @@
+/* Paleta única da VICUS: app (frontend/src/styles/tokens.css) e landing (landing/index.html) leem daqui.
+   Para trocar o visual do site inteiro, edite só este arquivo. Origem: design/dashboard-cinematico/styles.css. */
+
+/* Inter local (OFL, landing/assets/fonts/LICENSE-Inter-OFL.txt), servida em /assets/fonts/ pelo nginx e pelos
+   servidores de desenvolvimento. Sem ela o Windows cai na Segoe UI, mais borrada (landing/docs/TEXTO-NITIDO.md). */
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/fonts/inter-latin-wght.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  /* Base (valores do protótipo) */
+  --coal: #20272d;
+  --coal-2: #313b42;
+  --stone: #f6f5f1;
+  --paper: #fdfcf9;
+  --sand: #e8e5dc;
+  --line: #e5e2da;
+  --ink: #263039;
+  --muted: #87908e; /* só ícones, bordas e texto sobre --coal (3,2:1 sobre --paper: não serve para texto claro) */
+  --muted-dark: #65706d; /* texto secundário: 5,0:1 sobre --paper */
+  --copper: #ad7651;
+  --copper-dark: #8f5c3c; /* ação: texto branco 5,6:1 */
+  --copper-wash: #f4e9df;
+  --sage: #688c83;
+  --sage-dark: #466d67;
+  --sage-light: #e4eeea;
+  --red: #b97163;
+
+  /* Derivados para contraste AA (texto sobre fundos claros) */
+  --copper-deep: #7a4d31; /* hover da ação */
+  --copper-soft: #e2c6ae; /* destaques sobre --coal */
+  --red-dark: #9c5446; /* texto de erro: 5,4:1 sobre --paper */
+  --red-wash: #f7e9e5;
+  --muted-ink: #5a6562; /* texto secundário sobre --sand */
+  --on-dark: #f5f1ea; /* texto sobre --coal */
+  --on-dark-muted: #b9c0bf; /* texto secundário sobre --coal: 7:1 */
+
+  /* Escala do mapa: combina mais (escuro) -> combina menos (claro). Luminosidade sempre decrescente
+     (OKLab L 0,50 / 0,61 / 0,72 / 0,81 / 0,91): distinguível sem cor; o número da posição vai em cada área. */
+  --scale-5: var(--sage-dark);
+  --scale-4: var(--sage);
+  --scale-3: #b0a185;
+  --scale-2: #e0b6a8;
+  --scale-1: #f0dcd4;
+  --scale-none: #d9d6cd;
+
+  --shadow-soft: 0 22px 70px rgb(34 41 43 / 0.08);
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+}

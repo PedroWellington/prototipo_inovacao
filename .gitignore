@@ -31,3 +31,6 @@ data/uploads/
 *.dump
 *.sql.gz
 *.backup
+
+# Protótipo de design (referência local, com dados demonstrativos): nunca no produto nem no repositório
+design/dashboard-cinematico/

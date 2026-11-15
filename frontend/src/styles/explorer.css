@@ -273,12 +273,12 @@ button.pick:hover {
   border-radius: 50%;
 }
 .crit-attract {
-  background: color-mix(in srgb, var(--score-5) 16%, transparent);
-  color: #0f6b38;
+  background: var(--color-positive-soft);
+  color: var(--color-positive);
 }
 .crit-repel {
-  background: color-mix(in srgb, var(--score-1) 14%, transparent);
-  color: #a3221b;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 .seg {
   display: inline-flex;
@@ -483,7 +483,7 @@ button.rank-row:hover {
   bottom: 36px;
   width: 260px;
   padding: var(--space-3);
-  background: rgb(255 255 255 / 0.95);
+  background: var(--color-overlay);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);

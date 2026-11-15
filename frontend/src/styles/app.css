@@ -157,11 +157,11 @@ textarea {
 }
 .btn-danger {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 .btn-danger:hover:not(:disabled) {
-  background: #8f1e18;
-  color: #fff;
+  background: var(--color-danger-hover);
+  color: var(--color-on-accent);
 }
 .btn-block {
   width: 100%;
@@ -246,7 +246,7 @@ textarea {
 .select:focus {
   outline: none;
   border-color: var(--color-focus);
-  box-shadow: 0 0 0 3px rgb(31 122 119 / 0.18);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 .input[aria-invalid='true'] {
   border-color: var(--color-danger);
@@ -326,8 +326,8 @@ textarea {
   position: relative;
   overflow: hidden;
   padding: var(--space-12);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-top);
+  color: var(--color-on-top);
 }
 @media (min-width: 960px) {
   .auth-aside {
@@ -336,17 +336,26 @@ textarea {
     justify-content: space-between;
   }
 }
+/* Logo sobre o grafite: marca em cobre claro, como na barra superior. */
+.on-dark .logo,
 .auth-aside .logo {
-  color: var(--color-on-accent);
+  color: var(--color-on-top);
 }
+.on-dark .logo rect,
 .auth-aside .logo rect {
-  fill: var(--color-on-accent);
+  fill: var(--color-brand-mark);
 }
+.on-dark .logo path,
 .auth-aside .logo path {
-  fill: var(--color-accent);
+  fill: var(--color-top);
 }
+.on-dark .logo circle,
 .auth-aside .logo circle {
-  fill: var(--color-on-accent);
+  fill: var(--color-brand-mark);
+}
+.auth-aside li .icon,
+.auth-aside h1 em {
+  color: var(--color-brand-mark);
 }
 .auth-aside h1 {
   max-width: 15ch;
@@ -626,6 +635,7 @@ textarea {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   text-align: left;
+  overflow-wrap: anywhere; /* "Supermercado/Mercado" quebra dentro do cartão */
   cursor: pointer;
   transition:
     border-color var(--dur-fast),

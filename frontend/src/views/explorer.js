@@ -51,7 +51,7 @@ export async function render(root) {
         <div class="legend" data-legend hidden>
           <div class="legend-bar" aria-hidden="true"></div>
           <div class="legend-scale small"><span>combina menos</span><span>combina mais</span></div>
-          <p class="small">Verde = combina mais com seus critérios; vermelho = combina menos; o número é a posição.</p>
+          <p class="small">Tom mais escuro = combina mais com seus critérios; mais claro = combina menos. O número em cada área é a posição.</p>
         </div>
         <div class="tooltip" data-tooltip role="tooltip" hidden></div>
       </section>

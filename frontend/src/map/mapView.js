@@ -83,7 +83,7 @@ function addLayers(map, opts) {
         ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
         css('--score-none'),
       ],
-      'fill-opacity': hover(0.9, 0.72),
+      'fill-opacity': hover(0.95, 0.86),
     },
   });
   map.addLayer({
@@ -91,7 +91,7 @@ function addLayers(map, opts) {
     type: 'line',
     source: 'hoods',
     paint: {
-      'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], text, '#ffffff'],
+      'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], text, css('--map-line')],
       'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, ['boolean', ['feature-state', 'hover'], false], 2, 0.8],
     },
   });
@@ -117,7 +117,7 @@ function addLayers(map, opts) {
     source: 'cities',
     'source-layer': 'munis',
     paint: {
-      'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], text, '#ffffff'],
+      'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], text, css('--map-line')],
       'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.15, 7, 0.6, 10, 1.2],
     },
   });
@@ -151,7 +151,7 @@ function drawBadge(n) {
   c.width = w;
   c.height = h;
   const g = c.getContext('2d');
-  g.fillStyle = '#ffffff';
+  g.fillStyle = css('--color-surface');
   g.strokeStyle = css('--color-text');
   g.lineWidth = 1.5 * ratio;
   g.beginPath();

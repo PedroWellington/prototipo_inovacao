@@ -38,6 +38,7 @@ services:
       context: ./frontend
       additional_contexts:
         landing: ./landing
+        shared: ./shared
       args:
         PRODUCT_NAME: ${PRODUCT_NAME}
     ports:
@@ -59,6 +60,7 @@ services:
     volumes:
       - ./frontend:/app
       - ./landing:/landing:ro
+      - ./shared:/shared:ro
       - /app/node_modules
     ports:
       - "${FRONTEND_DEV_PORT:-5173}:5173"

@@ -1,42 +1,60 @@
-/* Tokens visuais do produto. Para trocar o visual, edite só este arquivo. */
+/* Tokens do app: nomes por função, valores vindos da paleta única em shared/design-tokens.css.
+   Para trocar o visual do site inteiro, edite shared/design-tokens.css; aqui só o mapeamento. */
+@import '../../../shared/design-tokens.css';
+
 :root {
   /* Superfícies e texto */
-  --color-bg: #f5f4f0;
-  --color-surface: #ffffff;
-  --color-surface-2: #efeee9;
-  --color-surface-3: #e7e5df;
-  --color-border: #dfdcd5;
-  --color-border-strong: #c9c5bc;
-  --color-text: #1b1f22;
-  --color-text-muted: #596066;
-  --color-text-subtle: #6a7076; /* ≥ 4.5:1 sobre branco */
+  --color-bg: var(--stone);
+  --color-surface: var(--paper);
+  --color-surface-2: var(--stone);
+  --color-surface-3: var(--sand);
+  --color-border: var(--line);
+  --color-border-strong: #d3cfc4;
+  --color-text: var(--ink);
+  --color-text-muted: var(--muted-dark);
+  --color-text-subtle: var(--muted-dark); /* ≥ 4.5:1 sobre --paper e --stone */
+  --color-text-on-sand: var(--muted-ink);
 
-  /* Acento (verde-petróleo) */
-  --color-accent: #0f5c5a;
-  --color-accent-hover: #0b4a48;
-  --color-accent-soft: #e2eeec;
+  /* Acento (cobre) */
+  --color-accent: var(--copper-dark);
+  --color-accent-hover: var(--copper-deep);
+  --color-accent-soft: var(--copper-wash);
   --color-on-accent: #ffffff;
-  --color-focus: #1f7a77;
+  --color-focus: var(--copper);
+  --color-focus-ring: rgb(173 118 81 / 0.28);
+
+  /* Barra superior grafite */
+  --color-top: var(--coal);
+  --color-top-2: var(--coal-2);
+  --color-on-top: var(--on-dark);
+  --color-on-top-muted: var(--on-dark-muted);
+  --color-brand-mark: var(--copper-soft);
 
   /* Estados */
-  --color-danger: #b3261e;
-  --color-danger-soft: #fbeae8;
-  --color-warning: #8a5a00;
-  --color-warning-soft: #fdf3dc;
-  --color-info-soft: #e8f0f7;
-  --color-demo: #b3261e;
+  --color-positive: var(--sage-dark);
+  --color-positive-soft: var(--sage-light);
+  --color-danger: var(--red-dark);
+  --color-danger-hover: #84463a;
+  --color-danger-soft: var(--red-wash);
+  --color-warning: var(--copper-dark);
+  --color-warning-soft: var(--copper-wash);
+  --color-info-soft: var(--sage-light);
+  --color-demo: var(--red-dark);
+  --color-scrim: rgb(32 39 45 / 0.38);
+  --color-overlay: rgb(253 252 249 / 0.94);
 
-  /* Escala do ranking: verde = combina mais → vermelho = combina menos (5 paradas) */
-  --score-5: #1a9850;
-  --score-4: #91cf60;
-  --score-3: #f2d06b;
-  --score-2: #fc8d59;
-  --score-1: #d73027;
-  --score-none: #c9c5bc;
+  /* Escala do ranking: 5 = combina mais ... 1 = combina menos (ver shared/design-tokens.css) */
+  --score-5: var(--scale-5);
+  --score-4: var(--scale-4);
+  --score-3: var(--scale-3);
+  --score-2: var(--scale-2);
+  --score-1: var(--scale-1);
+  --score-none: var(--scale-none);
+  --map-line: var(--paper);
 
-  /* Tipografia: fontes do sistema (zero download, melhor LCP) */
-  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif;
-  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif;
+  /* Tipografia: Inter local (shared/design-tokens.css), com as fontes do sistema enquanto ela carrega */
+  --font-sans: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif;
+  --font-display: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif;
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
   --text-base: 0.9375rem;
@@ -63,18 +81,21 @@
   --space-16: 64px;
 
   /* Forma e profundidade */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
   --radius-full: 999px;
   --shadow-sm: 0 1px 2px rgb(20 24 28 / 0.06);
   --shadow: 0 1px 2px rgb(20 24 28 / 0.06), 0 4px 14px rgb(20 24 28 / 0.07);
   --shadow-lg: 0 2px 6px rgb(20 24 28 / 0.08), 0 16px 40px rgb(20 24 28 / 0.12);
 
   /* Movimento */
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: var(--ease-spring);
   --dur-fast: 150ms; /* transições entre 150 e 200 ms (docs/PERFORMANCE.md) */
   --dur: 180ms;
+  --dur-ui: 350ms; /* microinterações (protótipo: motion.css) */
+  --dur-enter: 620ms; /* entrada escalonada dos cartões */
+  --stagger: 57ms;
 
   /* Layout */
   --panel-width: 380px;

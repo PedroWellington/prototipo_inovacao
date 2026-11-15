@@ -151,7 +151,7 @@ img.avatar {
   animation: dialog-in var(--dur) var(--ease-out);
 }
 .dialog::backdrop {
-  background: rgb(20 24 28 / 0.35);
+  background: var(--color-scrim);
 }
 .dialog-body {
   padding: var(--space-5);
