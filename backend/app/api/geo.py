@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.http_cache import cached, etag_of
 from app.auth.deps import current_user
 from app.config import IBGE_API
-from app.db import get_db
+from app.db import get_data_db as get_db
 
 router = APIRouter(prefix="/api/geo", tags=["geo"], dependencies=[Depends(current_user)])
 

@@ -18,12 +18,17 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 
 | Holograma trocado (2026-11-15) | Novos 360 PNG 720×720 -> WebP 486×396, 4,9 MB, versão `ff24815a9b42` | ✅ | `docs/visual/holograma2-*`; dist sem quadro antigo |
 | Deploy | Fase 0: auditoria (nginx, variáveis, banco, segredos, público) | ✅ | esta seção; relatório na conversa de 2026-11-15 |
-| Deploy | Fase 1: frontend na Vercel (`vercel.json`) | ❌ | aguarda a escolha do servidor |
+| Deploy (protótipo) | Banco do Brasil inteiro em dois bancos pequenos para o Neon grátis (`vicus-dados` 253 MB, `vicus-contas` 24 MB), dois pools no backend, 20 consultas idênticas | ✅ | `docs/DATA.md` (fim); `scripts/build_prod_db.py`, `scripts/compare_rank.py` |
+| Deploy (protótipo) | Fase 1: frontend na Vercel (`vercel.json`) | ❌ | o prompt de deploy de protótipo (Vercel Hobby, DEMO_MODE, banner) não está em `design/prompts/` |
 | Deploy | Fase 2: backend e banco em servidor próprio (Compose de produção, Caddy, backups, restore) | ❌ | |
 | Deploy | Fase 3: domínio, HTTPS, e-mail transacional, páginas legais (rascunho) | ❌ | |
 | Deploy | Fase 4: login com Google (preparado e desligado por flag) | ❌ | |
 | Deploy | Fase 5: verificação em produção | ❌ | |
 | Deploy | Fase 6: operação (`docs/DEPLOY.md`, CI, monitoramento) | ❌ | |
+
+## Mudança de rumo (2026-11-15): protótipo no Neon grátis, sem servidor próprio
+
+Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (≤ 800 MB) e contas em `vicus-contas`, no plano grátis do Neon (1 GB por projeto, 100 CU-hora/mês por projeto). Resultado: 253 MB e 24 MB; detalhes e comandos em `docs/DATA.md`. As opções de servidor da Fase 0 abaixo ficam como registro.
 
 ## Fase 0 do deploy: o que foi medido (2026-11-15)
 
@@ -47,7 +52,8 @@ Fase 0 entregue. **Parado à espera de decisões** (abaixo). Depois: modo escuro
 
 ## Decisões que dependem do Pedro
 
-- Servidor do backend e do banco (ver custos no relatório da Fase 0): recomendação é um VPS de 4 a 8 GB em São Paulo com Postgres no próprio Compose.
+- Onde roda a API FastAPI do protótipo (o Neon é só o banco): precisa de um host para o container ou de adaptação para funções da Vercel.
+- Colocar o prompt de deploy de protótipo (Vercel Hobby, DEMO_MODE, banner de protótipo) em `design/prompts/`.
 - Licença do repositório (padrão: "todos os direitos reservados").
 - Manter públicos `docs/LOCUS-logica-do-produto.pdf` e `design/brand/`.
 - Vercel: uso comercial exige o plano Pro (US$ 20/mês por pessoa); o Hobby é só para uso pessoal.

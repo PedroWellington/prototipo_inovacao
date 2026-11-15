@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.http_cache import cached
-from app.db import get_db
+from app.db import get_data_db as get_db
 
 router = APIRouter(prefix="/api/catalog", tags=["catalog"])
 

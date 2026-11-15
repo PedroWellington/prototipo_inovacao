@@ -3,7 +3,9 @@ from pathlib import Path
 
 ENV = os.getenv("ENV", "development")
 IS_PRODUCTION = ENV == "production"
-DATABASE_URL = os.environ["DATABASE_URL"]
+DATABASE_URL = os.environ["DATABASE_URL"]  # contas: usuários, sessões, créditos, perfil
+# Dados de leitura (cidades, bairros, contagens, geometria). Vazio = o mesmo banco das contas (desenvolvimento e testes).
+DATA_DATABASE_URL = os.getenv("DATA_DATABASE_URL") or DATABASE_URL
 DATA_DIR = Path(os.getenv("DATA_DIR", "/data"))
 SESSION_TTL_HOURS = int(os.getenv("SESSION_TTL_HOURS", "168"))
 PRODUCT_NAME = os.environ["PRODUCT_NAME"]  # definido só no .env

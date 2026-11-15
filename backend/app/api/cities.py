@@ -9,7 +9,7 @@ from app.api.http_cache import cached
 from app.api.profile import CriteriaIn
 from app import credits
 from app.auth.deps import CurrentUser, current_user
-from app.db import get_db
+from app.db import get_data_db, get_db
 from app.scoring.rank import NO_DATA, income_block, income_source, rank
 from app.scoring.rank_cities import rank_cities
 
@@ -31,11 +31,11 @@ class CityRankIn(CriteriaIn):
 
 @router.post("/rank")
 def rank_cities_endpoint(body: CityRankIn, request: Request, user: CurrentUser = Depends(current_user),
-                         db: Session = Depends(get_db)):
+                         db: Session = Depends(get_db), data: Session = Depends(get_data_db)):
     """Ranking de cidades no alcance (Brasil, região ou UF) pelos mesmos critérios do perfil. Exige a busca liberada."""
     credits.require_search(db, user.id, credits.scope_key(None if body.uf else body.region_id, body.uf))
     out, gz = rank_cities(
-        db,
+        data,
         region=None if body.uf else body.region_id,
         uf=body.uf.upper() if body.uf else None,
         criteria=[c.model_dump() for c in body.criteria],
@@ -50,7 +50,7 @@ def rank_cities_endpoint(body: CityRankIn, request: Request, user: CurrentUser =
 
 
 @router.get("/{ibge}/status")
-def status(ibge: int, request: Request, db: Session = Depends(get_db)):
+def status(ibge: int, request: Request, db: Session = Depends(get_data_db)):
     row = db.execute(
         text(
             """
@@ -100,11 +100,12 @@ def status(ibge: int, request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/{ibge}/neighborhoods.geojson")
-def neighborhoods_geojson(ibge: int, request: Request, user: CurrentUser = Depends(current_user), db: Session = Depends(get_db)):
+def neighborhoods_geojson(ibge: int, request: Request, user: CurrentUser = Depends(current_user), db: Session = Depends(get_db),
+                          data: Session = Depends(get_data_db)):
     credits.require_city(db, user.id, ibge)  # o mapa de bairros é a análise paga
     # Geometria simplificada (ver docs/PERFORMANCE.md), 5 casas decimais (~1 m), id para juntar com o ranking.
     # O frontend pede ?v=<loaded_at>: o cache longo é seguro porque a URL muda quando a cidade é recarregada.
-    body = db.execute(
+    body = data.execute(
         text(
             """
             SELECT json_build_object('type', 'FeatureCollection', 'features', coalesce(json_agg(json_build_object(
@@ -121,9 +122,10 @@ def neighborhoods_geojson(ibge: int, request: Request, user: CurrentUser = Depen
 
 
 @router.post("/{ibge}/rank")
-def rank_city(ibge: int, body: CriteriaIn, user: CurrentUser = Depends(current_user), db: Session = Depends(get_db)):
+def rank_city(ibge: int, body: CriteriaIn, user: CurrentUser = Depends(current_user), db: Session = Depends(get_db),
+              data: Session = Depends(get_data_db)):
     credits.require_city(db, user.id, ibge)
-    result = rank(db, ibge, [c.model_dump() for c in body.criteria])
+    result = rank(data, ibge, [c.model_dump() for c in body.criteria])
     if result["status"] == "not_found":
         raise HTTPException(404, {"code": "not_found", "message": result["message"]})
     return result

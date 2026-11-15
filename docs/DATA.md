@@ -312,3 +312,37 @@ O ranking de **cidades** não depende disso: o município vem do próprio CNPJ. 
 2. **Aliases de distrito ("centro", nome do distrito, "zona rural").** São inferências documentadas, e o efeito aparece separado na coluna "Alias" de [COBERTURA.md](COBERTURA.md). Para desligar, tire os aliases em `ibge_boundaries.area_rows` e rode `load_br --steps boundaries,locate,counts --force`.
 3. **Aliases revisados por cidade** ("RECIFE ANTIGO" → Recife, "SETOR BUENO" → ?). Exigem conhecimento local e uma tabela revisada. Não foram feitos por palpite.
 4. **CNES para clínica e laboratório:** só com um mapeamento tipo de unidade → tipo do catálogo conferido (ver "CNES").
+
+## Banco de produção do protótipo: dois bancos pequenos (Neon, plano grátis)
+
+A API nunca lê `establishments`, `health_units`, `census_tracts` nem `census_income`: são insumos do ETL, que já
+deixa tudo somado em `neighborhood_type_counts`, `municipality_type_counts`, `neighborhood_coverage` e nas colunas de
+renda de `neighborhoods` e `municipalities`. Também não lê `neighborhoods.geom` (a geometria original só serve para
+calcular área e localizar estabelecimentos): o mapa usa `geom_simplified`. Por isso a produção do protótipo usa:
+
+| Banco | Conteúdo | Esquema | Tamanho medido (2026-11-15) |
+|---|---|---|---|
+| `vicus-dados` (leitura) | regiões, estados, municípios (sem colunas do ETL), bairros (`geom_simplified`, `label_point`, área, renda), `city_data_status`, as três tabelas de contagem, catálogo, fontes, `etl_progress`, `geo_cache` | `backend/app/prod_data_schema.sql` | **253 MB** no banco; dump `-Fc` 158 MB |
+| `vicus-contas` | usuários, sessões, perfil, critérios, créditos, liberações; mais as tabelas de referência que essas telas juntam (municípios sem geometria, estados, regiões, segmentos, tipos, `city_data_status`, fontes) | Alembic (`alembic upgrade head`), tabelas de dados ficam vazias | 24 MB (7 MB são o `spatial_ref_sys` do PostGIS) |
+
+O banco completo (ETL) continua local: 2,8 GB, dump 619 MB. Para montar os dois bancos a partir dele:
+
+```powershell
+docker compose exec backend alembic upgrade head                                     # com DATABASE_URL apontando para vicus-contas
+docker compose exec backend python scripts/build_prod_db.py contas "postgresql://...vicus_contas"   # só insere o que falta
+docker compose exec backend python scripts/build_prod_db.py dados  "postgresql://...vicus_dados"    # recria tudo
+docker compose exec backend python scripts/compare_rank.py        # 20 consultas: completo x compacto (DATA_DATABASE_URL)
+```
+
+No backend, `DATABASE_URL` é o banco das contas e `DATA_DATABASE_URL` o de leitura (`app/db.py`: `get_db` e
+`get_data_db`). Vazio, os dois são o mesmo banco: é assim em desenvolvimento e nos testes. Os endpoints de catálogo,
+geografia, tiles, status de cidade, GeoJSON de bairros e os dois rankings leem o banco de dados; cobrança e liberação
+de crédito continuam no banco das contas, na mesma requisição.
+
+Comparação de 2026-11-15 (`scripts/compare_rank.py`): 15 rankings de bairros (São Paulo, Rio, Brasília, Fortaleza,
+Salvador, 5 cidades médias com bairros do IBGE, 5 pequenas com áreas por setor) e 5 rankings de cidades (Brasil,
+Nordeste por área, PE com renda, SP ≥ 100 mil, Sul por área com renda): **20 de 20 idênticos**, byte a byte, incluindo
+fontes, datas, cobertura e versão dos dados. Tempo por consulta: igual ou menor no banco compacto (por exemplo São Paulo
+98 -> 73 ms; Brasil 156 -> 182 ms, dentro da variação).
+
+Atualizar os dados em produção = rodar o ETL local, refazer `vicus-dados` com o script e nada muda nas contas.
