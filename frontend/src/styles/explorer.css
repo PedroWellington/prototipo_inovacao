@@ -116,31 +116,21 @@ button.ex-chip:hover {
   background: var(--color-surface);
   transform: translateY(-1px);
 }
-.ex-views {
-  gap: 2px;
-  padding: 3px;
-}
-.ex-views[hidden] {
-  display: none;
-}
-.view-toggle {
-  padding: 7px 11px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  color: var(--color-text-muted);
+.ex-plane {
+  margin-left: auto;
   cursor: pointer;
 }
-.view-toggle[aria-pressed='true'] {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+.ex-plane[hidden] {
+  display: none;
 }
-.ex-views {
-  margin-left: auto;
+.ex-plane:not([hidden]) + .ex-overview {
+  margin-left: 0;
 }
-.ex-views:not([hidden]) + .ex-overview {
+.ex-chip:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.ex-overview {
   margin-left: 0;
 }
 .ex-overview {

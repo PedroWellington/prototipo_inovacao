@@ -2,6 +2,7 @@ import { get, getCached, post, put } from '../api.js';
 import { fmt, html, mount } from '../html.js';
 import { icon } from '../icons.js';
 import { bbox, brl, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
+import { createHologram } from '../map/hologram.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
 import { topbar } from '../components/topbar.js';
@@ -23,6 +24,12 @@ const UNITS = {
 const NO_DATA = (item) => `Não foi possível encontrar dados de ${item} desta área.`;
 const INCOME_DIR = { attract: 'poder de compra acima da mediana', repel: 'poder de compra abaixo da mediana' };
 const DEFAULT_MIN_POP = 20000;
+// Holograma da unidade: ângulo de quem olha (90 = de cima). No MapLibre, pitch = 90 - ângulo.
+const HOLO_VIEW_ANGLE_DEG = 50;
+const HOLO_PITCH = 90 - HOLO_VIEW_ANGLE_DEG;
+const HOLO_MS = 700; // inclinar e subir: a mesma animação
+const HOLO_SWAP_MS = 450; // trocar de bairro já inclinado
+const HOLO_ZOOM = 0.15; // aproximação leve ao inclinar
 const PANEL_KEY = 'explorer-panel'; // preferência só deste navegador (aberto/recolhido)
 const METHOD_LINK = () => html`<a href="#/como-calculamos" target="_blank" rel="noopener">Como calculamos</a>`;
 const DISCLAIMER =
@@ -39,15 +46,13 @@ export async function render(root) {
       <div class="ex-work">
         <section class="ex-map" aria-label="Mapa">
           <div class="map" data-map></div>
+          <div class="holo-layer" data-holo></div>
           <div class="ex-loading" data-loading hidden><span></span></div>
           <div class="ex-maptop">
             <button type="button" class="ex-chip ex-chip-icon panel-toggle" data-toggle-panel aria-controls="ex-left" aria-expanded="true"
               aria-label="Recolher ou abrir o painel de navegação">${icon('panel', 18)}</button>
             <nav class="crumbs ex-chip" aria-label="Caminho geográfico" data-crumbs></nav>
-            <div class="ex-chip ex-views" role="group" aria-label="Visualização do mapa" data-views hidden>
-              <button type="button" class="view-toggle" aria-pressed="true" data-relief="off">2D</button>
-              <button type="button" class="view-toggle" aria-pressed="false" data-relief="on">Relevo</button>
-            </div>
+            <button type="button" class="ex-chip ex-plane" data-plane hidden aria-label="Voltar ao plano: mapa visto de cima, sem o holograma">${icon('layers', 15)}<span class="sr-only-sm">Voltar ao plano</span></button>
             <a class="ex-chip ex-overview" href="#/home">${icon('back', 15)}<span class="sr-only-sm">Visão geral</span></a>
           </div>
           <div class="legend" data-legend hidden>
@@ -102,6 +107,7 @@ export async function render(root) {
     cities: [],
     hoods: new Map(), // id -> { name, bounds, label }
     tab: 'ranking', // painel direito: 'ranking' | 'detail'
+    holo: { state: 'PLANO', id: null, slot: 0, zoomed: 0 }, // máquina de estados do holograma
     leftOpen: true,
     sheetOpen: false, // celular: gaveta do painel direito expandida
   };
@@ -118,6 +124,16 @@ export async function render(root) {
   s.criteria = profile.criteria.map((c) => ({ ...c }));
 
   const map = createMap($('[data-map]'), { onHover, onClick }, { tilesVersion: tiles.version });
+  // Área livre para o holograma (sem painéis, barra de cima, gaveta, legenda e atribuição): medida só quando
+  // o layout muda (syncInsets), nunca por quadro.
+  let holoArea = { left: 0, right: 0, top: 0, bottom: 0 };
+  const holo = createHologram($('[data-holo]'), { project: (ll) => map.project(ll), area: () => holoArea });
+  map.onMove(() => holo.follow());
+  // Leituras para os testes (perf/journey.mjs, perf/holo-fps.mjs): estado, pitch e onde fica cada bairro na tela.
+  Object.assign($('[data-holo]'), {
+    holoState: () => ({ ...s.holo, pitch: map.pitch(), top: (s.rank?.neighborhoods || []).slice(0, 5).map((n) => n.id) }),
+    holoPoint: (id) => map.project(labelOf(id)),
+  });
 
   // ---------- Painel lateral: blocos da conta + recolher (só transform: o mapa não muda de tamanho) ----------
   const accountBox = $('[data-account]');
@@ -133,6 +149,11 @@ export async function render(root) {
   const left = $('.ex-left');
   const right = $('[data-right]');
   function syncInsets(animate = true) {
+    const box = $('.ex-map');
+    const ins = wide.matches
+      ? { left: s.leftOpen ? left.offsetWidth : 0, right: right.offsetWidth, bottom: 44 }
+      : { left: 0, right: 0, bottom: right.offsetHeight + 16 };
+    holoArea = { left: ins.left + 8, right: box.clientWidth - ins.right - 8, top: 68, bottom: box.clientHeight - ins.bottom };
     if (wide.matches) map.setInsets({ left: s.leftOpen ? left.offsetWidth : 0, right: right.offsetWidth, bottom: 0 }, { animate });
     else if (!s.sheetOpen) {
       // Gaveta recolhida: a câmera desconta a altura dela, e a atribuição do OSM sobe para ficar à vista.
@@ -160,6 +181,7 @@ export async function render(root) {
     shell.classList.toggle('sheet-open', open);
     right.querySelector('[data-sheet]')?.setAttribute('aria-expanded', String(open));
     $('[data-scrim]').hidden = wide.matches || !(open || (s.leftOpen && !wide.matches));
+    syncInsets(false); // a área livre do holograma muda com a gaveta
   }
   let panelPref = 'open';
   try {
@@ -171,6 +193,7 @@ export async function render(root) {
   const initialPanel = () =>
     setPanel(wide.matches && matchMedia('(min-width: 1100px)').matches ? panelPref === 'open' : false, { animate: false, remember: false });
   wide.addEventListener('change', initialPanel, { signal: ac.signal });
+  addEventListener('resize', () => syncInsets(false), { signal: ac.signal, passive: true }); // área livre do holograma
   map.setData('regions', regionsGeo);
   map.setLevel('region');
 
@@ -424,15 +447,70 @@ export async function render(root) {
     renderPanel();
     renderRight();
     $('[data-legend]').hidden = s.level !== 'result' && s.level !== 'cities';
-    $('[data-views]').hidden = s.level !== 'result';
-    if (s.level !== 'result' && s.relief) setRelief(false);
+    // Trocou de nível ou de cidade: o mapa volta ao plano na hora, antes de qualquer enquadramento.
+    const where = `${s.level}:${s.city?.id ?? ''}`;
+    if (where !== lastWhere && s.holo.state !== 'PLANO') toPlane({ instant: true });
+    lastWhere = where;
   }
+  let lastWhere = '';
 
-  // Relevo (opcional): altura pela nota, com a mesma cor e o mesmo número; 2D é o padrão.
-  function setRelief(on) {
-    s.relief = on;
-    map.setRelief(on);
-    root.querySelectorAll('[data-relief]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.relief === 'on') === on)));
+  // ---------- Holograma: máquina de estados PLANO <-> INCLINADO(bairro) ----------
+  // Clique num bairro: inclina e sobe o holograma (uma só animação). Mesmo bairro de novo: volta ao plano.
+  // Outro bairro já inclinado: o antigo desce, o novo sobe, a câmera desliza. "Voltar ao plano" e Esc: plano.
+  // Clicar no fundo ou arrastar não muda o estado. Qualquer clique no meio reverte do ponto atual.
+  const labelOf = (id) => s.hoods.get(id)?.label;
+  const holoPadding = () => {
+    const ins = map.insets();
+    const reserve = Math.round(Math.min(0.42 * $('.ex-map').clientHeight, wide.matches ? 280 : 200));
+    return { top: reserve, right: ins.right, bottom: ins.bottom, left: ins.left };
+  };
+  function holoClick(id) {
+    if (!labelOf(id)) return;
+    if (s.holo.state === 'INCLINADO' && s.holo.id === id) return toPlane();
+    toInclined(id);
+  }
+  function toInclined(id) {
+    const ll = labelOf(id);
+    if (!wide.matches && s.sheetOpen) setSheet(false); // celular: a gaveta recolhe para o holograma caber
+    const from = s.holo;
+    // Mesmo slot se ele já mostra este bairro (ou está vazio); senão o outro, e o antigo desce.
+    const same = holo.anchor(from.slot) === ll || holo.rise(from.slot) < 0.01;
+    const slot = same ? from.slot : 1 - from.slot;
+    const old = 1 - slot;
+    holo.set(slot, { lngLat: ll });
+    const r0 = holo.rise(slot), ro = holo.rise(old);
+    const swapping = from.state === 'INCLINADO' && map.pitch() > HOLO_PITCH - 1;
+    const zoomed = from.state === 'PLANO' && !from.zoomed ? HOLO_ZOOM : 0;
+    s.holo = { state: 'INCLINADO', id, slot, zoomed: from.zoomed + zoomed };
+    const dur = swapping ? HOLO_SWAP_MS : Math.max(250, HOLO_MS * (1 - map.pitch() / HOLO_PITCH));
+    map.tiltTo(
+      { pitch: HOLO_PITCH, center: ll, zoom: map.zoom() + zoomed, padding: holoPadding() },
+      {
+        duration: dur,
+        onUpdate: (e) => {
+          holo.set(slot, { rise: r0 + (1 - r0) * e });
+          holo.set(old, { rise: ro * (1 - e) });
+        },
+      },
+    );
+    $('[data-plane]').hidden = false;
+  }
+  function toPlane({ instant = false } = {}) {
+    const r = [holo.rise(0), holo.rise(1)];
+    const zoomed = s.holo.zoomed;
+    s.holo = { ...s.holo, state: 'PLANO', id: null, zoomed: 0 };
+    const dur = instant ? 0 : Math.max(250, HOLO_MS * (map.pitch() / HOLO_PITCH));
+    map.tiltTo(
+      { pitch: 0, zoom: map.zoom() - zoomed, padding: { top: 0, right: 0, bottom: 0, left: 0 } },
+      {
+        duration: dur,
+        onUpdate: (e) => {
+          holo.set(0, { rise: r[0] * (1 - e) });
+          holo.set(1, { rise: r[1] * (1 - e) });
+        },
+      },
+    );
+    $('[data-plane]').hidden = true;
   }
 
   function renderCrumbs() {
@@ -909,12 +987,13 @@ export async function render(root) {
     if (key === null || key !== tooltipKey) mount(tooltip, typeof content === 'function' ? content() : content);
     tooltipKey = key;
     tooltip.hidden = false;
-    const box = tooltip.parentElement.getBoundingClientRect();
+    // Dentro da área livre do mapa (entre os painéis), nunca por cima deles.
+    const a = holoArea;
     const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
-    const x = point.x + 16 + w > box.width ? point.x - w - 16 : point.x + 16;
-    const y = Math.max(8, Math.min(point.y + 16, box.height - h - 8));
+    const x = point.x + 16 + w > a.right ? point.x - w - 16 : point.x + 16;
+    const y = Math.max(a.top, Math.min(point.y + 16, a.bottom - h));
     // Pixels inteiros: a posição do mouse no mapa é fracionária e deixava o texto do tooltip borrado.
-    tooltip.style.transform = `translate(${Math.round(Math.max(8, x))}px, ${Math.round(y)}px)`;
+    tooltip.style.transform = `translate(${Math.round(Math.max(a.left, x))}px, ${Math.round(y)}px)`;
   }
 
   function hideTooltip() {
@@ -936,20 +1015,20 @@ export async function render(root) {
       return showTooltip(html`<strong>${f.properties.name}</strong><br /><span class="small muted">Dados ainda não carregados para esta cidade</span>`, point);
     }
     if (source === 'hoods') {
-      selectHood(f.id, { fly: false });
-      const n = s.rank?.status === 'ok' && s.rankById.get(f.id);
-      if (n && matchMedia('(hover: none)').matches) showTooltip(hoodDetail(n), point); // toque no celular
+      // Os números do bairro vão para a aba Detalhes; o tooltip sai para não cobrir o holograma.
+      hideTooltip();
+      selectHood(f.id);
+      holoClick(f.id);
     }
   }
 
   // Selecionar um bairro (no mapa ou no ranking) abre a aba Detalhes; o ranking guarda o destaque.
-  function selectHood(id, { fly = true } = {}) {
+  // A câmera de quem seleciona é a do holograma (holoClick): aqui só seleção e painel.
+  function selectHood(id) {
     s.selectedId = id;
     s.tab = 'detail';
     map.select(id);
-    if (fly && s.hoods.has(id)) map.fit(s.hoods.get(id).bounds, { maxZoom: 15 });
     renderRight();
-    if (!wide.matches) setSheet(true);
   }
 
   // Do ranking de cidades para o mapa de bairros da cidade.
@@ -994,7 +1073,6 @@ export async function render(root) {
       return renderRight();
     }
     if (d.sheet !== undefined) return setSheet(!s.sheetOpen);
-    if (d.relief) return setRelief(d.relief === 'on');
     if (d.openCity) return openCityDirect(Number(d.openCity));
     if (d.openSearch) return openSearchDirect(d.openSearch);
     if (d.crumb)
@@ -1025,7 +1103,11 @@ export async function render(root) {
     if (d.region) return goState(regions.find((r) => r.id === Number(d.region)));
     if (d.state) return goCity(s.statesList.find((x) => x.id === Number(d.state)));
     if (d.city) return goResult(s.cities.find((c) => c.id === Number(d.city)));
-    if (d.hood) return selectHood(Number(d.hood));
+    if (d.hood) {
+      selectHood(Number(d.hood));
+      return holoClick(Number(d.hood));
+    }
+    if (d.plane !== undefined) return toPlane();
     if (d.closeDetail !== undefined) {
       s.selectedId = null;
       map.select(null);
@@ -1100,6 +1182,7 @@ export async function render(root) {
   on(document, 'keydown', (e) => {
     if (e.key !== 'Escape') return;
     hideTooltip();
+    if (s.holo.state === 'INCLINADO') return toPlane();
     if (!wide.matches && (s.leftOpen || s.sheetOpen)) {
       setSheet(false);
       setPanel(false);
@@ -1109,6 +1192,8 @@ export async function render(root) {
   // ---------- Início: "Você já tem uma cidade em mente?" (a sede pré-seleciona a cidade no "Sim") ----------
   renderAll();
   initialPanel();
+  // Quadros do holograma: só depois que o explorador abriu, no ocioso (nunca na landing nem no dashboard).
+  (window.requestIdleCallback || ((f) => setTimeout(f, 800)))(() => holo.load(), { timeout: 3000 });
   on($('[data-scrim]'), 'click', () => {
     if (s.sheetOpen) setSheet(false);
     if (s.leftOpen && !wide.matches) setPanel(false);
@@ -1131,6 +1216,7 @@ export async function render(root) {
     cityCtrl?.abort();
     offCredits();
     scheduleRank.cancel();
+    holo.destroy();
     map.destroy();
   };
   // O roteador mantém o explorador vivo ao ir para a visão geral ou a conta (router.js): ao voltar, mapa,

@@ -50,6 +50,13 @@ for (const [device, viewport] of [['desktop', { width: 1440, height: 900 }], ['c
   await page.click('dialog .btn-primary');
   await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
   await settle(page, 2500); await shot(page, d('recife'));
+  // Clique num bairro: mapa inclinado (pitch 40) com o holograma da unidade sobre ele.
+  const [hood] = await page.evaluate(() => document.querySelector('[data-holo]').holoState().top);
+  const pt = await page.evaluate((id) => document.querySelector('[data-holo]').holoPoint(id), hood);
+  const box = await page.locator('[data-map]').boundingBox();
+  await page.mouse.click(box.x + pt.x, box.y + pt.y + 8);
+  await settle(page, 1800); await shot(page, d('recife-holograma'));
+  await page.keyboard.press('Escape'); await settle(page, 900);
   await page.goto(`${BASE}/app/#/home`); await settle(page, 2000); await shot(page, d('inicio-com-analise')); await shot(page, d('inicio-pagina-inteira'), true);
   await page.goto(`${BASE}/app/#/conta`); await settle(page); await shot(page, d('conta'));
   await page.goto(`${BASE}/app/#/termos`); await settle(page); await shot(page, d('termos'));

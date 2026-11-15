@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { cameraStep } from './camera.js';
+import { cameraStep, ease } from './camera.js';
 
 const EMPTY = { type: 'FeatureCollection', features: [] };
 const LEVEL_LAYERS = {
@@ -97,23 +97,6 @@ function addLayers(map, opts) {
       'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, ['boolean', ['feature-state', 'hover'], false], 2, 0.8],
     },
   });
-  // Relevo (opcional, desligado por padrão): a mesma cor da nota, com altura proporcional a ela.
-  map.addLayer({
-    id: 'hoods-extrusion',
-    type: 'fill-extrusion',
-    source: 'hoods',
-    layout: { visibility: 'none' },
-    paint: {
-      'fill-extrusion-color': [
-        'case',
-        ['==', ['typeof', ['feature-state', 'score']], 'number'],
-        ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
-        css('--score-none'),
-      ],
-      'fill-extrusion-height': ['case', ['==', ['typeof', ['feature-state', 'score']], 'number'], ['*', ['feature-state', 'score'], 14], 0],
-      'fill-extrusion-opacity': 0.92,
-    },
-  });
   const scoreFill = [
     'case',
     ['==', ['typeof', ['feature-state', 'score']], 'number'],
@@ -151,6 +134,9 @@ function addLayers(map, opts) {
       layout: {
         'icon-image': ['concat', 'rank-', ['to-string', ['get', 'rank']]],
         'icon-allow-overlap': true,
+        // Números sempre de frente para a tela, também com o mapa inclinado (estado do holograma).
+        'icon-pitch-alignment': 'viewport',
+        'icon-rotation-alignment': 'viewport',
         'icon-ignore-placement': true,
         'symbol-sort-key': ['get', 'rank'],
       },
@@ -275,6 +261,7 @@ export function createMap(container, handlers, opts = {}) {
     raf = requestAnimationFrame(frame);
   }
   function moveTo(center, zoom) {
+    stopTilt();
     if (reducedMotion()) return map.jumpTo({ center, zoom });
     const m = merc(center);
     goal = { x: m.x, y: m.y, zoom };
@@ -283,8 +270,40 @@ export function createMap(container, handlers, opts = {}) {
       raf = requestAnimationFrame(frame);
     }
   }
+  // Inclinação (holograma): uma linha do tempo única, com a curva --ease, que move pitch, centro, zoom e
+  // padding juntos (jumpTo por quadro) e entrega o mesmo progresso a quem desenha o holograma. Interromper
+  // recomeça do ponto atual. Se o usuário arrastar no meio, centro e zoom passam a ser dele; pitch e o
+  // holograma terminam o caminho (nada fica a meio caminho).
+  let tilt = null;
+  function stopTilt() {
+    if (tilt) cancelAnimationFrame(tilt.raf);
+    tilt = null;
+  }
+  function tiltFrame(t) {
+    const k = tilt;
+    const x = k.duration ? Math.min(1, (t - k.t0) / k.duration) : 1;
+    const e = ease(x);
+    const lerp = (a, b) => a + (b - a) * e;
+    const opts = { pitch: lerp(k.from.pitch, k.to.pitch), bearing: 0 };
+    if (!k.userMoved) {
+      const c = new maplibregl.MercatorCoordinate(lerp(k.from.x, k.to.x), lerp(k.from.y, k.to.y)).toLngLat();
+      Object.assign(opts, { center: c, zoom: lerp(k.from.zoom, k.to.zoom) });
+      opts.padding = Object.fromEntries(['top', 'right', 'bottom', 'left'].map((s) => [s, lerp(k.from.padding[s], k.to.padding[s])]));
+    }
+    map.jumpTo(opts);
+    k.onUpdate?.(e);
+    if (x < 1) k.raf = requestAnimationFrame(tiltFrame);
+    else {
+      tilt = null;
+      k.onDone?.();
+    }
+  }
   // Interação do usuário (só eventos com originalEvent) interrompe a câmera automática.
-  map.on('movestart', (e) => e.originalEvent && stopCamera());
+  map.on('movestart', (e) => {
+    if (!e.originalEvent) return;
+    stopCamera();
+    if (tilt) tilt.userMoved = true;
+  });
   const padding = () => ({ top: PAD, right: PAD + insets.right, bottom: PAD + insets.bottom, left: PAD + insets.left });
 
   const api = {
@@ -341,12 +360,6 @@ export function createMap(container, handlers, opts = {}) {
           .map((n) => ({ type: 'Feature', id: n.id, properties: { id: n.id, rank: n.rank }, geometry: { type: 'Point', coordinates: labelPoints.get(n.id) } })),
       });
     },
-    // Relevo: liga a extrusão e inclina a câmera; desligado, volta ao 2D (padrão).
-    async setRelief(on) {
-      await ready;
-      map.setLayoutProperty('hoods-extrusion', 'visibility', on ? 'visible' : 'none');
-      map.easeTo({ pitch: on ? 50 : 0, duration: reducedMotion() ? 0 : 600 });
-    },
     async clearRank() {
       await ready;
       for (const id of hoodIds) map.setFeatureState({ source: 'hoods', id }, { score: null });
@@ -378,9 +391,32 @@ export function createMap(container, handlers, opts = {}) {
       rankedCities = [];
       map.getSource('cityLabels').setData(EMPTY);
     },
+    // to: { pitch, center?, zoom?, padding? }. duration em ms (0 = instantâneo). onUpdate(e) recebe o progresso
+    // já com a curva, no mesmo quadro em que o mapa se move: o holograma usa esse valor.
+    tiltTo(to, { duration = 700, onUpdate, onDone } = {}) {
+      stopCamera();
+      stopTilt();
+      const c = map.getCenter();
+      const m = merc(c);
+      const pad = map.getPadding();
+      const from = { pitch: map.getPitch(), zoom: map.getZoom(), x: m.x, y: m.y, padding: { top: pad.top, right: pad.right, bottom: pad.bottom, left: pad.left } };
+      const tm = to.center ? merc(to.center) : m;
+      const target = { pitch: to.pitch, zoom: to.zoom ?? from.zoom, x: tm.x, y: tm.y, padding: { ...from.padding, ...(to.padding || {}) } };
+      tilt = { from, to: target, duration: reducedMotion() ? 0 : duration, t0: performance.now(), onUpdate, onDone, userMoved: false, raf: 0 };
+      if (!tilt.duration) return tiltFrame(tilt.t0); // instantâneo: já aplicado antes de qualquer fit() seguinte
+      tilt.raf = requestAnimationFrame(tiltFrame);
+    },
+    isTilting: () => !!tilt,
+    insets: () => ({ ...insets }),
+    pitch: () => map.getPitch(),
+    zoom: () => map.getZoom(),
+    project: (lngLat) => map.project(lngLat),
+    onMove: (fn) => map.on('move', fn),
+    hoodAt: (point) => map.queryRenderedFeatures(point, { layers: ['hoods-fill'] })[0]?.id ?? null,
     resize: () => map.resize(),
     destroy: () => {
       stopCamera();
+      stopTilt();
       map.remove();
     },
   };

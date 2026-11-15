@@ -144,6 +144,71 @@ await step('explorador: aba Detalhes ao escolher um bairro', async () => {
   await page.waitForSelector('[data-tab="detail"][aria-selected="true"]');
   expect(await page.isVisible('.detail .hd'), 'detalhe do bairro');
 });
+// --- Holograma: máquina de estados PLANO <-> INCLINADO(bairro) -----------------------------------------
+const hs = () => page.evaluate(() => document.querySelector('[data-holo]').holoState());
+const clickHood = async (id) => {
+  const pt = await page.evaluate((id) => document.querySelector('[data-holo]').holoPoint(id), id);
+  const box = await page.locator('[data-map]').boundingBox();
+  await page.mouse.click(box.x + pt.x, box.y + pt.y + 8); // um pouco abaixo do número: dentro do bairro
+};
+const settled = () => page.waitForTimeout(950);
+await step('holograma: clique no bairro inclina para pitch 40 e sobe o holograma, com rótulo', async () => {
+  await page.keyboard.press('Escape'); await settled();
+  const [a] = (await hs()).top;
+  await clickHood(a); await settled();
+  const r = await hs();
+  const op = await page.evaluate(() => Math.max(...[...document.querySelectorAll('.holo')].map((e) => +e.style.opacity || 0)));
+  expect(r.state === 'INCLINADO' && Math.round(r.pitch) === 40, `estado ${r.state}, pitch ${r.pitch}`);
+  expect(op > 0.95, `holograma não subiu (opacidade ${op})`);
+  expect(await page.isVisible('[data-plane]'), 'botão "Voltar ao plano"');
+  expect(await page.isVisible('.holo-label'), 'rótulo "Visualização conceitual da unidade"');
+  const txt = await page.evaluate(() => document.body.innerText);
+  expect(!/fluxo estimado|potencial da unidade|126 mil/i.test(txt), 'dado inventado na tela');
+});
+await step('holograma: reclique no mesmo bairro volta ao plano (pitch 0, sem holograma)', async () => {
+  const { id } = await hs();
+  await clickHood(id); await settled();
+  const r = await hs();
+  const op = await page.evaluate(() => Math.max(...[...document.querySelectorAll('.holo')].map((e) => +e.style.opacity || 0)));
+  expect(r.state === 'PLANO' && r.pitch < 0.01 && op < 0.01, JSON.stringify({ ...r, op }));
+  expect(!(await page.isVisible('[data-plane]')), 'botão ainda visível');
+});
+await step('holograma: outro bairro já inclinado troca sem voltar ao plano; botão e Esc voltam', async () => {
+  const [a, b] = (await hs()).top;
+  await clickHood(a); await settled();
+  const pitches = page.evaluate(() => new Promise((done) => {
+    const out = [];
+    const t0 = performance.now();
+    const tick = () => (out.push(document.querySelector('[data-holo]').holoState().pitch), performance.now() - t0 < 600 ? requestAnimationFrame(tick) : done(out));
+    requestAnimationFrame(tick);
+  }));
+  await clickHood(b);
+  const min = Math.min(...(await pitches));
+  await settled();
+  expect((await hs()).id === b && min > 39, `trocou para ${(await hs()).id}, pitch mínimo ${min}`);
+  await page.click('[data-plane]'); await settled();
+  expect((await hs()).state === 'PLANO', 'botão não voltou ao plano');
+  await clickHood(a); await settled();
+  await page.keyboard.press('Escape'); await settled();
+  const r = await hs();
+  expect(r.state === 'PLANO' && r.pitch < 0.01, 'Esc não voltou ao plano');
+});
+await step('holograma: clique no meio da transição reverte do ponto atual; arrastar não muda o estado', async () => {
+  const [a] = (await hs()).top;
+  await clickHood(a); await page.waitForTimeout(180);
+  const mid = (await hs()).pitch;
+  await clickHood(a); await settled();
+  const r = await hs();
+  expect(mid > 0 && mid < 40 && r.state === 'PLANO' && r.pitch < 0.01, `meio ${mid}, fim ${JSON.stringify(r)}`);
+  await clickHood(a); await settled();
+  const box = await page.locator('[data-map]').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.8);
+  await page.mouse.down(); await page.mouse.move(box.x + box.width / 2 - 120, box.y + box.height * 0.8 - 40, { steps: 8 }); await page.mouse.up();
+  await settled();
+  const d = await hs();
+  expect(d.state === 'INCLINADO' && Math.round(d.pitch) === 40, `arrastar mudou o estado: ${JSON.stringify(d)}`);
+  await page.keyboard.press('Escape'); await settled();
+});
 await step('explorador -> visão geral -> explorador: mesmo mapa, cidade e aba (sem recarregar)', async () => {
   await page.evaluate(() => (document.querySelector('.maplibregl-canvas').__keep = true));
   await page.click('.ex-overview');
