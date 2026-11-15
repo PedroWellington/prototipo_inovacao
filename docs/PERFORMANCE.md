@@ -151,7 +151,7 @@ O método é o `perf/holo-fps.mjs`: build de produção no Recife, com um clique
 
 - **Em todas as fases:** fps ≥ 55; nenhum quadro acima de 50 ms; nenhuma tarefa longa no clique; CLS 0.
 - **Memória dos quadros decodificados:** 3,6 MB (desktop) e 4,8 MB (celular, DPR 3). Meta: ≤ 80 MB.
-- **Peso dos quadros:** 3,8 MB em WebP, contra 25,8 MB em PNG. Meta: ≤ 6 MB.
+- **Peso dos quadros:** 4,9 MB em WebP (conjunto atual, 360 quadros de 486×396, versão `ff24815a9b42`), contra 11,6 MB em PNG. O conjunto anterior pesava 3,8 MB. Meta: ≤ 6 MB.
 - **Giro:** 30 quadros diferentes por segundo (uma volta a cada 12 s).
 
 **Por que a transição passa de 12 ms com CPU 4×.**

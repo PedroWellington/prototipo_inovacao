@@ -16,15 +16,42 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Modo escuro, logo e menu | Logo, favicon, manifesto, og:image | ✅ | `217a1bd`; `docs/MARCA.md`; `docs/visual/logo-*` |
 | Modo escuro, logo e menu | Modo escuro | ❌ | só ganchos: `hologram.theme()` e conjunto por tema no manifesto do holograma; fundo previsto `#181512` (apple-touch-icon e `manifest.webmanifest`) |
 
+| Holograma trocado (2026-11-15) | Novos 360 PNG 720×720 -> WebP 486×396, 4,9 MB, versão `ff24815a9b42` | ✅ | `docs/visual/holograma2-*`; dist sem quadro antigo |
+| Deploy | Fase 0: auditoria (nginx, variáveis, banco, segredos, público) | ✅ | esta seção; relatório na conversa de 2026-11-15 |
+| Deploy | Fase 1: frontend na Vercel (`vercel.json`) | ❌ | aguarda a escolha do servidor |
+| Deploy | Fase 2: backend e banco em servidor próprio (Compose de produção, Caddy, backups, restore) | ❌ | |
+| Deploy | Fase 3: domínio, HTTPS, e-mail transacional, páginas legais (rascunho) | ❌ | |
+| Deploy | Fase 4: login com Google (preparado e desligado por flag) | ❌ | |
+| Deploy | Fase 5: verificação em produção | ❌ | |
+| Deploy | Fase 6: operação (`docs/DEPLOY.md`, CI, monitoramento) | ❌ | |
+
+## Fase 0 do deploy: o que foi medido (2026-11-15)
+
+- **Banco filtrado:** 2.774 MB em disco; dump `pg_dump -Fc -Z 6`: **619 MB**. Maiores tabelas: `establishments` 1.714 MB (2,46 M linhas), `neighborhoods` 760 MB (53,9 mil), `municipalities` 156 MB, `census_income` 50 MB, `census_tracts` 44 MB. As 5.570 cidades estão carregadas.
+- **nginx hoje** (`frontend/nginx.conf`): `/app` -> 301 `/app/`; `/app/assets/` cache 1 ano imutável; `*.webmanifest` tipo próprio; `/app/` -> `try_files $uri /app/index.html` (fallback do SPA) com `no-cache`; `/api/` -> proxy para o backend (corpo até 3 MB, cabeçalhos X-Forwarded-*); `/assets/` da landing cache 1 dia; `*.md` como markdown; `/` -> `try_files $uri $uri/ =404` com `no-cache`; gzip nível 6 para css/js/json/geojson/svg/md. O holograma vai por `?v=<hash>` (`frontend/public/holograma/manifest.json`), então pode ter cache longo.
+- **Variáveis.** Backend: `DATABASE_URL`, `PRODUCT_NAME` (obrigatórias), `ENV` (`production` liga o cookie `Secure`), `DATA_DIR`, `SESSION_TTL_HOURS`, `TEST_DATABASE_URL` (testes). Frontend (build): só `PRODUCT_NAME`; nenhum `VITE_*` em produção (`VITE_API_TARGET`/`VITE_POLL` são do Vite em desenvolvimento). Landing: `APP_URL` e `SESSION_URL` fixos em `landing/js/config.js` (mesma origem).
+- **Segredos:** `.env` nunca entrou no Git; a varredura do histórico por padrões de chave (AWS, Google, GitHub, Slack, chaves privadas, URLs com senha) não achou nada. Sem `gitleaks` instalado.
+- **Público no repositório (decidir):** `docs/LOCUS-logica-do-produto.pdf` (regras do produto), `design/brand/*.png` (painel de marca, 5,8 MB), `docs/COBERTURA.md`. Sem `LICENSE`. Nada de dado bruto, dump ou prompt.
+- **Segurança já existente:** cookie `httpOnly` + `SameSite=Lax` (+ `Secure` em produção), CSRF, argon2id, limite de tentativas no login; sem CSP/HSTS, sem CORS (mesma origem), pool de 10 conexões, sem `statement_timeout`.
+- **Mapa-base:** `tile.openstreetmap.org` direto no MapLibre (`frontend/src/map/mapView.js`); precisa trocar antes de produção.
+
 ## Agora
 
-Nada em andamento sem commit. Próximo passo: **modo escuro**, assim que o prompt estiver em `design/prompts/`.
+Fase 0 entregue. **Parado à espera de decisões** (abaixo). Depois: modo escuro (prompt em `design/prompts/`) ou Fase 1 do deploy, conforme a ordem que for definida.
 
 ## Decisões tomadas
 
 - Logo no produto = ícone PNG (2x/3x) + nome em texto na cor do tema; os PNGs originais ficam em `design/brand/` (versionados desde `654da32`, 5,8 MB).
 - `manifest.webmanifest` servido como `application/manifest+json` por um `location` próprio no nginx.
 - Build do Compose no Docker Desktop 29 (Compose v5) falha com "failed to execute bake" neste Windows; as imagens foram construídas com `docker build` direto e `docker compose up -d --no-build`.
+
+## Decisões que dependem do Pedro
+
+- Servidor do backend e do banco (ver custos no relatório da Fase 0): recomendação é um VPS de 4 a 8 GB em São Paulo com Postgres no próprio Compose.
+- Licença do repositório (padrão: "todos os direitos reservados").
+- Manter públicos `docs/LOCUS-logica-do-produto.pdf` e `design/brand/`.
+- Vercel: uso comercial exige o plano Pro (US$ 20/mês por pessoa); o Hobby é só para uso pessoal.
+- Provedor de tiles do mapa-base (Fase 2).
 
 ## Pendências
 
@@ -35,4 +62,4 @@ Nada em andamento sem commit. Próximo passo: **modo escuro**, assim que o promp
 
 ## Último commit
 
-`217a1bd` Marca: ícone definitivo no app e na landing, favicons, manifesto instalável e og:image (push feito).
+Ver `git log -1`; este arquivo é atualizado no mesmo commit de cada fase.

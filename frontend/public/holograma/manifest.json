@@ -1,18 +1,18 @@
 {
-  "version": "2547ded025a6",
+  "version": "ff24815a9b42",
   "label": "Visualização conceitual da unidade",
-  "turnSeconds": 12,
+  "turnSeconds": 12.0,
   "stillAngle": 30,
   "baseline": 0.0,
   "scale": 1.0,
   "sets": {
     "claro": {
       "dir": "claro/",
-      "pattern": "loja-{i}.webp",
+      "pattern": "quadro-{i}.webp",
       "digits": 3,
       "count": 360,
-      "width": 511,
-      "height": 411
+      "width": 486,
+      "height": 396
     }
   },
   "note": "Gerado por scripts/build-holograma.py. Visualização conceitual: loja genérica, sem endereço nem estabelecimento real. Ver docs/HOLOGRAMA.md."
