@@ -84,6 +84,10 @@ docker compose run --rm backend python -m app.etl.seed_catalog   # depois de edi
 docker compose run --rm backend pytest           # backend: auth, perfil, ETL, ranking (banco locus_test)
 cd frontend; npm install; npx vitest run          # frontend: funções puras e roteamento
 cd frontend; npm run perf                         # fluidez: abre o Edge e mede (usa Recife; precisa estar carregado)
+cd frontend; node perf/explorer-fps.mjs          # câmera do explorador, 2D e Relevo, CPU normal e 4x
+cd frontend; node perf/journey.mjs               # ponta a ponta: landing, cadastro, dashboard, explorador, celular
+cd frontend; node perf/a11y.mjs                  # acessibilidade (axe-core, WCAG A e AA): docs/ACESSIBILIDADE.md
+cd frontend; node perf/screens.mjs <pasta>       # capturas das telas principais (desktop e celular)
 docker compose run --rm backend python scripts/perf_rank.py   # tempo do ranking (p50/p95) e tamanho da geometria
 ```
 

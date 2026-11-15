@@ -36,9 +36,12 @@ backend/   FastAPI + SQLAlchemy Core (SQL explícito) + Alembic
   scripts/     medição (perf_rank) e auditoria de dados (audit_establishments, compare_cnes); só desenvolvimento
   app/seed     CSVs editáveis: segmentos, tipos, tipo→CNAE, sugestões por ramo
 frontend/  Vite + JS puro (ES modules), roteador por hash, MapLibre só no explorador
-  src/styles/tokens.css  todas as cores, fontes e espaçamentos (troque o visual por aqui)
+  src/styles/tokens.css  nomes por função (cor, fonte, espaço) mapeados para a paleta de shared/
+  src/map/camera.js      câmera contínua (zoom logarítmico + deslocamento atrelado); src/rankList.js: ranking com FLIP
   src/map/mapView.js     mapa: fontes criadas uma vez, feature-state para cor e hover
 docs/      DATA, SCORING, PERFORMANCE, EXTENSIONS
+shared/    design-tokens.css: paleta única (app e landing); troque o visual do site inteiro por aqui
+design/    referência do protótipo (dashboard-cinematico/, fora do Git) e check-leak.sh
 landing/   landing estática (HTML/CSS/JS puro, Canvas 2D); limites do IBGE pré-gerados em landing/data (ver landing/README.md)
 data/raw/  downloads do IBGE e da Receita (não versionado)
 ```
@@ -56,6 +59,9 @@ docker compose run --rm backend python scripts/audit_establishments.py --ibge 26
 docker compose run --rm backend python -m app.etl.seed_catalog                # recarrega o catálogo depois de editar os CSVs
 docker compose run --rm backend pytest                                        # testes do backend (banco locus_test)
 cd frontend; npx vitest run                                                   # testes do frontend
+cd frontend; node perf/journey.mjs                                            # ponta a ponta (landing, app, explorador, celular)
+cd frontend; node perf/a11y.mjs                                               # axe-core WCAG AA nas telas principais
+sh design/check-leak.sh                                                       # nada do protótipo no produto (antes de cada commit visual)
 docker compose run --rm backend alembic revision -m "descricao"               # nova migration (escreva o SQL à mão)
 docker compose run --rm backend python -m app.credits grant --email X --amount 5  # concede créditos (sem pagamento)
 docker compose --profile dev up frontend-dev                                  # Vite com HMR em http://localhost:5173

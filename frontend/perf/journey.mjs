@@ -172,6 +172,26 @@ await step('celular: gaveta de navegação e gaveta do ranking', async () => {
   await p.waitForSelector('.sheet-open [data-rank-list] li');
   await m.close();
 });
+await step('prefers-reduced-motion: sem entrada escalonada e ranking sem FLIP', async () => {
+  const m = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', storageState: await ctx.storageState() });
+  const p = await m.newPage(); watch(p);
+  await p.goto(`${BASE}/app/#/home`); await p.waitForSelector('[data-dashboard]');
+  const anim = await p.evaluate(() => getComputedStyle(document.querySelector('.ov-animate')).animationName);
+  expect(anim === 'none', `cartões animam: ${anim}`);
+  await p.goto(`${BASE}/app/#/explorer?city=2611606`);
+  await p.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
+  await p.waitForSelector('[data-rank-list] li');
+  const n0 = await p.evaluate(() => performance.getEntriesByName('app:recolor').length);
+  await p.evaluate(() => {
+    const r = document.querySelector('[data-weight="0"]');
+    r.value = r.value === '5' ? '1' : '5';
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await p.waitForFunction((n) => performance.getEntriesByName('app:recolor').length > n, n0);
+  const flips = await p.evaluate(() => document.getAnimations().filter((a) => a.effect?.target?.closest?.('[data-rank-list]')).length);
+  expect(flips === 0, `${flips} animações de ranking com movimento reduzido`);
+  await m.close();
+});
 await step('"Conhecer a VICUS" -> landing mostra "Ir para a plataforma"', async () => {
   await page.goto(`${BASE}/app/#/home`); await page.waitForSelector('.about-link');
   await page.click('.about-link');

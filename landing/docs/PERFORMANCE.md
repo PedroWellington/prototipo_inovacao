@@ -72,6 +72,18 @@ Mesmo método e mesmo dia (2026-11-14), depois de reiniciar a máquina.
 - **Uma regressão foi achada e corrigida durante a medição.** A correção do texto borrado tinha tirado o `will-change` dos capítulos. Sem ele, o navegador criava e desfazia a camada de cada capítulo a cada troca. Isso gerou de 2 a 3 quadros acima de 50 ms no desktop, exatamente nas fronteiras dos capítulos (p ≈ 0,14, 0,28 e 0,42). Com `will-change: opacity, transform` de volta, o desktop voltou a 0, e a nitidez do texto não mudou (ver `TEXTO-NITIDO.md`).
 - **O celular emulado varia de uma rodada para outra:** de 0 a 5 quadros acima de 50 ms tanto no código antigo quanto no novo. É ruído da GPU emulada, não diferença de código. A medição num aparelho real continua pendente ("O que falta").
 
+## Depois da paleta única (2026-11-15)
+
+Agora as cores da landing (CSS, logo e polígonos do canvas) vêm de `shared/design-tokens.css`. A composição e a animação são as mesmas. Medição no nginx (`BASE=http://localhost:8080`), duas rodadas:
+
+| Cenário | Thread principal p95 / máx. | JS p95 / máx. | Quadro p95 / máx. | fps médio | Quadros > 50 ms | LCP / CLS |
+|---|---|---|---|---|---|---|
+| Desktop | 1,7–1,8 / 2,9–3,6 ms | 0,5–0,6 / 0,9–1,2 ms | 20,9 / 48,5–48,6 ms | 91–95 | 0 / 0 | 512–540 ms / 0,0005 |
+| Desktop CPU 4× | 6,6 / 10,3–10,7 ms | 1,9 / 3,4–4,4 ms | 20,9 / 34,8–41,7 ms | 85–87 | 0 / 0 | 264–268 ms / 0,0005 |
+| Celular CPU 4× | 7,2–7,5 / 10,4–11,6 ms | 1,9 / 3,1–4,3 ms | 27,8 / 41,8–62,5 ms | 78 | 1 / 0 | 248–252 ms / 0 |
+
+Os números são os mesmos da integração (acima): ler as cores dos tokens uma vez, no início, não custa nada por quadro. Tarefas longas: 0.
+
 ## O que mudou e quanto pesou
 
 1. **Geometria pré-processada** (`scripts/build-geo.mjs`): Web Mercator e LOD por zoom já vêm prontos. O navegador decodifica cada arquivo **uma vez** em `Path2D`. A câmera é só `ctx.setTransform`: **nenhum vértice é reprojetado por quadro**. Isso tirou ~85% do JS por quadro (p95 de 13 para 2 ms com CPU 4×).

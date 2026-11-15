@@ -10,7 +10,8 @@ O documento do produto não fixa números. As metas abaixo seguem referências p
 | CLS (login e explorador) | ≤ 0,1 |
 | Ranking de bairros no servidor (`POST /api/cities/{ibge}/rank`) | p95 ≤ 200 ms |
 | Ranking de cidades no servidor (`POST /api/cities/rank`) | p95 ≤ 150 ms |
-| Mexer no peso até o mapa recolorido | ≤ 500 ms, já contando os 250 ms de debounce |
+| Mexer no peso até o mapa recolorido | ≤ 150 ms (desde 2026-11-15; antes, ≤ 500 ms com debounce de 250 ms) |
+| Câmera, ranking animado e trocas de tela | 60 fps: p95 do intervalo entre quadros ≤ 16,7 ms com CPU 4× mais lenta, nenhum quadro acima de 50 ms; só `transform` e `opacity` |
 | Tooltip ao passar o mouse | sem nenhuma chamada de rede |
 | Arrastar e dar zoom no mapa (bairros e ~5.570 municípios) | média ≥ 60 fps |
 | Recolher/abrir o painel lateral | ≥ 60 fps, sem quadro acima de 33 ms |
@@ -92,6 +93,42 @@ Achados desta rodada:
 - **O painel não redimensiona o mapa.** Painel e mapa ocupam a mesma área. O painel recolhe por `transform` (compositor), a legenda acompanha por `transform`, e o mapa só desloca a câmera meia largura (`panBy`, 180 ms). O enquadramento desconta o painel aberto (`setInset`).
 - **A tela inicial é desenhada uma vez só.** Perfil, usuário e créditos chegam em paralelo, e o avatar tem tamanho fixo.
 
+### Visão geral, explorador em três colunas e paleta única (2026-11-15)
+
+Mesmo método (`npm run perf`, Edge com janela, tela de 144 Hz), duas rodadas. Scripts novos:
+- `perf/explorer-fps.mjs`: voos de câmera pelo ranking, 2D e Relevo, CPU normal e 4×;
+- `perf/journey.mjs`: mede peso → mapa recolorido e confere se as linhas do ranking são reaproveitadas.
+
+| O quê | Medido | Meta |
+|---|---|---|
+| Login: LCP / CLS | 204–208 ms / 0 | ✅ |
+| Visão geral (`#/home`): LCP / CLS | 172–180 ms / 0 | ✅ |
+| Explorador: CLS | 0 | ✅ |
+| Peso até os bairros recoloridos (sem debounce) | p50 33–36 ms, p95 41–43 ms; no `journey.mjs`, 44–73 ms | ✅ ≤ 150 ms |
+| Peso até as cidades recoloridas, população mínima de 20 mil | p50 54 ms, p95 158 ms | ❌ no p95 (o servidor levou 137 ms na 1ª vez) |
+| Peso até as cidades recoloridas, sem mínimo (5.570) | p50 100 ms, p95 338 ms | ❌ (servidor p95 268 ms: o mesmo ponto aberto de antes) |
+| Explorador → conta → explorador | 30 ms / 20 ms (volta sem recriar o mapa) | ✅ |
+| Recolher e abrir o painel esquerdo | 143 fps; 0 quadros acima de 33 ms | ✅ |
+| Mapa de bairros ao arrastar e dar zoom | 144 fps; pior quadro de 7,3 ms | ✅ |
+| Mapa do Brasil (municípios) | 141 fps; pior quadro de 34,7 ms | ✅ |
+
+Câmera nova (`src/map/camera.js`), com seis voos até bairros a partir do ranking. Cada linha é uma rodada, depois da correção dos números das posições (abaixo):
+
+| Cenário | p95 do quadro | Pior quadro | Quadros > 50 ms |
+|---|---|---|---|
+| 2D, CPU normal | 7,0 / 7,0 ms | 13,9 / 7,2 ms | 0 / 0 |
+| Relevo, CPU normal | 7,0 / 7,0 ms | 7,2 / 7,2 ms | 0 / 0 |
+| 2D, CPU 4× | 13,9 / 14,0 ms | 41,7 / 55,6 ms | 0 / 2 |
+| Relevo, CPU 4× | 14,0 / 13,9 ms | 48,6 / 41,7 ms | 0 / 0 |
+
+Achados desta rodada:
+- **Números das posições desenhados no primeiro zoom.** Ao aproximar além do zoom 12,4, o MapLibre pedia de uma vez as imagens das posições 11 em diante, e o app desenhava cerca de 84 crachás em canvas na thread principal. Isso dava uma tarefa longa de 74 ms e um quadro de 70 a 104 ms em todas as quatro rodadas iniciais. Agora os crachás são preparados antes, em lotes, no tempo ocioso (`requestIdleCallback`): o pior quadro com CPU normal caiu para 7 a 14 ms.
+- **Relevo (opcional, desligado por padrão).** Usa `fill-extrusion` com altura pela nota e a mesma cor e o mesmo número do 2D. Em seis rodadas com CPU 4×, cinco ficaram dentro da meta (p95 de 14 ms, nenhum quadro acima de 50 ms) e uma não (p95 de 20,8 ms, 4 quadros acima de 50 ms). O 2D também teve uma rodada com 2 quadros acima de 50 ms. Como o custo é o mesmo do 2D, o Relevo ficou, desligado por padrão. **Falta medir num celular de verdade.**
+- **Ranking sem reconstruir a lista.** As linhas são reaproveitadas pela chave e deslizam até a nova posição (FLIP, só `transform`), com duas leituras de layout por atualização e nenhuma por quadro. Com `prefers-reduced-motion`, não há deslizamento (conferido no `journey.mjs`).
+- **Trocas de tela sem recarregar.** O explorador fica numa camada mantida viva: a ida à visão geral ou à conta não destrói o mapa. A camada entra e sai só com `opacity` e `transform`.
+- **CLS de 0,0018 no login com a Inter.** A troca de fonte deslocava o texto. Corrigido com `preload` da fonte no `index.html` do app: voltou a 0.
+- **Esqueleto de carregamento.** O brilho do esqueleto usava `background-position`, que repintava a cada quadro. Agora é um pulso de `opacity`.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**
@@ -108,7 +145,7 @@ Achados desta rodada:
   - Antes dessas mudanças: p50 585 ms e 2,7 MB para 1.710 cidades; 1,2 s e 8,8 MB para 5.570.
 - **Cache HTTP.** A geometria de bairros é pedida com `?v=<loaded_at>` e vai com `max-age` de um dia e ETag. Catálogo e malhas também usam ETag.
 - **Contagens prontas.** As views materializadas `neighborhood_type_counts`, `municipality_type_counts` e `neighborhood_coverage` são atualizadas pelo ETL. Os rankings são SQL únicos sobre elas.
-- **Debounce.** O ranking espera 250 ms depois do último ajuste (peso ou população mínima), e o salvamento dos critérios espera 800 ms.
+- **Um pedido de ranking por vez.** Ajustes de peso são agrupados por quadro (`requestAnimationFrame`); o que mudar durante um pedido vai num único pedido seguinte, com o valor mais novo. O salvamento dos critérios espera 800 ms.
 - **Tooltip local.** O tooltip usa a resposta do ranking que o navegador já tem.
 
 Os marcadores `app:recolor`, `app:city-recolor` e `app:tooltip` (`performance.measure` em `src/views/explorer.js`) são o que `npm run perf` lê.

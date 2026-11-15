@@ -167,7 +167,9 @@ export async function render(root) {
   } catch {
     /* idem */
   }
-  const initialPanel = () => setPanel(wide.matches ? panelPref === 'open' : false, { animate: false, remember: false });
+  // Abaixo de 1100 px os dois painéis deixariam pouco mapa: o esquerdo começa recolhido (abre pelo botão).
+  const initialPanel = () =>
+    setPanel(wide.matches && matchMedia('(min-width: 1100px)').matches ? panelPref === 'open' : false, { animate: false, remember: false });
   wide.addEventListener('change', initialPanel, { signal: ac.signal });
   map.setData('regions', regionsGeo);
   map.setLevel('region');

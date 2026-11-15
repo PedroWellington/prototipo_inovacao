@@ -60,7 +60,7 @@ await ctx.request.post(`${BASE}/api/credits/searches`, { headers, data: {} });
 // 2b) Tela inicial pós-login: LCP e CLS (carregamento completo)
 await page.goto('about:blank');
 await page.goto(`${BASE}/app/#/home`);
-await page.locator('.analysis').first().waitFor();
+await page.locator('.ov-analysis').first().waitFor();
 await page.waitForTimeout(500);
 out.home = await page.evaluate(() => ({ lcp_ms: Math.round(window.__lcp), cls: +window.__cls.toFixed(4) }));
 
@@ -165,12 +165,12 @@ await page.getByRole('heading', { name: 'Minha conta' }).waitFor();
 out.nav_explorer_to_account_ms = Date.now() - t;
 t = Date.now();
 await page.evaluate(() => (location.hash = '#/explorer'));
-await chooseCity();
-await page.waitForFunction(() => document.querySelector('.ex-head h1')?.textContent === 'Recife', null, { timeout: 15000 });
+// O explorador fica vivo (router.js): volta já no Recife, sem recriar o mapa.
+await page.waitForFunction(() => document.querySelector('.view-layer.is-shown .ex-head h1')?.textContent === 'Recife', null, { timeout: 15000 });
 out.nav_account_to_explorer_ms = Date.now() - t;
 t = Date.now();
 await page.getByRole('button', { name: 'Pernambuco' }).click();
-await page.getByText('Escolha uma cidade').waitFor();
+await page.getByRole('heading', { name: 'Escolha uma cidade' }).waitFor();
 out.level_change_panel_ms = Date.now() - t;
 
 // 8b) Recolher e abrir o painel lateral: quadros durante a transição (só transform, sem resize do mapa)
@@ -203,7 +203,7 @@ out.panel_toggle = {
 };
 
 // 9) Ranking de cidades ("Não"): Brasil inteiro, primeira coloração, recálculo e fluidez com ~5.570 municípios.
-await page.getByRole('button', { name: 'Início' }).click();
+await page.getByRole('button', { name: 'Explorador' }).click();
 await page.locator('[data-start="discover"]').click();
 const cityRank = async (action) => {
   await page.evaluate(() => performance.clearMeasures('app:city-recolor'));
