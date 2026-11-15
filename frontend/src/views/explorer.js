@@ -5,7 +5,7 @@ import { bbox, brl, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL,
 import { createHologram } from '../map/hologram.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
-import { topbar } from '../components/topbar.js';
+import { topbar, wireTopbar } from '../components/topbar.js';
 import { measure, rankListShell, updateRankList } from '../rankList.js';
 import { cityActive, creditsState, ensureCity, ensureSearch, loadCredits, onCredits } from '../credits.js';
 import { loadUser } from '../session.js';
@@ -77,6 +77,7 @@ export async function render(root) {
   const panel = $('[data-panel]');
   const tooltip = $('[data-tooltip]');
   const ac = new AbortController();
+  wireTopbar(root, { signal: ac.signal });
   const on = (el, ev, fn) => el.addEventListener(ev, fn, { signal: ac.signal });
 
   // ---------- Estado ----------

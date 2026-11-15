@@ -200,14 +200,6 @@ img.avatar {
   flex: none;
   text-decoration: none;
 }
-.topbar-sub {
-  padding-left: var(--space-4);
-  border-left: 1px solid var(--color-top-2);
-  font-size: var(--text-xs);
-  letter-spacing: 0.035em;
-  color: var(--color-on-top-muted);
-  white-space: nowrap;
-}
 .topnav {
   display: flex;
   align-self: stretch;
@@ -243,6 +235,42 @@ img.avatar {
 }
 .topnav-link.is-active::after {
   transform: scaleX(1);
+}
+/* Explorador: outra tela, por isso por último e em destaque (pílula em cobre). */
+.topnav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  margin-left: var(--space-3);
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform var(--dur-ui) var(--ease-spring), background-color var(--dur-fast);
+}
+.topnav-cta:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+.topnav-cta.is-active {
+  box-shadow: 0 0 0 2px var(--color-top), 0 0 0 4px var(--color-brand-mark);
+}
+.topbar-menu {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-top-2);
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--color-on-top);
+  font-size: var(--text-sm);
+  cursor: pointer;
 }
 .topbar-right {
   display: flex;
@@ -289,8 +317,50 @@ img.avatar {
     height: 56px;
     padding: 0 var(--space-4);
   }
+  /* Celular: o menu vira botão; o painel abre abaixo da barra, com o Explorador em destaque. */
+  .topbar-menu {
+    display: inline-flex;
+    margin-left: auto;
+  }
+  .topbar-right {
+    margin-left: 0;
+  }
   .topnav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
     display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: var(--space-2) var(--space-4) var(--space-4);
+    background: var(--color-top);
+    border-top: 1px solid var(--color-top-2);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 0.18);
+  }
+  .menu-open .topnav {
+    display: flex;
+  }
+  .topnav-link {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-top-2);
+  }
+  .topnav-link::after {
+    left: 0;
+    right: auto;
+    width: 3px;
+    height: 60%;
+    bottom: 20%;
+    transform: scaleY(0);
+  }
+  .topnav-link.is-active::after {
+    transform: scaleY(1);
+  }
+  .topnav-cta {
+    justify-content: center;
+    margin: var(--space-3) 0 0;
+    padding: 12px 16px;
   }
   .hide-sm {
     display: none;

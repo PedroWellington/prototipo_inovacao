@@ -1,7 +1,7 @@
 // Visão geral (tela inicial pós-login): tudo com dados reais da conta. O que é ilustração diz que é.
 import { get, getCached } from '../api.js';
 import { companyCard, daysText } from '../components/account.js';
-import { topbar } from '../components/topbar.js';
+import { setActiveNav, topbar, wireTopbar } from '../components/topbar.js';
 import { loadCredits } from '../credits.js';
 import { fmt, html, mount } from '../html.js';
 import { icon } from '../icons.js';
@@ -178,16 +178,42 @@ export async function render(root) {
     shell.classList.add('is-entering');
     entered = true;
   }
-  const section = new URLSearchParams(location.hash.split('?')[1] || '').get('s');
-  if (section) root.querySelector(`#${section === 'analises' ? 'analises' : 'fontes'}`)?.scrollIntoView({ block: 'start' });
+  // Menu: as três seções desta página rolam suavemente (sem recarregar); o item ativo segue a seção visível.
+  const ac = new AbortController();
+  const smooth = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+  const SECTIONS = { home: null, analises: 'analises', fontes: 'fontes' };
+  function goSection(key, behavior = smooth()) {
+    if (!(key in SECTIONS)) return false;
+    const id = SECTIONS[key];
+    if (id) root.querySelector(`#${id}`)?.scrollIntoView({ behavior, block: 'start' });
+    else window.scrollTo({ top: 0, behavior });
+    history.replaceState(null, '', id ? `#/home?s=${id}` : '#/home'); // recarregar volta à mesma seção
+    setActiveNav(root, key);
+    return true;
+  }
+  wireTopbar(root, { onSection: (key) => goSection(key), signal: ac.signal });
+  const watched = [root.querySelector('.ov-head'), root.querySelector('#analises'), root.querySelector('#fontes')];
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) if (e.isIntersecting) setActiveNav(root, e.target.id || 'home');
+    },
+    { rootMargin: '-40% 0px -55% 0px' }, // uma faixa no meio da tela: sem ler layout na rolagem
+  );
+  watched.forEach((el) => el && io.observe(el));
+  ac.signal.addEventListener('abort', () => io.disconnect());
+  let section = new URLSearchParams(location.hash.split('?')[1] || '').get('s');
+  if (section) requestAnimationFrame(() => goSection(section)); // vindo de outra tela: rola com suavidade
+  // Se a pessoa rolar por conta própria, não puxamos a tela de volta quando as fontes chegarem.
+  addEventListener('wheel', () => (section = null), { once: true, passive: true, signal: ac.signal });
+  addEventListener('touchstart', () => (section = null), { once: true, passive: true, signal: ac.signal });
 
   // Fontes e cobertura: depois do primeiro desenho, num bloco de altura fixa (sem salto de layout).
-  const ac = new AbortController();
   Promise.all([getCached('/api/catalog/sources'), last ? get(`/api/cities/${last.ibge}/status`).catch(() => null) : null])
     .then(([src, status]) => {
       const box = root.querySelector('[data-sources]');
       if (!box || ac.signal.aborted) return;
       box.removeAttribute('aria-busy');
+      requestAnimationFrame(() => section && goSection(section)); // a página cresceu: completa a rolagem pedida
       mount(
         box,
         html`<p class="ov-coverage">${status

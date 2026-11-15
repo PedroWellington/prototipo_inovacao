@@ -1,6 +1,6 @@
 import { del, post } from '../api.js';
 import { html, mount } from '../html.js';
-import { topbar } from '../components/topbar.js';
+import { topbar, wireTopbar } from '../components/topbar.js';
 import { icon } from '../icons.js';
 import { go } from '../router.js';
 import { clearUser, loadUser } from '../session.js';
@@ -33,6 +33,7 @@ export async function render(root) {
     </div></div>`,
   );
 
+  wireTopbar(root);
   root.querySelector('[data-logout]').addEventListener('click', async () => {
     await post('/api/auth/logout').catch(() => {});
     clearUser();

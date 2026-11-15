@@ -97,6 +97,27 @@ await step('tela inicial: logo volta para #/home e há "Conhecer a VICUS"', asyn
   expect(await page.getAttribute('.logo-link', 'href') === '#/home', 'logo não aponta para #/home');
   expect(await page.getAttribute('.about-link', 'href') === '/', 'link da landing ausente');
 });
+await step('menu: ordem Visão geral · Minhas análises · Dados e fontes · Explorador (por último, em destaque)', async () => {
+  const items = await page.$$eval('.topbar .topnav [data-nav]', (els) => els.map((e) => e.textContent.trim()));
+  expect(JSON.stringify(items) === JSON.stringify(['Visão geral', 'Minhas análises', 'Dados e fontes', 'Explorador']), items.join(' · '));
+  expect(!(await page.evaluate(() => document.querySelector('.topbar').innerText.includes('Inteligência territorial'))), '"Inteligência territorial" ainda na barra');
+  expect(await page.getAttribute('.topbar .logo-link', 'href') === '#/home', 'logo não leva à Visão geral');
+});
+await step('menu na Visão geral: "Dados e fontes" rola até a seção sem recarregar a tela', async () => {
+  await page.evaluate(() => (document.querySelector('[data-dashboard]').__keep = true));
+  await page.click('.topnav [data-nav="fontes"]');
+  await page.waitForTimeout(900);
+  const r = await page.evaluate(() => ({
+    same: document.querySelector('[data-dashboard]').__keep === true,
+    top: Math.round(document.querySelector('#fontes').getBoundingClientRect().top),
+    end: Math.ceil(scrollY + innerHeight) >= document.scrollingElement.scrollHeight - 2, // seção na última linha
+    active: document.querySelector('.topnav [aria-current="page"]')?.dataset.nav,
+  }));
+  expect(r.same, 'a Visão geral foi recarregada');
+  expect((r.top < 200 || r.end) && r.active === 'fontes', JSON.stringify(r));
+  await page.click('.topbar .logo-link'); await page.waitForTimeout(800);
+  expect(await page.evaluate(() => scrollY) < 5, 'a logo não voltou ao topo');
+});
 await step('recarregar /app/#/home mantém a tela', async () => {
   await page.reload({ waitUntil: 'load' });
   await page.waitForSelector('[data-dashboard]');
@@ -221,7 +242,7 @@ await step('explorador -> visão geral -> explorador: mesmo mapa, cidade e aba (
   await page.click('.ex-overview');
   await page.waitForSelector('#view [data-dashboard]');
   await page.waitForFunction(() => !document.querySelector('.view-layer').classList.contains('is-shown'));
-  await page.click('.topnav-link[href="#/explorer"]');
+  await page.click('.topnav-cta[href="#/explorer"]');
   await page.waitForFunction(() => document.querySelector('.view-layer').classList.contains('is-shown'));
   const r = await page.evaluate(() => ({
     sameMap: document.querySelector('.maplibregl-canvas').__keep === true,
@@ -230,6 +251,27 @@ await step('explorador -> visão geral -> explorador: mesmo mapa, cidade e aba (
   }));
   expect(r.sameMap, 'o mapa foi recriado');
   expect(r.city === 'Recife' && r.tab === 'detail', `estado perdido: ${JSON.stringify(r)}`);
+});
+await step('menu no explorador: "Minhas análises" leva à seção da Visão geral e o explorador volta como estava', async () => {
+  await page.click('.view-layer .topnav [data-nav="analises"]');
+  await page.waitForSelector('#view #analises');
+  await page.waitForTimeout(1600);
+  const r = await page.evaluate(() => ({ top: Math.round(document.querySelector('#analises').getBoundingClientRect().top), y: Math.round(scrollY), h: document.scrollingElement.scrollHeight, end: Math.ceil(scrollY + innerHeight) >= document.scrollingElement.scrollHeight - 2 }));
+  expect(r.top < 200 || r.end, `seção em ${JSON.stringify(r)}`);
+  await page.click('#view .topnav-cta');
+  await page.waitForFunction(() => document.querySelector('.view-layer').classList.contains('is-shown'));
+  expect((await page.evaluate(() => document.querySelector('.right-head h2')?.textContent)) === 'Recife', 'cidade perdida');
+});
+await step('celular: menu (hambúrguer) com Explorador em destaque, abre e fecha pelo teclado', async () => {
+  const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
+  const p = await m.newPage(); watch(p);
+  await p.goto(`${BASE}/app/#/home`); await p.waitForSelector('[data-dashboard]');
+  expect(!(await p.isVisible('.topnav-cta')), 'menu aberto sem pedir');
+  await p.click('[data-topbar-menu]');
+  expect(await p.isVisible('.topnav-cta') && (await p.getAttribute('[data-topbar-menu]', 'aria-expanded')) === 'true', 'menu não abriu');
+  await p.keyboard.press('Escape');
+  expect(!(await p.isVisible('.topnav-cta')), 'Esc não fechou o menu');
+  await m.close();
 });
 await step('celular: gaveta de navegação e gaveta do ranking', async () => {
   const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
