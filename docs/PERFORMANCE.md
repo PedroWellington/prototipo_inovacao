@@ -129,6 +129,43 @@ Achados desta rodada:
 - **CLS de 0,0018 no login com a Inter.** A troca de fonte deslocava o texto. Corrigido com `preload` da fonte no `index.html` do app: voltou a 0.
 - **Esqueleto de carregamento.** O brilho do esqueleto usava `background-position`, que repintava a cada quadro. Agora é um pulso de `opacity`.
 
+### Holograma da unidade e inclinação do mapa (2026-11-15)
+
+O método é o `perf/holo-fps.mjs`: build de produção no Recife, com um clique de mouse real num bairro. São três fases medidas à parte, mais uma referência:
+- **referência:** arrastar o mapa no plano, sem holograma;
+- **inclinar e subir:** 900 ms;
+- **giro parado:** 4 s;
+- **voltar ao plano:** 900 ms.
+
+**Trabalho por quadro** é o tempo da thread principal do início do quadro até depois da pintura, como na landing. Com janela, a tela é de 144 Hz; o modo sem janela (`HEADLESS=1`) roda a cerca de 60 Hz.
+
+| Fase | CPU | fps (144 Hz) | Trabalho p95 / pior quadro (144 Hz) | Trabalho p95 (~60 Hz) | Meta p95 ≤ 12 ms |
+|---|---|---|---|---|---|
+| Giro do holograma | 1× | 144 | 0,9–1,0 / 1,7–2,7 ms | 0,8 ms | ✅ |
+| Giro do holograma | 4× | 144 | 4,7–6,5 / 8,6–10,2 ms | 4,4–5,2 ms | ✅ |
+| Inclinar e subir | 1× | 138–144 | 4,0–6,4 / 7,7–16,3 ms | 3,4–6,7 ms | ✅ |
+| Inclinar e subir | 4× | 86–98 | 23,9–26,0 / 26–32 ms | 22,6–26,6 ms | ❌ |
+| Voltar ao plano | 1× | 144 | 3,6–4,5 / 5–8 ms | 2,5–3,1 ms | ✅ |
+| Voltar ao plano | 4× | 103–108 | 19,9–22,6 / 34 ms | 14,8–29,6 ms | ❌ |
+| Referência: arrastar no plano | 4× | 137–145 | 7,2–22,3 ms | 6,3–6,8 ms | — |
+
+- **Em todas as fases:** fps ≥ 55; nenhum quadro acima de 50 ms; nenhuma tarefa longa no clique; CLS 0.
+- **Memória dos quadros decodificados:** 3,6 MB (desktop) e 4,8 MB (celular, DPR 3). Meta: ≤ 80 MB.
+- **Peso dos quadros:** 3,8 MB em WebP, contra 25,8 MB em PNG. Meta: ≤ 6 MB.
+- **Giro:** 30 quadros diferentes por segundo (uma volta a cada 12 s).
+
+**Por que a transição passa de 12 ms com CPU 4×.**
+- Com o holograma escondido por CSS, o custo da inclinação fica igual. Mudar o pitch a cada quadro obriga o MapLibre a recalcular quais tiles cobrem a vista (`coveringTiles`, matrizes de cada tile) e a redesenhar o mapa-base raster. Num experimento, esconder o mapa-base OSM reduziu esse custo em cerca de metade.
+- Esconder o mapa-base ou os números de posição pioraria o mapa, então não foi feito. A transição dura 700 ms e mantém de 86 a 107 fps no simulado. **Falta medir em celular de verdade.**
+
+O que foi feito para chegar aqui:
+- **Opacidade do holograma com camada própria** (`will-change: opacity`): antes, mudar a opacidade repintava o canvas e o rótulo a cada quadro.
+- **Quadros decodificados já no tamanho de exibição** (`createImageBitmap` com `resizeWidth`), com desenho 1:1. A memória caiu de 17,6 MB para 3,6–4,8 MB.
+- **Janela decodificada no ocioso, assim que o download termina:** o primeiro clique não decodifica nada. Antes eram 111 ms de `createImageBitmap` no primeiro clique, com CPU 4×.
+- **`matchMedia` consultado uma vez**, não a cada quadro.
+- **Tiles raster sem fade de entrada e sem o zoom extra de +0,15:** são estáveis, mas não mudaram o p95 de forma mensurável.
+- **"Relevo" removido:** ele mudava o pitch fora da máquina de estados.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**

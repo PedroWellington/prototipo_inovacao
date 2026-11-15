@@ -29,7 +29,7 @@ const HOLO_VIEW_ANGLE_DEG = 50;
 const HOLO_PITCH = 90 - HOLO_VIEW_ANGLE_DEG;
 const HOLO_MS = 700; // inclinar e subir: a mesma animação
 const HOLO_SWAP_MS = 450; // trocar de bairro já inclinado
-const HOLO_ZOOM = 0.15; // aproximação leve ao inclinar
+const HOLO_ZOOM = 0; // aproximação ao inclinar: 0,15 fazia o mapa trocar o nível dos tiles no meio (medido)
 const PANEL_KEY = 'explorer-panel'; // preferência só deste navegador (aberto/recolhido)
 const METHOD_LINK = () => html`<a href="#/como-calculamos" target="_blank" rel="noopener">Como calculamos</a>`;
 const DISCLAIMER =

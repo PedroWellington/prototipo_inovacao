@@ -54,6 +54,7 @@ function createFrames(base) {
   const bitmaps = new Map();
   const pending = new Set();
   let started = null;
+  let target = null; // { w, h } em pixels do dispositivo: os quadros já saem do decodificador nesse tamanho
   const url = (i) => base + manifest.pattern.replace('{i}', String(i).padStart(3, '0')) + `?v=${manifest.version}`;
 
   async function fetchAll() {
@@ -86,6 +87,12 @@ function createFrames(base) {
       started ||= fetchAll().catch(() => {});
       return started;
     },
+    // Tamanho de exibição (px do dispositivo). Mudou: descarta o que estava decodificado em outro tamanho.
+    size(w, h) {
+      if (target && target.w === w && target.h === h) return;
+      target = { w, h };
+      this.clear();
+    },
     has: (i) => bitmaps.has(i),
     get: (i) => bitmaps.get(i),
     // Mantém decodificados só os quadros perto de i; libera (close) os que saíram da janela.
@@ -101,7 +108,7 @@ function createFrames(base) {
       for (const k of want) {
         if (bitmaps.has(k) || pending.has(k) || !blobs[k]) continue;
         pending.add(k);
-        createImageBitmap(blobs[k])
+        createImageBitmap(blobs[k], target ? { resizeWidth: target.w, resizeHeight: target.h, resizeQuality: 'high' } : undefined)
           .then((bmp) => {
             pending.delete(k);
             if (want.has(k) && windowOf(i, manifest.count).includes(k)) bitmaps.set(k, bmp);
@@ -110,7 +117,7 @@ function createFrames(base) {
           .catch(() => pending.delete(k));
       }
     },
-    memoryMB: () => (manifest ? (bitmaps.size * manifest.width * manifest.height * 4) / 1048576 : 0),
+    memoryMB: () => (manifest ? (bitmaps.size * (target?.w || manifest.width) * (target?.h || manifest.height) * 4) / 1048576 : 0),
     loaded: () => blobs.filter(Boolean).length,
     clear() {
       for (const bmp of bitmaps.values()) bmp.close();
@@ -123,8 +130,11 @@ function createFrames(base) {
 // host: elemento posicionado sobre o mapa. project(lngLat) -> {x, y}; area() -> {left, right, top, bottom}.
 export function createHologram(host, { project, area, base = `${import.meta.env.BASE_URL}holograma/` }) {
   const frames = createFrames(base);
-  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const small = () => matchMedia('(max-width: 860px)').matches;
+  // Media queries consultadas uma vez (chamar matchMedia por quadro custava ~37 ms a cada 3 transições, CPU 4x).
+  const mqReduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const mqSmall = matchMedia('(max-width: 860px)');
+  const reduced = () => mqReduced.matches;
+  const small = () => mqSmall.matches;
   const slots = [0, 1].map(() => {
     const el = document.createElement('div');
     el.className = 'holo';
@@ -152,6 +162,7 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
       s.canvas.style.height = `${h}px`;
       s.drawn = -1;
     }
+    frames.size(slots[0].canvas.width, slots[0].canvas.height); // decodifica direto no tamanho do canvas
     return { w: Math.round(w), h, lift: small() ? 46 : 64 };
   }
 
@@ -160,7 +171,7 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
     if (j < 0 || j === s.drawn) return;
     const g = s.canvas.getContext('2d');
     g.clearRect(0, 0, s.canvas.width, s.canvas.height);
-    g.drawImage(frames.get(j), 0, 0, s.canvas.width, s.canvas.height);
+    g.drawImage(frames.get(j), 0, 0); // 1:1, sem reescala por quadro
     s.drawn = j;
     paints++;
   }
@@ -190,8 +201,7 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
       raf = 0;
       last = 0;
       for (const s of slots) s.el.style.opacity = '0';
-      frames.clear(); // escondido: nenhuma memória de quadro decodificado
-      return;
+      return; // os quadros da janela continuam decodificados (~18 MB): o próximo clique não decodifica nada
     }
     if (frames.manifest) {
       size ||= measure();
@@ -213,7 +223,13 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
   host.holoStats = () => ({ loaded: frames.loaded(), decoded: frames.memoryMB(), running: !!raf, paints }); // medição (perf/holo-fps.mjs)
 
   return {
-    load: () => frames.load(),
+    // Baixa os quadros e, no ocioso, já decodifica a janela do quadro inicial: o primeiro clique não paga isso.
+    load: () =>
+      frames.load().then(() => {
+        size ||= measure();
+        const start = reduced() ? HOLO_STILL_FRAME : frameAt(seconds, frames.manifest.count);
+        (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => frames.keep(start), { timeout: 2000 });
+      }),
     // slot 0 ou 1: âncora (ponto dentro do bairro) e quanto subiu (0..1). O laço só roda com algo visível.
     set(slot, { lngLat, rise }) {
       const s = slots[slot];

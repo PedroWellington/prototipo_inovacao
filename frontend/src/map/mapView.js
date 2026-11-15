@@ -34,7 +34,8 @@ function baseStyle() {
     },
     layers: [
       { id: 'bg', type: 'background', paint: { 'background-color': css('--color-bg') } },
-      { id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-saturation': -0.85, 'raster-opacity': 0.85, 'raster-contrast': -0.05 } },
+      { id: 'osm', type: 'raster', source: 'osm', // Sem fade de entrada: na inclinação, tiles novos com fade obrigavam a desenhar duas camadas por quadro.
+        paint: { 'raster-saturation': -0.85, 'raster-opacity': 0.85, 'raster-contrast': -0.05, 'raster-fade-duration': 0 } },
     ],
   };
 }
