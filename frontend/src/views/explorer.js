@@ -1,9 +1,11 @@
 import { get, getCached, post, put } from '../api.js';
 import { fmt, html, mount } from '../html.js';
-import { aboutLink, icon, logo } from '../icons.js';
+import { icon } from '../icons.js';
 import { bbox, brl, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
+import { topbar } from '../components/topbar.js';
+import { measure, rankListShell, updateRankList } from '../rankList.js';
 import { cityActive, creditsState, ensureCity, ensureSearch, loadCredits, onCredits } from '../credits.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css';
@@ -26,35 +28,42 @@ const METHOD_LINK = () => html`<a href="#/como-calculamos" target="_blank" rel="
 const DISCLAIMER =
   'Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.';
 
+// Explorador em três colunas: painel esquerdo (conta, navegação e critérios), mapa no centro e painel direito
+// (Ranking | Detalhes). Os painéis ficam sobre o mapa, que nunca muda de tamanho: só a câmera desconta as faixas.
 export async function render(root) {
+  const user = await loadUser();
   mount(
     root,
-    html`<div class="explorer">
-      <header class="ex-top">
-        <button type="button" class="btn btn-ghost btn-sm btn-icon panel-toggle" data-toggle-panel aria-controls="ex-panel" aria-expanded="true"
-          aria-label="Recolher ou abrir o painel">${icon('panel', 18)}</button>
-        <a href="#/home" class="ex-logo" aria-label="Início">${logo()}</a>
-        <nav class="crumbs" aria-label="Navegação por nível" data-crumbs></nav>
-        <div class="ex-top-actions">
-          <span class="hide-sm about-slot">${aboutLink()}</span>
-          <a class="btn btn-ghost btn-sm" href="#/home"><span class="hide-sm">Início</span></a>
-          <a class="btn btn-ghost btn-sm" href="#/conta">${icon('user', 16)}<span class="hide-sm">Minha conta</span></a>
-        </div>
-      </header>
-      <aside class="ex-panel" id="ex-panel" aria-label="Painel">
-        <div class="ex-loading" data-loading hidden><span></span></div>
-        <div class="ex-account" data-account></div>
-        <div data-panel></div>
-      </aside>
-      <section class="ex-map" aria-label="Mapa">
-        <div class="map" data-map></div>
-        <div class="legend" data-legend hidden>
-          <div class="legend-bar" aria-hidden="true"></div>
-          <div class="legend-scale small"><span>combina menos</span><span>combina mais</span></div>
-          <p class="small">Tom mais escuro = combina mais com seus critérios; mais claro = combina menos. O número em cada área é a posição.</p>
-        </div>
-        <div class="tooltip" data-tooltip role="tooltip" hidden></div>
-      </section>
+    html`<div class="explorer" data-explorer>
+      ${topbar({ active: 'explorer', user })}
+      <div class="ex-work">
+        <section class="ex-map" aria-label="Mapa">
+          <div class="map" data-map></div>
+          <div class="ex-loading" data-loading hidden><span></span></div>
+          <div class="ex-maptop">
+            <button type="button" class="ex-chip ex-chip-icon panel-toggle" data-toggle-panel aria-controls="ex-left" aria-expanded="true"
+              aria-label="Recolher ou abrir o painel de navegação">${icon('panel', 18)}</button>
+            <nav class="crumbs ex-chip" aria-label="Caminho geográfico" data-crumbs></nav>
+            <div class="ex-chip ex-views" role="group" aria-label="Visualização do mapa" data-views hidden>
+              <button type="button" class="view-toggle" aria-pressed="true" data-relief="off">2D</button>
+              <button type="button" class="view-toggle" aria-pressed="false" data-relief="on">Relevo</button>
+            </div>
+            <a class="ex-chip ex-overview" href="#/home">${icon('back', 15)}<span>Visão geral</span></a>
+          </div>
+          <div class="legend" data-legend hidden>
+            <div class="legend-bar" aria-hidden="true"></div>
+            <div class="legend-scale small"><span>combina menos</span><span>combina mais</span></div>
+            <p class="small">Tom mais escuro = combina mais com seus critérios; mais claro = combina menos. O número em cada área é a posição.</p>
+          </div>
+          <div class="tooltip" data-tooltip role="tooltip" hidden></div>
+        </section>
+        <aside class="ex-left" id="ex-left" aria-label="Navegação territorial e critérios">
+          <div class="ex-account" data-account></div>
+          <div data-panel></div>
+        </aside>
+        <aside class="ex-right" id="ex-right" aria-label="Ranking e detalhes" data-right></aside>
+        <div class="ex-scrim" data-scrim hidden></div>
+      </div>
       <footer class="ex-footer small">${DISCLAIMER} ${METHOD_LINK()}.</footer>
     </div>`,
   );
@@ -92,15 +101,17 @@ export async function render(root) {
     cityQuery: '',
     cities: [],
     hoods: new Map(), // id -> { name, bounds, label }
+    tab: 'ranking', // painel direito: 'ranking' | 'detail'
+    leftOpen: true,
+    sheetOpen: false, // celular: gaveta do painel direito expandida
   };
 
-  const [types, profile, regions, regionsGeo, tiles, user] = await Promise.all([
+  const [types, profile, regions, regionsGeo, tiles] = await Promise.all([
     getCached('/api/catalog/business-types'),
     get('/api/profile'),
     getCached('/api/geo/regions'),
     getCached('/api/geo/regions.geojson'),
     getCached('/api/geo/tiles/version'),
-    loadUser(),
     loadCredits(true),
   ]);
   const typeByKey = Object.fromEntries(types.map((t) => [t.key, t]));
@@ -116,17 +127,39 @@ export async function render(root) {
   renderAccount();
   const offCredits = onCredits(renderAccount);
 
-  const overlayPanel = () => matchMedia('(min-width: 861px)').matches; // no celular o painel fica abaixo do mapa
-  const panelWidth = () => $('[data-account]').closest('.ex-panel').offsetWidth;
-  function setPanel(open, { animate = true } = {}) {
-    root.querySelector('.explorer').classList.toggle('is-collapsed', !open);
+  // Desktop: o painel esquerdo recolhe (transform). Celular: ele vira gaveta lateral e o direito, gaveta de baixo.
+  const shell = $('[data-explorer]');
+  const wide = matchMedia('(min-width: 861px)');
+  const left = $('.ex-left');
+  const right = $('[data-right]');
+  function syncInsets(animate = true) {
+    if (wide.matches) map.setInsets({ left: s.leftOpen ? left.offsetWidth : 0, right: right.offsetWidth, bottom: 0 }, { animate });
+    else if (!s.sheetOpen) {
+      // Gaveta recolhida: a câmera desconta a altura dela, e a atribuição do OSM sobe para ficar à vista.
+      map.setInsets({ left: 0, right: 0, bottom: right.offsetHeight + 8 }, { animate });
+      shell.style.setProperty('--sheet-h', `${right.offsetHeight + 8}px`);
+    }
+  }
+  function setPanel(open, { animate = true, remember = true } = {}) {
+    s.leftOpen = open;
+    shell.classList.toggle('is-collapsed', wide.matches && !open);
+    shell.classList.toggle('drawer-open', !wide.matches && open);
+    $('[data-scrim]').hidden = wide.matches || !(open || s.sheetOpen);
     $('[data-toggle-panel]').setAttribute('aria-expanded', String(open));
-    if (overlayPanel()) map.setInset(open ? panelWidth() : 0, { animate });
+    left.inert = !open; // fora da ordem de tabulação quando recolhido
+    syncInsets(animate);
+    if (!remember || !wide.matches) return;
     try {
       localStorage.setItem(PANEL_KEY, open ? 'open' : 'closed');
     } catch {
       /* sem armazenamento: só não lembra a preferência */
     }
+  }
+  function setSheet(open) {
+    s.sheetOpen = open;
+    shell.classList.toggle('sheet-open', open);
+    right.querySelector('[data-sheet]')?.setAttribute('aria-expanded', String(open));
+    $('[data-scrim]').hidden = wide.matches || !(open || (s.leftOpen && !wide.matches));
   }
   let panelPref = 'open';
   try {
@@ -134,7 +167,8 @@ export async function render(root) {
   } catch {
     /* idem */
   }
-  setPanel(panelPref === 'open', { animate: false });
+  const initialPanel = () => setPanel(wide.matches ? panelPref === 'open' : false, { animate: false, remember: false });
+  wide.addEventListener('change', initialPanel, { signal: ac.signal });
   map.setData('regions', regionsGeo);
   map.setLevel('region');
 
@@ -282,12 +316,14 @@ export async function render(root) {
   let rankCtrl = null;
   async function runRank() {
     if (s.level !== 'result' || !s.cityStatus?.has_data) return;
-    rankCtrl?.abort(); // cancela o pedido anterior: só a resposta mais nova importa
+    rankCtrl?.abort(); // troca de cidade: só a resposta mais nova importa
     rankCtrl = new AbortController();
     const city = s.city;
     setLoading(true);
+    const t0 = performance.now();
     try {
       const res = await post(`/api/cities/${city.id}/rank`, { criteria: s.criteria }, { signal: rankCtrl.signal });
+      performance.measure('app:rank-request', { start: t0 }); // docs/PERFORMANCE.md: pedido + resposta
       if (s.city !== city) return;
       s.rank = res;
       s.rankById = new Map((res.neighborhoods || []).map((n) => [n.id, n]));
@@ -343,32 +379,62 @@ export async function render(root) {
   }
 
   // Cada função só age no seu nível: bairros (result) ou cidades (cities).
-  const rerank = () => (s.level === 'cities' ? runCityRank() : runRank());
-  const scheduleRank = debounce(rerank, 250);
+  // Mudanças de peso: agrupadas por quadro (requestAnimationFrame) e com um pedido por vez; o que mudar
+  // enquanto um pedido está em andamento vai num único pedido seguinte, com o valor mais novo.
+  let rankFrame = 0;
+  let inFlight = false;
+  let again = false;
+  async function rerank() {
+    if (inFlight) {
+      again = true;
+      return;
+    }
+    inFlight = true;
+    try {
+      await (s.level === 'cities' ? runCityRank() : runRank());
+    } finally {
+      inFlight = false;
+      if (again) {
+        again = false;
+        scheduleRank();
+      }
+    }
+  }
+  const scheduleRank = () => {
+    if (!rankFrame) rankFrame = requestAnimationFrame(() => ((rankFrame = 0), rerank()));
+  };
+  scheduleRank.cancel = () => (cancelAnimationFrame(rankFrame), (rankFrame = 0));
   const saveCriteria = debounce(() => put('/api/profile/criteria', { criteria: s.criteria }).catch(() => {}), 800);
-  function criteriaChanged({ immediate = false } = {}) {
+  function criteriaChanged() {
     saveCriteria();
-    if (immediate) {
-      scheduleRank.cancel();
-      rerank();
-    } else scheduleRank();
+    scheduleRank();
   }
 
   function setLoading(on) {
     s.loadingRank = on;
     $('[data-loading]').hidden = !on;
-    panel.querySelector('[data-section=results]')?.classList.toggle('is-stale', on);
+    right.querySelector('[data-right-body]')?.classList.toggle('is-stale', on);
   }
 
   // ---------- Painel ----------
   function renderAll() {
     renderCrumbs();
     renderPanel();
+    renderRight();
     $('[data-legend]').hidden = s.level !== 'result' && s.level !== 'cities';
+    $('[data-views]').hidden = s.level !== 'result';
+    if (s.level !== 'result' && s.relief) setRelief(false);
+  }
+
+  // Relevo (opcional): altura pela nota, com a mesma cor e o mesmo número; 2D é o padrão.
+  function setRelief(on) {
+    s.relief = on;
+    map.setRelief(on);
+    root.querySelectorAll('[data-relief]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.relief === 'on') === on)));
   }
 
   function renderCrumbs() {
-    const items = [{ label: 'Início', go: 'start' }];
+    const items = [{ label: 'Explorador', go: 'start' }];
     if (s.mode === 'discover') {
       if (s.level !== 'scope') items.push({ label: 'Alcance', go: 'scope' });
       if (s.scope && s.level !== 'scope') items.push({ label: `Cidades: ${s.scope.label}`, go: 'cities' });
@@ -378,7 +444,7 @@ export async function render(root) {
       if (s.state) items.push({ label: s.state.name, go: 'city' });
     }
     if (s.city) items.push({ label: s.city.name });
-    if (items.length === 1) items[0] = { label: 'Início' };
+    if (items.length === 1) items[0] = { label: 'Explorador' };
     mount(
       $('[data-crumbs]'),
       html`<ol>
@@ -416,10 +482,9 @@ export async function render(root) {
             ${(s.allStates || []).map((x) => html`<option value="${x.uf}">${x.name}</option>`)}
           </select></label>`,
       cities: () => html`${backButton()}<div class="ex-head"><h1>Cidades: ${s.scope.label}</h1>
-          <p class="muted small">Cidades que mais combinam com os critérios que você definiu.</p></div>
+          <p class="muted small">Cidades que mais combinam com os critérios que você definiu. Ranking e detalhes ficam no painel ao lado.</p></div>
         <section class="ex-section" data-section="city-controls">${cityControls()}</section>
-        <section class="ex-section" data-section="criteria">${criteriaEditor()}</section>
-        <section class="ex-section" data-section="results">${cityResults()}</section>`,
+        <section class="ex-section" data-section="criteria">${criteriaEditor()}</section>`,
       region: () => html`<div class="ex-head"><h1>Escolha uma região</h1><p class="muted small">Clique no mapa ou na lista.</p></div>
         <ul class="pick-list">${regions.map((r) => html`<li><button type="button" class="pick" data-region="${r.id}"><span>${r.name}</span>${icon('chevron', 16)}</button></li>`)}</ul>`,
       state: () => html`${backButton()}<div class="ex-head"><h1>Escolha um estado</h1><p class="muted small">${s.region.name}</p></div>
@@ -430,15 +495,74 @@ export async function render(root) {
         <div class="search">${icon('search', 16)}<input class="input" type="search" placeholder="Buscar cidade" aria-label="Buscar cidade" data-city-search value="${s.cityQuery}" /></div>
         <div data-section="cities">${citiesList()}</div>`,
       result: () => html`${backButton()}<div class="ex-head"><h1>${s.city.name}</h1>
-          <p class="muted small">${unit().Many} que mais combinam com os critérios que você definiu.</p></div>
-        ${s.cityStatus?.division_kind === 'area' ? areaNotice() : ''}
-        ${cityCoverage()}
-        ${cityCensus()}
-        ${s.cityStatus?.has_data ? html`<section class="ex-section" data-section="criteria">${criteriaEditor()}</section>` : ''}
-        <section class="ex-section" data-section="results">${resultsBody()}</section>`,
+          <p class="muted small">${unit().Many} que mais combinam com os critérios que você definiu. Mude um peso e veja a ordem mudar no painel ao lado.</p></div>
+        ${s.cityStatus && !s.cityStatus.has_data ? cityCoverage() : ''}
+        ${s.cityStatus?.has_data ? html`<section class="ex-section" data-section="criteria">${criteriaEditor()}</section>` : ''}`,
     }[s.level];
     mount(panel, body());
-    panel.querySelector('[data-section=results]')?.classList.toggle('is-stale', s.loadingRank);
+  }
+
+  // ---------- Painel direito: Ranking | Detalhes ----------
+  const hasResults = () => s.level === 'result' || s.level === 'cities';
+  function renderRight() {
+    const title = s.level === 'result' ? s.city.name : s.level === 'cities' ? `Cidades: ${s.scope.label}` : 'Explore com clareza';
+    mount(
+      right,
+      html`<div class="right-head">
+          <button type="button" class="sheet-handle" data-sheet aria-expanded="${String(s.sheetOpen)}" aria-controls="ex-right"
+            aria-label="Expandir ou recolher o painel de ranking"><span></span></button>
+          <span class="right-icon">${icon(hasResults() ? 'list' : 'layers', 18)}</span>
+          <div><span class="overline">${hasResults() ? 'Painel de leitura' : 'Como ler o mapa'}</span><h2>${title}</h2></div>
+        </div>
+        ${hasResults()
+          ? html`<div class="tabs" role="tablist" aria-label="Painel">
+              <button type="button" class="tab" role="tab" id="tab-ranking" aria-controls="right-body" aria-selected="${String(s.tab === 'ranking')}" data-tab="ranking">Ranking</button>
+              <button type="button" class="tab" role="tab" id="tab-detail" aria-controls="right-body" aria-selected="${String(s.tab === 'detail')}" data-tab="detail">Detalhes</button>
+            </div>`
+          : ''}
+        <div class="right-body" id="right-body" ${hasResults() ? html`role="tabpanel" aria-labelledby="tab-${s.tab}"` : ''} data-right-body>${rightBody()}</div>`,
+    );
+    right.querySelector('[data-right-body]').classList.toggle('is-stale', s.loadingRank);
+    if (s.tab === 'ranking') fillRankList(new Map());
+    if (!wide.matches) syncInsets(false); // a gaveta de baixo mudou de altura (abas)
+  }
+
+  function rightBody() {
+    if (!hasResults()) return introBody();
+    if (s.tab === 'detail') return s.level === 'cities' ? cityDetailTab() : hoodDetailTab();
+    return s.level === 'cities' ? cityResults() : resultsBody();
+  }
+
+  function introBody() {
+    return html`<p class="small muted">Escolha uma cidade para ver os ${UNITS.bairro.many} que mais combinam com os critérios que você definiu,
+        ou peça o ranking de cidades de uma região ou estado.</p>
+      <ol class="ex-steps">
+        <li><span>01</span><div><strong>Escolha o território</strong><p class="small muted">Região, estado e cidade, no painel ou no mapa.</p></div></li>
+        <li><span>02</span><div><strong>Ajuste os pesos</strong><p class="small muted">O que você quer perto e o que não quer perto, de 1 a 5.</p></div></li>
+        <li><span>03</span><div><strong>Compare</strong><p class="small muted">Cada área mostra a posição, a nota, a cobertura, a fonte e a data.</p></div></li>
+      </ol>
+      <div class="source-card small">${icon('info', 16)}<span>Dados abertos da Receita Federal (CNPJ), do CNES e do IBGE, sempre com fonte e data de referência. ${METHOD_LINK()}.</span></div>`;
+  }
+
+  // Detalhes da cidade aberta: o bairro selecionado (se houver), aviso de áreas, cobertura e Censo.
+  function hoodDetailTab() {
+    const sel = s.rank?.status === 'ok' && s.selectedId != null ? s.rank.neighborhoods.find((n) => n.id === s.selectedId) : null;
+    return html`${sel
+        ? html`<div class="detail" aria-live="polite">
+            <div class="detail-head"><strong>Detalhe ${unit().of}</strong>
+              <button type="button" class="btn btn-ghost btn-sm btn-icon" data-close-detail aria-label="Fechar detalhe">${icon('close', 16)}</button></div>
+            ${hoodDetail(sel)}</div>`
+        : s.cityStatus?.has_data
+          ? html`<p class="small muted ex-hint">Clique num ${unit() === UNITS.area ? 'área' : 'bairro'} do mapa ou do ranking para ver os números dele.</p>`
+          : ''}
+      ${s.cityStatus?.division_kind === 'area' ? areaNotice() : ''}
+      ${cityCoverage()}
+      ${cityCensus()}`;
+  }
+
+  function cityDetailTab() {
+    return html`<p class="small muted ex-hint">Passe o mouse (ou toque) numa cidade do mapa para ver os números dela; clique para abrir os bairros.</p>
+      ${s.cityRank?.status === 'ok' ? html`<p class="small">${s.cityRank.income.note}</p>` : ''}`;
   }
 
   function citiesList() {
@@ -543,13 +667,7 @@ export async function render(root) {
     return html`<p class="small analyzed"><strong>Cidades analisadas: ${fmt.int(k.analyzed)} de ${fmt.int(k.in_scope)}</strong> no alcance escolhido${out.length ? ` (${out.join('; ')})` : ''}.</p>
       ${k.analyzed
         ? html`<div class="section-head"><h2>${s.showAllCities ? `Todas as ${fmt.int(k.analyzed)} cidades` : `As ${Math.min(TOP, k.analyzed)} que mais combinam`}</h2></div>
-          <ol class="rank-list">${rows.map(
-            (c) => html`<li><button type="button" class="rank-row" data-city-rank="${c.ibge}" title="Ver os bairros de ${c.name}">
-              <span class="rank-pos tabular">${c.rank}</span>
-              <span class="rank-name">${c.name} <span class="muted small">${c.uf}</span></span>
-              <span class="rank-score tabular" style="--score:${c.score}">${fmt.dec(c.score)}</span>
-            </button></li>`,
-          )}</ol>
+          ${rankListShell(`Cidades em ordem de posição (${rows.length})`)}
           ${k.analyzed > TOP ? html`<button type="button" class="btn btn-ghost btn-sm btn-block" data-toggle-all-cities>${s.showAllCities ? 'Mostrar só as 10 primeiras' : html`${icon('list', 16)} Ver todas as cidades`}</button>` : ''}
           <p class="small muted">Clique numa cidade para ver o mapa dos bairros dela.</p>`
         : html`<p class="empty small">Nenhuma cidade atende aos filtros. Diminua a população mínima ou amplie o alcance.</p>`}
@@ -626,10 +744,10 @@ export async function render(root) {
 
   function resultsBody() {
     if (s.level === 'cities') return cityResults();
+    if (!s.cityStatus?.has_data) return s.cityStatus ? html`<p class="small muted">${NO_DATA('estabelecimentos')}</p>` : rankSkeleton();
     if (s.rankError)
       return html`<div class="alert alert-error">${icon('alert', 16)}<span>${s.rankError}</span></div>
         <button type="button" class="btn btn-secondary btn-sm retry" data-retry>Tentar de novo</button>${s.rank?.status === 'ok' ? rankList() : ''}`;
-    if (!s.cityStatus?.has_data) return s.cityStatus ? '' : rankSkeleton();
     if (!s.rank) return rankSkeleton();
     if (s.rank.status !== 'ok') return html`<div class="alert alert-warning">${icon('info', 16)}<span>${s.rank.message}</span></div>`;
     return rankList();
@@ -644,24 +762,50 @@ export async function render(root) {
 
   function rankList() {
     const r = s.rank;
-    const rows = s.showAll ? r.neighborhoods : r.neighborhoods.slice(0, TOP);
-    const sel = s.selectedId != null ? r.neighborhoods.find((n) => n.id === s.selectedId) : null;
-    return html`${sel ? html`<div class="detail" aria-live="polite">
-          <div class="detail-head"><strong>Detalhe ${unit().of}</strong>
-            <button type="button" class="btn btn-ghost btn-sm btn-icon" data-close-detail aria-label="Fechar detalhe">${icon('close', 16)}</button></div>
-          ${hoodDetail(sel)}</div>`
-        : ''}
-      <div class="section-head"><h2>${s.showAll ? unit().all(r.count) : unit().top(Math.min(TOP, r.count))}</h2></div>
-      <ol class="rank-list">${rows.map(
-        (n) => html`<li><button type="button" class="rank-row ${n.id === s.selectedId ? 'is-selected' : ''}" data-hood="${n.id}">
-          <span class="rank-pos tabular">${n.rank}</span>
-          <span class="rank-name">${n.name}</span>
-          <span class="rank-score tabular" style="--score:${n.score}">${fmt.dec(n.score)}</span>
-        </button></li>`,
-      )}</ol>
+    const shown = s.showAll ? r.count : Math.min(TOP, r.count);
+    return html`${coverageLine()}
+      <div class="section-head"><h2>${s.showAll ? unit().all(r.count) : unit().top(shown)}</h2></div>
+      ${rankListShell(`${unit().Many} em ordem de posição (${shown})`)}
       ${r.count > TOP ? html`<button type="button" class="btn btn-ghost btn-sm btn-block" data-toggle-all>${s.showAll ? 'Mostrar só os 10 primeiros' : html`${icon('list', 16)} ${unit().seeAll}`}</button>` : ''}
       ${r.excluded.length ? html`<p class="small muted">Fora do ranking: ${r.excluded.map((e) => `${e.name} (${e.reason})`).join('; ')}.</p>` : ''}
       ${sourcesBlock(r)}`;
+  }
+
+  // Cobertura sempre à vista no ranking (o cartão completo fica em Detalhes).
+  function coverageLine() {
+    const st = s.cityStatus;
+    if (!st?.has_data) return '';
+    return html`<button type="button" class="cov-line small" data-tab="detail">${icon('info', 14)}
+      <span>Cobertura: <strong class="tabular">${fmt.pct(st.coverage.share)}</strong> dos cadastros localizados em ${unit().many} · ref. ${st.reference_month}</span></button>`;
+  }
+
+  // Linhas do ranking na ordem atual (bairros ou cidades); null quando não há lista a mostrar.
+  function rankRows() {
+    if (s.level === 'cities') {
+      const r = s.cityRank;
+      if (!r || r.status !== 'ok' || !r.counts.analyzed) return null;
+      return (s.showAllCities ? r.cities : r.cities.slice(0, TOP)).map((c) => ({ ...c, key: c.ibge }));
+    }
+    const r = s.rank;
+    if (r?.status !== 'ok') return null;
+    return (s.showAll ? r.neighborhoods : r.neighborhoods.slice(0, TOP)).map((n) => ({ ...n, key: n.id }));
+  }
+  const bar = (score) => html`<span class="rank-bar" aria-hidden="true"><span style="transform:scaleX(${(score / 100).toFixed(3)})"></span></span>`;
+  function rankRow(x) {
+    if (s.level === 'cities')
+      return html`<button type="button" class="rank-row" data-city-rank="${x.ibge}" title="Ver os bairros de ${x.name}">
+        <span class="rank-pos tabular">${x.rank}</span>
+        <span class="rank-name">${x.name} <span class="muted small">${x.uf}</span>${bar(x.score)}</span>
+        <span class="rank-score tabular">${fmt.dec(x.score)}</span></button>`;
+    return html`<button type="button" class="rank-row ${x.id === s.selectedId ? 'is-selected' : ''}" data-hood="${x.id}" ${x.id === s.selectedId ? 'aria-current="true"' : ''}>
+      <span class="rank-pos tabular">${x.rank}</span>
+      <span class="rank-name">${x.name}${bar(x.score)}</span>
+      <span class="rank-score tabular">${fmt.dec(x.score)}</span></button>`;
+  }
+  function fillRankList(before) {
+    const ol = right.querySelector('[data-rank-list]');
+    const rows = ol && rankRows();
+    if (rows) updateRankList(ol, rows, rankRow, before);
   }
 
   function sourcesBlock(r) {
@@ -697,11 +841,20 @@ export async function render(root) {
     </div>`;
   }
 
+  // Atualiza o painel direito sem reconstruir a lista: o <ol> antigo volta para o lugar e as linhas deslizam.
   function renderResults() {
-    const sec = panel.querySelector('[data-section=results]');
-    if (!sec) return renderPanel();
-    mount(sec, resultsBody());
-    sec.classList.toggle('is-stale', s.loadingRank);
+    const body = right.querySelector('[data-right-body]');
+    if (!body || !hasResults()) return renderRight();
+    const old = body.querySelector('[data-rank-list]');
+    const before = measure(old);
+    mount(body, rightBody());
+    const slot = body.querySelector('[data-rank-list]');
+    if (slot && old) {
+      old.setAttribute('aria-label', slot.getAttribute('aria-label'));
+      slot.replaceWith(old);
+    }
+    if (s.tab === 'ranking') fillRankList(before);
+    body.classList.toggle('is-stale', s.loadingRank);
   }
 
   function renderCriteria() {
@@ -787,12 +940,14 @@ export async function render(root) {
     }
   }
 
+  // Selecionar um bairro (no mapa ou no ranking) abre a aba Detalhes; o ranking guarda o destaque.
   function selectHood(id, { fly = true } = {}) {
     s.selectedId = id;
+    s.tab = 'detail';
     map.select(id);
     if (fly && s.hoods.has(id)) map.fit(s.hoods.get(id).bounds, { maxZoom: 15 });
-    renderResults();
-    panel.querySelector('.detail')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    renderRight();
+    if (!wide.matches) setSheet(true);
   }
 
   // Do ranking de cidades para o mapa de bairros da cidade.
@@ -831,6 +986,13 @@ export async function render(root) {
     if (!b) return;
     const d = b.dataset;
     if (d.togglePanel !== undefined) return setPanel(b.getAttribute('aria-expanded') !== 'true');
+    if (d.tab) {
+      if (s.tab === d.tab) return;
+      s.tab = d.tab;
+      return renderRight();
+    }
+    if (d.sheet !== undefined) return setSheet(!s.sheetOpen);
+    if (d.relief) return setRelief(d.relief === 'on');
     if (d.openCity) return openCityDirect(Number(d.openCity));
     if (d.openSearch) return openSearchDirect(d.openSearch);
     if (d.crumb)
@@ -875,14 +1037,14 @@ export async function render(root) {
     if (d.remove) {
       s.criteria.splice(Number(d.remove), 1);
       renderCriteria();
-      return criteriaChanged({ immediate: true });
+      return criteriaChanged();
     }
     if (d.dir) {
       const c = s.criteria[Number(d.dir)];
       if (c.direction === d.value) return;
       c.direction = d.value;
       renderCriteria();
-      return criteriaChanged({ immediate: true });
+      return criteriaChanged();
     }
   });
 
@@ -922,7 +1084,7 @@ export async function render(root) {
     const fd = new FormData(e.target);
     s.criteria.push({ business_type_key: fd.get('type'), direction: fd.get('direction'), weight: 3 });
     renderCriteria();
-    criteriaChanged({ immediate: true });
+    criteriaChanged();
   });
 
   on(root, 'pointerover', (e) => {
@@ -934,18 +1096,34 @@ export async function render(root) {
     if (b) prefetchCity(s.cities.find((c) => c.id === Number(b.dataset.city)));
   });
   on(document, 'keydown', (e) => {
-    if (e.key === 'Escape') hideTooltip();
+    if (e.key !== 'Escape') return;
+    hideTooltip();
+    if (!wide.matches && (s.leftOpen || s.sheetOpen)) {
+      setSheet(false);
+      setPanel(false);
+    }
   });
 
   // ---------- Início: "Você já tem uma cidade em mente?" (a sede pré-seleciona a cidade no "Sim") ----------
   renderAll();
+  initialPanel();
+  on($('[data-scrim]'), 'click', () => {
+    if (s.sheetOpen) setSheet(false);
+    if (s.leftOpen && !wide.matches) setPanel(false);
+  });
   // Vindo da tela inicial: #/explorer?city=<ibge> ou ?search=<alcance>
-  const query = new URLSearchParams(location.hash.split('?')[1] || '');
-  history.replaceState(null, '', '#/explorer'); // recarregar a página não repete a abertura
-  if (query.get('city')) openCityDirect(Number(query.get('city')));
-  else if (query.get('search')) openSearchDirect(query.get('search'));
+  function openFromQuery() {
+    const query = new URLSearchParams(location.hash.split('?')[1] || '');
+    history.replaceState(null, '', '#/explorer'); // recarregar a página não repete a abertura
+    if (query.get('city')) {
+      const id = Number(query.get('city'));
+      if (s.level === 'result' && s.city?.id === id) return; // já está aberta: nada a refazer
+      openCityDirect(id);
+    } else if (query.get('search')) openSearchDirect(query.get('search'));
+  }
+  openFromQuery();
 
-  return () => {
+  const cleanup = () => {
     ac.abort();
     rankCtrl?.abort();
     cityCtrl?.abort();
@@ -953,4 +1131,12 @@ export async function render(root) {
     scheduleRank.cancel();
     map.destroy();
   };
+  // O roteador mantém o explorador vivo ao ir para a visão geral ou a conta (router.js): ao voltar, mapa,
+  // cidade, critérios e aba estão como ficaram; só o saldo é relido e um ?city= novo é aberto.
+  cleanup.resume = () => {
+    loadCredits(true).catch(() => {});
+    map.resize();
+    openFromQuery();
+  };
+  return cleanup;
 }

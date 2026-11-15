@@ -69,7 +69,40 @@ textarea {
   font-variant-numeric: tabular-nums;
 }
 
-#app.view-enter {
+/* Explorador mantido vivo (router.js): camada fixa por cima das outras telas. Entra e sai só com
+   opacity + transform; escondido, fica fora da tabulação (inert) e não recebe cliques. */
+.view-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--color-bg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate3d(0, 12px, 0);
+  transition:
+    opacity var(--dur-ui) var(--ease-spring),
+    transform 520ms var(--ease-spring),
+    visibility 0s linear var(--dur-ui);
+}
+.view-layer.is-shown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition:
+    opacity 470ms var(--ease-spring),
+    transform 640ms var(--ease-spring),
+    visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-layer,
+  .view-layer.is-shown {
+    transform: none;
+    transition: none;
+  }
+}
+#view.view-enter {
   animation: view-in var(--dur) var(--ease-out);
 }
 /* Só opacidade: um deslocamento vertical fazia a barra de rolagem aparecer e sumir na entrada de telas da

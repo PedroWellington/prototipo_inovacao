@@ -1,5 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { cameraStep } from './camera.js';
 
 const EMPTY = { type: 'FeatureCollection', features: [] };
 const LEVEL_LAYERS = {
@@ -13,7 +14,8 @@ const LEVEL_LAYERS = {
 const VECTOR = { cities: 'munis' };
 const target = (source, id) => (VECTOR[source] ? { source, sourceLayer: VECTOR[source], id } : { source, id });
 const ALL_LAYERS = Object.values(LEVEL_LAYERS).flat();
-const CAMERA = { duration: 800, padding: 48, essential: true };
+const PAD = 48;
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -93,6 +95,23 @@ function addLayers(map, opts) {
     paint: {
       'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], text, css('--map-line')],
       'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, ['boolean', ['feature-state', 'hover'], false], 2, 0.8],
+    },
+  });
+  // Relevo (opcional, desligado por padrão): a mesma cor da nota, com altura proporcional a ela.
+  map.addLayer({
+    id: 'hoods-extrusion',
+    type: 'fill-extrusion',
+    source: 'hoods',
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-extrusion-color': [
+        'case',
+        ['==', ['typeof', ['feature-state', 'score']], 'number'],
+        ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
+        css('--score-none'),
+      ],
+      'fill-extrusion-height': ['case', ['==', ['typeof', ['feature-state', 'score']], 'number'], ['*', ['feature-state', 'score'], 14], 0],
+      'fill-extrusion-opacity': 0.92,
     },
   });
   const scoreFill = [
@@ -182,12 +201,27 @@ export function createMap(container, handlers, opts = {}) {
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
   const ready = new Promise((resolve) => map.on('load', resolve)).then(() => addLayers(map, opts));
+  const addBadge = (n) => {
+    const id = `rank-${n}`;
+    if (map.hasImage(id)) return;
+    const { image, ratio } = drawBadge(n);
+    map.addImage(id, image, { pixelRatio: ratio });
+  };
   map.on('styleimagemissing', (e) => {
     const m = /^rank-(\d+)$/.exec(e.id);
-    if (!m || map.hasImage(e.id)) return;
-    const { image, ratio } = drawBadge(Number(m[1]));
-    map.addImage(e.id, image, { pixelRatio: ratio });
+    if (m) addBadge(Number(m[1]));
   });
+  // Os números acima de 10 só aparecem perto (zoom 12,4+): desenhá-los todos no primeiro zoom custava uma
+  // tarefa de ~75 ms. Aqui eles são preparados antes, em lotes pequenos, quando o navegador está ocioso.
+  const idle = window.requestIdleCallback || ((fn) => setTimeout(() => fn({ timeRemaining: () => 8 }), 50));
+  function warmBadges(max) {
+    let n = 1;
+    const batch = (deadline) => {
+      while (n <= max && deadline.timeRemaining() > 2) addBadge(n++);
+      if (n <= max) idle(batch, { timeout: 1000 });
+    };
+    idle(batch, { timeout: 1000 });
+  }
 
   // Hover por feature-state, sem rede e sem re-render.
   const hovered = {};
@@ -214,8 +248,44 @@ export function createMap(container, handlers, opts = {}) {
 
   let selected = null;
   let hoodIds = [];
-  let inset = 0; // largura do painel sobre o mapa (desktop): o enquadramento desconta essa faixa
+  // Faixas cobertas por painéis sobre o mapa (desktop: esquerda e direita; celular: a gaveta de baixo).
+  // O mapa nunca muda de tamanho: o enquadramento só desconta essas faixas.
+  const insets = { left: 0, right: 0, bottom: 0 };
   let rankedCities = [];
+
+  // Câmera própria (map/camera.js): um loop em requestAnimationFrame com jumpTo, que para sozinho ao chegar
+  // e cede ao usuário assim que ele arrasta, gira a roda ou faz pinça.
+  let raf = 0;
+  let goal = null;
+  let last = 0;
+  const merc = (lngLat) => maplibregl.MercatorCoordinate.fromLngLat(lngLat);
+  function stopCamera() {
+    cancelAnimationFrame(raf);
+    raf = 0;
+    goal = null;
+  }
+  function frame(t) {
+    const dt = last ? t - last : 16.7;
+    last = t;
+    const c = map.getCenter();
+    const m = merc(c);
+    const r = cameraStep({ x: m.x, y: m.y, zoom: map.getZoom() }, goal, dt);
+    map.jumpTo({ center: new maplibregl.MercatorCoordinate(r.cam.x, r.cam.y).toLngLat(), zoom: r.cam.zoom });
+    if (r.done) return stopCamera();
+    raf = requestAnimationFrame(frame);
+  }
+  function moveTo(center, zoom) {
+    if (reducedMotion()) return map.jumpTo({ center, zoom });
+    const m = merc(center);
+    goal = { x: m.x, y: m.y, zoom };
+    if (!raf) {
+      last = 0;
+      raf = requestAnimationFrame(frame);
+    }
+  }
+  // Interação do usuário (só eventos com originalEvent) interrompe a câmera automática.
+  map.on('movestart', (e) => e.originalEvent && stopCamera());
+  const padding = () => ({ top: PAD, right: PAD + insets.right, bottom: PAD + insets.bottom, left: PAD + insets.left });
 
   const api = {
     ready,
@@ -239,14 +309,16 @@ export function createMap(container, handlers, opts = {}) {
       for (const id of ids) map.setFeatureState({ source: 'munis', id }, { hasData: true });
     },
     fit(bounds, opts = {}) {
-      const pad = CAMERA.padding;
-      map.fitBounds(bounds, { ...CAMERA, padding: { top: pad, right: pad, bottom: pad, left: pad + inset }, ...opts });
+      const cam = map.cameraForBounds(bounds, { padding: padding(), ...opts });
+      if (cam) moveTo(cam.center, cam.zoom);
     },
-    // Painel recolhido/aberto: o mapa não muda de tamanho (sem resize por quadro); só a câmera desliza meia faixa.
-    setInset(px, { animate = true } = {}) {
-      const delta = px - inset;
-      inset = px;
-      if (delta && animate) map.panBy([-delta / 2, 0], { duration: 180, easing: (t) => 1 - Math.pow(1 - t, 3) });
+    // Painel recolhido/aberto ou gaveta do celular: o mapa não muda de tamanho (sem resize por quadro);
+    // a câmera desliza meia faixa para o conteúdo continuar centrado na área livre.
+    setInsets(next, { animate = true } = {}) {
+      const dx = (next.left ?? insets.left) - insets.left - ((next.right ?? insets.right) - insets.right);
+      const dy = (next.bottom ?? insets.bottom) - insets.bottom;
+      Object.assign(insets, next);
+      if ((dx || dy) && animate && !raf) map.panBy([-dx / 2, dy / 2], { duration: 180, easing: (t) => 1 - Math.pow(1 - t, 3) });
     },
     async setHoods(fc) {
       await ready;
@@ -261,12 +333,19 @@ export function createMap(container, handlers, opts = {}) {
         const n = byId.get(id);
         map.setFeatureState({ source: 'hoods', id }, { score: n ? n.score : null });
       }
+      warmBadges(neighborhoods.length);
       map.getSource('labels').setData({
         type: 'FeatureCollection',
         features: neighborhoods
           .filter((n) => labelPoints.has(n.id))
           .map((n) => ({ type: 'Feature', id: n.id, properties: { id: n.id, rank: n.rank }, geometry: { type: 'Point', coordinates: labelPoints.get(n.id) } })),
       });
+    },
+    // Relevo: liga a extrusão e inclina a câmera; desligado, volta ao 2D (padrão).
+    async setRelief(on) {
+      await ready;
+      map.setLayoutProperty('hoods-extrusion', 'visibility', on ? 'visible' : 'none');
+      map.easeTo({ pitch: on ? 50 : 0, duration: reducedMotion() ? 0 : 600 });
     },
     async clearRank() {
       await ready;
@@ -285,6 +364,7 @@ export function createMap(container, handlers, opts = {}) {
       for (const id of rankedCities) if (!now.has(id)) map.setFeatureState(target('cities', id), { score: null });
       for (const c of cities) map.setFeatureState(target('cities', c.ibge), { score: c.score });
       rankedCities = [...now];
+      warmBadges(Math.min(cities.length, 300));
       map.getSource('cityLabels').setData({
         type: 'FeatureCollection',
         features: cities
@@ -299,7 +379,10 @@ export function createMap(container, handlers, opts = {}) {
       map.getSource('cityLabels').setData(EMPTY);
     },
     resize: () => map.resize(),
-    destroy: () => map.remove(),
+    destroy: () => {
+      stopCamera();
+      map.remove();
+    },
   };
   return api;
 }

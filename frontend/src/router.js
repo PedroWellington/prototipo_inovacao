@@ -16,6 +16,11 @@ const ROUTES = {
 let cleanup = null;
 let navId = 0;
 let firstView = true; // a 1ª tela aparece já visível (sem fade): conteúdo na primeira pintura (FCP/LCP)
+// O explorador fica vivo ao ir para a visão geral ou a conta: voltar não recria o mapa nem perde cidade,
+// critérios e aba. Ele mora numa camada própria; as outras telas, em #view.
+const KEEP = '/explorer';
+const KEEP_FOR = new Set(['/home', '/conta']); // telas que não descartam o explorador
+let alive = null; // { el, cleanup }
 
 export function go(path) {
   if (location.hash === '#' + path) route();
@@ -33,6 +38,30 @@ export function resolve(path, user) {
   return path;
 }
 
+function layers() {
+  const app = document.getElementById('app');
+  let main = document.getElementById('view');
+  if (!main) {
+    main = document.createElement('div');
+    main.id = 'view';
+    app.append(main);
+  }
+  return { app, main };
+}
+
+function showKeep(on) {
+  if (!alive) return;
+  alive.el.classList.toggle('is-shown', on);
+  alive.el.inert = !on;
+}
+
+function dropKeep() {
+  if (!alive) return;
+  alive.cleanup?.();
+  alive.el.remove();
+  alive = null;
+}
+
 async function route() {
   const id = ++navId;
   const path = location.hash.replace(/^#/, '').split('?')[0] || '/';
@@ -42,18 +71,43 @@ async function route() {
     history.replaceState(null, '', '#' + target);
     return route();
   }
+  const { app, main } = layers();
+  if (target === KEEP && alive) {
+    // Volta ao explorador vivo: a tela atual sai por baixo da camada, sem recarregar nada.
+    if (cleanup) cleanup();
+    cleanup = null;
+    showKeep(true);
+    main.replaceChildren();
+    alive.cleanup.resume?.();
+    return;
+  }
+  if (!KEEP_FOR.has(target) && target !== KEEP) dropKeep();
   const view = await ROUTES[target].load();
   if (id !== navId) return; // outra navegação começou enquanto carregava
   if (cleanup) cleanup();
-  const root = document.getElementById('app');
-  root.classList.remove('view-enter');
-  if (!firstView) {
-    void root.offsetWidth; // reinicia a animação de entrada (só nas trocas de tela)
-    root.classList.add('view-enter');
+  cleanup = null;
+  if (target === KEEP) {
+    const el = document.createElement('div');
+    el.className = 'view-layer';
+    el.inert = true;
+    app.append(el);
+    alive = { el, cleanup: null };
+    alive.cleanup = (await view(el)) || null;
+    if (id !== navId) return;
+    requestAnimationFrame(() => showKeep(true)); // entra por cima (opacity + transform) depois de montada
+    main.replaceChildren();
+    firstView = false;
+    return;
+  }
+  main.classList.remove('view-enter');
+  if (!firstView && !alive?.el.classList.contains('is-shown')) {
+    void main.offsetWidth; // reinicia a animação de entrada (só nas trocas de tela)
+    main.classList.add('view-enter');
   }
   firstView = false;
   window.scrollTo(0, 0); // cada tela começa do topo (a seção pedida, se houver, rola depois)
-  cleanup = (await view(root)) || null;
+  cleanup = (await view(main)) || null;
+  showKeep(false); // a nova tela já está montada por baixo: o explorador sai sem deixar tela em branco
   document.querySelector('[autofocus]')?.focus();
 }
 

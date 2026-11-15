@@ -104,7 +104,73 @@ await step('recarregar /app/#/home mantém a tela', async () => {
 await step('explorador abre e o mapa aparece', async () => {
   await page.goto(`${BASE}/app/#/explorer`);
   await page.waitForSelector('.maplibregl-canvas', { timeout: 20000 });
-  expect(await page.getAttribute('.ex-logo', 'href') === '#/home', 'logo do explorador');
+  expect(await page.getAttribute('.view-layer .logo-link', 'href') === '#/home', 'logo do explorador');
+});
+// --- Explorador: Recife, ranking animado (mesmas linhas), recálculo e ida/volta sem recarregar ---------
+const recolors = () => page.evaluate(() => performance.getEntriesByName('app:recolor').length);
+await step('explorador: abre Recife com confirmação de crédito', async () => {
+  await page.goto(`${BASE}/app/#/explorer?city=2611606`);
+  await page.waitForSelector('dialog .btn-primary', { timeout: 20000 });
+  await page.click('dialog .btn-primary');
+  await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
+  await page.waitForSelector('[data-rank-list] li');
+  expect(await page.isVisible('.cov-line'), 'cobertura não aparece no ranking');
+  expect(await page.locator('.ex-left').isVisible() && await page.locator('.ex-right').isVisible(), 'três colunas');
+});
+await step('explorador: mudar o peso reordena as MESMAS linhas (FLIP) em até 150 ms', async () => {
+  await page.evaluate(() => document.querySelectorAll('[data-rank-list] li').forEach((li) => (li.__keep = true)));
+  const before = await page.$$eval('[data-rank-list] li', (ls) => ls.map((l) => l.dataset.key).join());
+  const n0 = await recolors();
+  const t = await page.evaluate(() => {
+    const r = document.querySelector('[data-weight="0"]');
+    r.value = r.value === '5' ? '1' : '5';
+    window.__t0 = performance.now();
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+    return window.__t0;
+  });
+  await page.waitForFunction((n) => performance.getEntriesByName('app:recolor').length > n, n0, { timeout: 10000 });
+  await page.waitForTimeout(600);
+  const r = await page.evaluate((t0) => {
+    const e = performance.getEntriesByName('app:recolor').at(-1);
+    const lis = [...document.querySelectorAll('[data-rank-list] li')];
+    return { ms: Math.round(e.startTime + e.duration - t0), kept: lis.filter((l) => l.__keep).length, total: lis.length, order: lis.map((l) => l.dataset.key).join() };
+  }, t);
+  console.log(`   recálculo do ranking (peso -> mapa recolorido): ${r.ms} ms; linhas reaproveitadas ${r.kept}/${r.total}; ordem mudou: ${r.order !== before}`);
+  expect(r.kept > 0, 'a lista foi reconstruída');
+  expect(r.ms <= 150, `recálculo levou ${r.ms} ms`);
+});
+await step('explorador: aba Detalhes ao escolher um bairro', async () => {
+  await page.click('[data-rank-list] li >> nth=0 >> button');
+  await page.waitForSelector('[data-tab="detail"][aria-selected="true"]');
+  expect(await page.isVisible('.detail .hd'), 'detalhe do bairro');
+});
+await step('explorador -> visão geral -> explorador: mesmo mapa, cidade e aba (sem recarregar)', async () => {
+  await page.evaluate(() => (document.querySelector('.maplibregl-canvas').__keep = true));
+  await page.click('.ex-overview');
+  await page.waitForSelector('#view [data-dashboard]');
+  await page.waitForFunction(() => !document.querySelector('.view-layer').classList.contains('is-shown'));
+  await page.click('.topnav-link[href="#/explorer"]');
+  await page.waitForFunction(() => document.querySelector('.view-layer').classList.contains('is-shown'));
+  const r = await page.evaluate(() => ({
+    sameMap: document.querySelector('.maplibregl-canvas').__keep === true,
+    city: document.querySelector('.right-head h2')?.textContent,
+    tab: document.querySelector('[aria-selected="true"][data-tab]')?.dataset.tab,
+  }));
+  expect(r.sameMap, 'o mapa foi recriado');
+  expect(r.city === 'Recife' && r.tab === 'detail', `estado perdido: ${JSON.stringify(r)}`);
+});
+await step('celular: gaveta de navegação e gaveta do ranking', async () => {
+  const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
+  const p = await m.newPage(); watch(p);
+  await p.goto(`${BASE}/app/#/explorer?city=2611606`);
+  await p.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
+  await p.tap('[data-toggle-panel]');
+  await p.waitForSelector('.drawer-open');
+  await p.tap('[data-scrim]', { position: { x: 370, y: 400 } });
+  await p.waitForSelector('.drawer-open', { state: 'detached' });
+  await p.tap('[data-sheet]');
+  await p.waitForSelector('.sheet-open [data-rank-list] li');
+  await m.close();
 });
 await step('"Conhecer a VICUS" -> landing mostra "Ir para a plataforma"', async () => {
   await page.goto(`${BASE}/app/#/home`); await page.waitForSelector('.about-link');
