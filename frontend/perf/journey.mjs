@@ -146,11 +146,18 @@ await step('explorador: aba Detalhes ao escolher um bairro', async () => {
 });
 // --- Holograma: máquina de estados PLANO <-> INCLINADO(bairro) -----------------------------------------
 const hs = () => page.evaluate(() => document.querySelector('[data-holo]').holoState());
-const clickHood = async (id) => {
-  const pt = await page.evaluate((id) => document.querySelector('[data-holo]').holoPoint(id), id);
-  const box = await page.locator('[data-map]').boundingBox();
-  await page.mouse.click(box.x + pt.x, box.y + pt.y + 8); // um pouco abaixo do número: dentro do bairro
-};
+// Calcula o ponto do bairro e clica no MESMO instante (dentro da página): com a câmera em movimento, um
+// clique de fora chega alguns ms depois, quando o bairro já saiu daquele ponto.
+const clickHood = (id) =>
+  page.evaluate((id) => {
+    const pt = document.querySelector('[data-holo]').holoPoint(id);
+    const canvas = document.querySelector('.maplibregl-canvas');
+    const r = canvas.getBoundingClientRect();
+    const o = { bubbles: true, cancelable: true, clientX: r.left + pt.x, clientY: r.top + pt.y + 8, button: 0, buttons: 1, view: window };
+    canvas.dispatchEvent(new MouseEvent('mousedown', o));
+    canvas.dispatchEvent(new MouseEvent('mouseup', { ...o, buttons: 0 }));
+    canvas.dispatchEvent(new MouseEvent('click', { ...o, buttons: 0 }));
+  }, id);
 const settled = () => page.waitForTimeout(950);
 await step('holograma: clique no bairro inclina para pitch 40 e sobe o holograma, com rótulo', async () => {
   await page.keyboard.press('Escape'); await settled();
