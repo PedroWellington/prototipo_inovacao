@@ -5,7 +5,7 @@
  - Se um arquivo do IBGE falhar, aquela camada usa js/fallback-geo.js e a tela diz que é ILUSTRATIVA.
  - A loja é uma ilustração conceitual, não um endereço real.
 */
-import { APP_URL } from './config.js';
+import { APP_URL, SESSION_URL } from './config.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('mapCanvas');
@@ -394,7 +394,7 @@ function updatePill(pill, text, [wx, wy], opacity, [ox, oy]) {
   put(pill.el, 'visibility', o > 0.01 ? 'visible' : 'hidden');
   if (o <= 0.01) return;
   put(pill.text, 'text', text);
-  put(pill.el, 'transform', `translate3d(${clamp(x + ox, 60, size.w - 60).toFixed(1)}px,${clamp(y + oy, 135, size.h - 90).toFixed(1)}px,0) translate(-50%,-50%)`);
+  put(pill.el, 'transform', `translate3d(${Math.round(clamp(x + ox, 60, size.w - 60))}px,${Math.round(clamp(y + oy, 135, size.h - 90))}px,0) translate(-50%,-50%)`);
 }
 const SCENE_BORDERS = [0.15, 0.29, 0.43, 0.57, 0.7, 0.81, 0.91];
 const SCENE_LABELS = ['BRASIL', 'NORDESTE', 'PERNAMBUCO', 'RECIFE', 'BAIRROS', 'AMPLIANDO O BAIRRO', 'A LOJA SURGE', 'SUA DECISÃO'];
@@ -427,7 +427,8 @@ function updateChapters(p) {
     el._alpha = alpha;
     el.style.opacity = alpha;
     put(el, 'visibility', alpha > 0.015 ? 'visible' : 'hidden');
-    el.style.transform = `translate3d(${((i % 2 === 0 ? -1 : 1) * (1 - alpha) * 21).toFixed(1)}px,calc(-50% + ${((1 - alpha) * 25).toFixed(1)}px),0)`;
+    // Texto parado sem transform; durante o fade, só pixels inteiros (frações de pixel borram a letra).
+    el.style.transform = alpha >= 0.999 ? 'none' : `translate3d(${Math.round((i % 2 === 0 ? -1 : 1) * (1 - alpha) * 21)}px,${Math.round((1 - alpha) * 25)}px,0)`;
     put(el, 'pointerEvents', alpha > 0.7 ? 'auto' : 'none');
     put(el, 'aria-hidden', alpha > 0.5 ? 'false' : 'true');
   });
@@ -545,7 +546,38 @@ function drawMiniMap() {
 }
 
 // --- Início ----------------------------------------------------------------------------------------------
-for (const a of document.querySelectorAll('[data-app-route]')) a.href = new URL(a.dataset.appRoute, APP_URL).href;
+for (const a of document.querySelectorAll('[data-app-route]')) a.href = APP_URL + a.dataset.appRoute;
+
+// Já logado? Mostra "Ir para a plataforma" no lugar de "Criar conta/Entrar". Só quando o navegador estiver ocioso:
+// nada espera a rede para desenhar, e os botões trocados ficam abaixo da dobra (sem salto visível).
+(window.requestIdleCallback || ((f) => setTimeout(f, 1200)))(() => {
+  fetch(SESSION_URL, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+    .then((r) => r.ok && document.documentElement.classList.add('is-user'))
+    .catch(() => {}); // sem app (ex.: npm run serve): fica como visitante
+}, { timeout: 4000 });
+
+// Menu do topo: o item ativo acompanha a seção que cruza o meio da tela (IntersectionObserver, sem ler layout).
+const navLinks = [...document.querySelectorAll('.nav-links a')];
+const setActive = (id) => navLinks.forEach((a) => {
+  const on = a.getAttribute('href') === `#${id}`;
+  a.classList.toggle('is-active', on);
+  if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+});
+const sectionObserver = new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting) setActive(e.target.id);
+}, { rootMargin: '-49% 0px -50% 0px' });
+for (const a of navLinks) {
+  const section = document.getElementById(a.getAttribute('href').slice(1));
+  if (section) sectionObserver.observe(section);
+  a.addEventListener('click', () => { setActive(section.id); closeMenu(); });
+}
+const toggle = document.querySelector('.nav-toggle');
+function closeMenu() { nav.classList.remove('menu-open'); toggle.setAttribute('aria-expanded', 'false'); }
+toggle.addEventListener('click', () => {
+  const open = nav.classList.toggle('menu-open');
+  toggle.setAttribute('aria-expanded', String(open));
+});
+addEventListener('keydown', (e) => e.key === 'Escape' && closeMenu());
 new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) { dirty = true; readScroll(); } }).observe(story);
 addEventListener('scroll', readScroll, { passive: true });
 addEventListener('resize', () => { size.maxDpr = 0; resize(); }, { passive: true });

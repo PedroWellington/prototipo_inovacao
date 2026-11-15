@@ -1,6 +1,6 @@
 import { del, post } from '../api.js';
 import { html, mount } from '../html.js';
-import { icon, logo } from '../icons.js';
+import { aboutLink, icon, logo } from '../icons.js';
 import { go } from '../router.js';
 import { clearUser, loadUser } from '../session.js';
 
@@ -10,8 +10,8 @@ export async function render(root) {
     root,
     html`<div class="page">
       <header class="page-header">
-        <a href="#/home" aria-label="Início">${logo()}</a>
-        <a class="btn btn-ghost btn-sm" href="#/explorer">${icon('back', 16)} Voltar ao mapa</a>
+        <a href="#/home" class="logo-link" aria-label="Início">${logo()}</a>
+        <span class="header-actions">${aboutLink()}<a class="btn btn-ghost btn-sm" href="#/explorer">${icon('back', 16)} Voltar ao mapa</a></span>
       </header>
       <h1>Minha conta</h1>
       <section class="card">

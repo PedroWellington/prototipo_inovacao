@@ -1,4 +1,4 @@
-import { PRODUCT_NAME } from './brand.js';
+import { LANDING_URL, PRODUCT_NAME } from './brand.js';
 import { escape, raw } from './html.js';
 
 // Ícones SVG inline (traço 1.75, 24x24). Herdam a cor do texto via currentColor.
@@ -35,6 +35,9 @@ export function icon(name, size = 18, label) {
     `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ${a11y}>${PATHS[name]}</svg>`,
   );
 }
+
+// Link discreto para a landing, presente em todas as telas do app.
+export const aboutLink = () => raw(`<a class="about-link" href="${LANDING_URL}">Conhecer a ${escape(PRODUCT_NAME)}</a>`);
 
 export const logo = () =>
   raw(

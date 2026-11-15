@@ -1,6 +1,6 @@
 import { html, mount } from '../html.js';
 import { PRODUCT_NAME } from '../brand.js';
-import { icon, logo } from '../icons.js';
+import { aboutLink, icon, logo } from '../icons.js';
 
 const DRAFT = 'Texto provisório, sujeito a revisão jurídica antes de uso real.';
 
@@ -11,7 +11,7 @@ function page(root, title, body, draft = true) {
       <div class="page">
         <header class="page-header">
           <a href="#/" class="logo-link" aria-label="Início">${logo()}</a>
-          <a class="btn btn-ghost btn-sm" href="#/">${icon('back', 16)} Voltar</a>
+          <span class="header-actions">${aboutLink()}<a class="btn btn-ghost btn-sm" href="#/">${icon('back', 16)} Voltar</a></span>
         </header>
         <h1>${title}</h1>
         ${body}

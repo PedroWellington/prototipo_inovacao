@@ -1,6 +1,6 @@
 import { get, getCached, post, put } from '../api.js';
 import { fmt, html, mount } from '../html.js';
-import { icon, logo } from '../icons.js';
+import { aboutLink, icon, logo } from '../icons.js';
 import { bbox, brl, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
@@ -36,6 +36,7 @@ export async function render(root) {
         <a href="#/home" class="ex-logo" aria-label="Início">${logo()}</a>
         <nav class="crumbs" aria-label="Navegação por nível" data-crumbs></nav>
         <div class="ex-top-actions">
+          <span class="hide-sm about-slot">${aboutLink()}</span>
           <a class="btn btn-ghost btn-sm" href="#/home"><span class="hide-sm">Início</span></a>
           <a class="btn btn-ghost btn-sm" href="#/conta">${icon('user', 16)}<span class="hide-sm">Minha conta</span></a>
         </div>
@@ -757,7 +758,8 @@ export async function render(root) {
     const w = tooltip.offsetWidth, h = tooltip.offsetHeight;
     const x = point.x + 16 + w > box.width ? point.x - w - 16 : point.x + 16;
     const y = Math.max(8, Math.min(point.y + 16, box.height - h - 8));
-    tooltip.style.transform = `translate(${Math.max(8, x)}px, ${y}px)`;
+    // Pixels inteiros: a posição do mouse no mapa é fracionária e deixava o texto do tooltip borrado.
+    tooltip.style.transform = `translate(${Math.round(Math.max(8, x))}px, ${Math.round(y)}px)`;
   }
 
   function hideTooltip() {

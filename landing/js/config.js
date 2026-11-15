@@ -1,3 +1,4 @@
-// Endereço do app VICUS. As rotas do app são por hash: #/register e #/login.
-// shortcut: aponta para o app local (docker compose, porta 8080); trocar pelo domínio definitivo quando houver.
-export const APP_URL = 'http://localhost:8080/';
+// O app fica no mesmo endereço da landing, em /app/ (rotas por hash: #/register, #/login, #/home).
+export const APP_URL = '/app/';
+// Sessão do app (cookie httpOnly): 200 = logado, 401 = visitante. Consultada só depois do primeiro desenho.
+export const SESSION_URL = '/api/auth/me';

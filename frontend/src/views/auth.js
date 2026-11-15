@@ -1,7 +1,7 @@
 import { post } from '../api.js';
 import { bindForm } from '../forms.js';
 import { html, mount, raw } from '../html.js';
-import { icon, logo } from '../icons.js';
+import { aboutLink, icon, logo } from '../icons.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 
@@ -15,7 +15,7 @@ function shell(title, subtitle, form) {
   return html`
     <div class="auth">
       <aside class="auth-aside">
-        ${ART} ${logo()}
+        ${ART} <a href="#/" class="logo-link" aria-label="Início">${logo()}</a>
         <div>
           <h1>Compare bairros pelos critérios que você define.</h1>
           <ul>
@@ -28,10 +28,11 @@ function shell(title, subtitle, form) {
       </aside>
       <main class="auth-main">
         <div class="auth-card">
-          ${logo()}
+          <a href="#/" class="logo-link" aria-label="Início">${logo()}</a>
           <h2>${title}</h2>
           <p>${subtitle}</p>
           ${form}
+          <p class="about-row">${aboutLink()}</p>
         </div>
       </main>
     </div>`;

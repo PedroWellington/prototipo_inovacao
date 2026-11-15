@@ -3,7 +3,7 @@ import { get } from '../api.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
 import { loadCredits } from '../credits.js';
 import { html, mount } from '../html.js';
-import { icon, logo } from '../icons.js';
+import { aboutLink, icon, logo } from '../icons.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css';
@@ -17,7 +17,7 @@ export async function render(root) {
       html`<div class="home">
         <header class="page-header home-top">
           <a href="#/home" class="logo-link" aria-label="Início">${logo()}</a>
-          <a class="btn btn-ghost btn-sm" href="#/conta">${icon('user', 16)} Minha conta</a>
+          <span class="header-actions">${aboutLink()}<a class="btn btn-ghost btn-sm" href="#/conta">${icon('user', 16)} Minha conta</a></span>
         </header>
         <main class="home-grid">
           <div class="home-main">

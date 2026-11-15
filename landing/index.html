@@ -13,6 +13,7 @@
   <meta property="og:description" content="Cidades e bairros que mais combinam com os critérios que você definiu. Dados abertos da Receita Federal, do CNES e do IBGE, com fonte e data. A decisão é sua." />
   <link rel="icon" href="assets/icone.svg" type="image/svg+xml" />
   <link rel="preload" href="data/manifest.json" as="fetch" crossorigin="anonymous" />
+  <link rel="preload" href="assets/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/landing.css" />
   <script type="module" src="js/landing.js"></script>
 </head>
@@ -23,7 +24,8 @@
       <svg width="37" height="37" viewBox="0 0 42 42" fill="none" aria-hidden="true"><path d="m5 24 16 8 16-8M5 30l16 8 16-8" stroke="#d7b895" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 18 21 25l15-7-15-7z" stroke="#d7b895" stroke-width="2.4" stroke-linejoin="round"/><path d="M21 5c-4 0-7 3-7 7 0 5 7 11 7 11s7-6 7-11c0-4-3-7-7-7Z" fill="#d5b28f" stroke="#293339" stroke-width="1.4"/><circle cx="21" cy="12" r="2.3" fill="#343b40"/></svg>
       <strong>VICUS</strong>
     </a>
-    <nav class="nav-links" aria-label="Navegação principal"><a href="#inicio" class="is-active">Início</a><a href="#produto">Como funciona</a><a href="#fontes">Dados e fontes</a><a href="#final">A plataforma</a></nav>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks">Menu</button>
+    <nav class="nav-links" id="navLinks" aria-label="Navegação principal"><a href="#inicio" class="is-active" aria-current="true">Início</a><a href="#produto">Como funciona</a><a href="#fontes">Dados e fontes</a><a href="#planos">Planos</a><a href="#final">A plataforma</a></nav>
     <div class="nav-actions"><a class="text-link" href="#produto">Conhecer</a><a class="nav-cta" href="#final">Explorar VICUS <span aria-hidden="true">↗</span></a></div>
   </header>
 
@@ -121,7 +123,20 @@
       </div>
     </section>
     <section class="sources" id="fontes"><div class="sources-inner"><span>DADOS & FONTES</span><h2>Um mapa bonito chama atenção. <em>Dados transparentes sustentam a análise.</em></h2><p>A VICUS usa dados abertos: estabelecimentos da Receita Federal (CNPJ), unidades de saúde do CNES e, do IBGE, limites territoriais, população e renda do Censo 2022. Cada informação mostra fonte e data. Cadastro não é prédio e pode estar desatualizado, por isso mostramos a cobertura de dados de cada área. A loja da animação é uma ilustração, não um estabelecimento real.</p><p>Os limites da animação: Malha Municipal 2022 e Malha de Bairros do Censo 2022, ambas do IBGE (<a href="data/FONTES.md">detalhes e datas</a>).</p><div class="source-links"><a href="https://www.ibge.gov.br/" target="_blank" rel="noopener noreferrer">IBGE <span>↗</span></a><a href="https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj" target="_blank" rel="noopener noreferrer">Receita Federal · dados abertos do CNPJ <span>↗</span></a><a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener noreferrer">CNES / DATASUS <span>↗</span></a><a href="https://dados.recife.pe.gov.br/dataset/mapas-de-limites-e-divisoes-territoriais" target="_blank" rel="noopener noreferrer">Dados Abertos do Recife <span>↗</span></a></div></div></section>
-    <section class="end-section" id="final"><div class="end-inner"><div><div class="subheading">VICUS · INTELIGÊNCIA TERRITORIAL</div><h2>Explore o território.<br /><em>A decisão é sua.</em></h2><p>Cidades e bairros que mais combinam com os critérios que você definiu.</p></div><div class="end-actions"><a class="end-cta" href="#final" data-app-route="#/register">Criar conta <span aria-hidden="true">↗</span></a><a class="end-cta secondary" href="#final" data-app-route="#/login">Entrar <span aria-hidden="true">↗</span></a><a class="end-cta ghost" href="#inicio">Rever a experiência <span aria-hidden="true">↑</span></a></div></div></section>
+    <section class="plans" id="planos" aria-labelledby="planosTitulo">
+      <div class="plans-inner">
+        <div class="section-meta"><span>VICUS / PLANOS E CRÉDITOS</span><span>CRÉDITOS</span></div>
+        <div class="plans-intro"><div><div class="subheading">Planos e créditos</div><h2 id="planosTitulo">Um crédito, <em>uma cidade.</em></h2></div><p>Cada crédito permite analisar uma cidade por 30 dias, e reabrir dentro do prazo não gasta outro. O ranking de cidades usa 1 crédito por busca.</p></div>
+        <p class="plans-note" role="note">Valores previstos, sujeitos a alteração antes do lançamento. Os planos pagos estarão disponíveis em breve.</p>
+        <div class="plan-grid">
+          <article class="plan"><h3>Gratuito</h3><p class="plan-price"><b>R$ 0</b></p><ul><li>1 crédito ao criar a conta</li><li>Sem cartão</li></ul><a class="plan-cta" href="/app/#/register" data-app-route="#/register" data-when="guest">Criar conta grátis</a><a class="plan-cta" href="/app/#/home" data-app-route="#/home" data-when="user">Ir para a plataforma</a></article>
+          <article class="plan"><h3>Essencial</h3><p class="plan-price"><b>R$ 89</b> <span>por mês</span></p><ul><li>5 créditos por mês</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
+          <article class="plan"><h3>Profissional</h3><p class="plan-price"><b>R$ 249</b> <span>por mês</span></p><ul><li>20 créditos por mês</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
+          <article class="plan"><h3>Rede</h3><p class="plan-price"><b>R$ 790</b> <span>por mês</span></p><ul><li>100 créditos por mês</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
+        </div>
+      </div>
+    </section>
+    <section class="end-section" id="final"><div class="end-inner"><div><div class="subheading">VICUS · INTELIGÊNCIA TERRITORIAL</div><h2>Explore o território.<br /><em>A decisão é sua.</em></h2><p>Cidades e bairros que mais combinam com os critérios que você definiu.</p></div><div class="end-actions"><a class="end-cta" href="/app/#/register" data-app-route="#/register" data-when="guest">Criar conta <span aria-hidden="true">↗</span></a><a class="end-cta secondary" href="/app/#/login" data-app-route="#/login" data-when="guest">Entrar <span aria-hidden="true">↗</span></a><a class="end-cta" href="/app/#/home" data-app-route="#/home" data-when="user">Ir para a plataforma <span aria-hidden="true">↗</span></a><a class="end-cta ghost" href="#inicio">Rever a experiência <span aria-hidden="true">↑</span></a></div></div></section>
   </main>
   <footer class="footer"><span>© 2026 VICUS</span><span class="disclaimer">Informações de caráter informativo. Não substituem análise própria ou profissional.</span></footer>
 </body>

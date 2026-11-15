@@ -27,7 +27,7 @@ await ctx.addInitScript(() => {
 });
 
 // 1) Tela de login: LCP e CLS (cache frio)
-await page.goto(`${BASE}/#/login`, { waitUntil: 'networkidle' });
+await page.goto(`${BASE}/app/#/login`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(500);
 out.login = await page.evaluate(() => ({ lcp_ms: Math.round(window.__lcp), cls: +window.__cls.toFixed(4), js_kb: Math.round(performance.getEntriesByType('resource').filter((r) => r.name.endsWith('.js')).reduce((a, r) => a + r.transferSize, 0) / 1024) }));
 
@@ -59,7 +59,7 @@ await ctx.request.post(`${BASE}/api/credits/searches`, { headers, data: {} });
 
 // 2b) Tela inicial pós-login: LCP e CLS (carregamento completo)
 await page.goto('about:blank');
-await page.goto(`${BASE}/#/home`);
+await page.goto(`${BASE}/app/#/home`);
 await page.locator('.analysis').first().waitFor();
 await page.waitForTimeout(500);
 out.home = await page.evaluate(() => ({ lcp_ms: Math.round(window.__lcp), cls: +window.__cls.toFixed(4) }));
@@ -68,7 +68,7 @@ out.home = await page.evaluate(() => ({ lcp_ms: Math.round(window.__lcp), cls: +
 const chooseCity = () => page.locator('[data-start="city"]').click();
 await page.goto('about:blank'); // só trocar o hash não recarrega o app, que ainda guarda o usuário deslogado
 const t0 = Date.now();
-await page.goto(`${BASE}/#/explorer`);
+await page.goto(`${BASE}/app/#/explorer`);
 await chooseCity();
 await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
 out.explorer_first_colored_ms = Date.now() - t0;

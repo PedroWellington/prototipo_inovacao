@@ -3,7 +3,7 @@ import { avatar } from '../components/account.js';
 import '../styles/components.css';
 import { showError } from '../forms.js';
 import { html, mount } from '../html.js';
-import { icon, logo } from '../icons.js';
+import { aboutLink, icon, logo } from '../icons.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import { initials } from '../lib.js';
@@ -222,7 +222,7 @@ export async function render(root) {
       root,
       html`<div class="ob">
         <header class="ob-top">
-          ${logo()}
+          <a href="#/home" class="logo-link" aria-label="Início">${logo()}</a>
           <div class="ob-progress" role="progressbar" aria-label="Progresso" aria-valuemin="1" aria-valuemax="${STEPS}" aria-valuenow="${s.step}">
             <span style="transform: scaleX(${s.step / STEPS})"></span>
           </div>
@@ -243,6 +243,7 @@ export async function render(root) {
             </div>
           </div>
         </form>
+        <p class="about-row">${aboutLink()}</p>
       </div>`,
     );
     // Mantém o foco onde estava (troca de chip/opção re-renderiza a tela).

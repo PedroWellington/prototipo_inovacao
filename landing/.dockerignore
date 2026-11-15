@@ -1,0 +1,8 @@
+node_modules
+.build
+perf
+scripts
+docs
+*.html
+!index.html
+package*.json

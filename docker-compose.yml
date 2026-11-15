@@ -32,10 +32,12 @@ services:
       db:
         condition: service_healthy
 
-  # Build de produção servido pelo nginx (gzip + proxy de /api). É o que se mede em docs/PERFORMANCE.md.
+  # Build de produção servido pelo nginx: landing em /, app em /app/, proxy de /api. É o que se mede em docs/PERFORMANCE.md.
   frontend:
     build:
       context: ./frontend
+      additional_contexts:
+        landing: ./landing
       args:
         PRODUCT_NAME: ${PRODUCT_NAME}
     ports:
@@ -53,8 +55,10 @@ services:
       VITE_API_TARGET: http://backend:8000
       PRODUCT_NAME: ${PRODUCT_NAME}
       VITE_POLL: "1"
+      LANDING_DIR: /landing
     volumes:
       - ./frontend:/app
+      - ./landing:/landing:ro
       - /app/node_modules
     ports:
       - "${FRONTEND_DEV_PORT:-5173}:5173"
