@@ -1091,6 +1091,21 @@ img.avatar {
   outline-offset: 2px;
 }
 
+/* Barra superior em telas estreitas: a marca (ícone + VICUS + selo) encolhe para caber com o botão do menu e o
+   avatar; abaixo de 480 px a barra pode quebrar em duas linhas em vez de criar rolagem horizontal na página. */
+@media (max-width: 860px) {
+  .topbar .logo-link { min-width: 0; }
+  .topbar .logo-word { font-size: var(--text-base); letter-spacing: 0.12em; margin-right: -0.12em; }
+  .topbar .proto-badge { margin-left: var(--space-1); padding: 2px 5px; font-size: 10px; letter-spacing: 0.03em; }
+}
+@media (max-width: 480px) {
+  .topbar { flex-wrap: wrap; height: auto; min-height: 56px; padding: 8px 12px; row-gap: 4px; }
+  .topbar .logo-link { order: 0; }
+  .topbar-menu { order: 1; padding: 7px 9px; }
+  .topbar-menu span { display: none; } /* só o ícone; o nome fica no aria-label */
+  .topbar-right { order: 2; }
+}
+
 /* Login com o Google: cores e medidas da especificação de marca do Google (branco, borda #747775, texto #1F1F1F),
    por isso literais; a fonte é a do app. */
 .auth-google { margin-top: var(--space-4, 16px); }

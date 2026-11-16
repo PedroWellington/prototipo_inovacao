@@ -7,6 +7,11 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 
 | Etapa | Fase | Estado | Evidência |
 |---|---|---|---|
+| Redesign premium (prompt de 2026-11-16) | 0. Exame da arquitetura + extras 13.1 (barra de progresso da landing) e 13.2 (domínio) | ✅ | `bfff907`; relatório na conversa |
+| Redesign premium | 1. Bugs (painel sem corte, tooltip compacto) e holograma trocável | ✅ já feito antes (`643c96f`, `654da32`); `perf/overflow.mjs` passa em 8 larguras × 3 zooms depois do ajuste da barra superior em telas estreitas | `docs/HOLOGRAMA.md`; `build-holograma.py --autoteste` |
+| Redesign premium | 2. Design system claro/escuro, logo, mapa no escuro, botão de tema | ⬜ | |
+| Redesign premium | 3. Navegação (Visão geral · Explorador · Análises · Comparar · Dados e fontes) | ⬜ | |
+| Redesign premium | 4 a 9. Visão geral, explorador, páginas, comparar, tema em círculo, verificação | ⬜ | |
 | Redesign completo | 1. Paleta única (`shared/design-tokens.css`) | ✅ | `87e7a50`; `docs/visual/fase1-*` |
 | Redesign completo | 2. Visão geral com dados reais | ✅ | `fab9d46`; `docs/visual/fase2-*` |
 | Redesign completo | 3. Explorador em três colunas, ranking FLIP, câmera contínua | ✅ | `0f9ae09`; `docs/visual/fase3-*`; `docs/PERFORMANCE.md` |

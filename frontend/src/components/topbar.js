@@ -16,7 +16,7 @@ export function topbar({ active, user, profile }) {
   const name = profile?.company_name || user?.name || '';
   return html`<header class="topbar on-dark">
     <a href="#/home" class="logo-link" data-nav="home">${logo()}</a>
-    <button type="button" class="topbar-menu" data-topbar-menu aria-expanded="false" aria-controls="topnav">${icon('list', 18)}<span>Menu</span></button>
+    <button type="button" class="topbar-menu" data-topbar-menu aria-label="Menu" aria-expanded="false" aria-controls="topnav">${icon('list', 18)}<span>Menu</span></button>
     <nav class="topnav" id="topnav" aria-label="Navegação principal">
       ${NAV.map(
         (n) => html`<a class="topnav-link ${n.key === active ? 'is-active' : ''}" href="${n.href}" data-nav="${n.key}" ${n.key === active ? 'aria-current="page"' : ''}>${n.label}</a>`,
