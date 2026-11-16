@@ -1,5 +1,5 @@
 # Só o que a função Python e o build precisam sobe para a Vercel (limite de 250 MB por função).
-data/
+/data/
 design/
 docs/
 backend/tests/
