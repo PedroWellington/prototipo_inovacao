@@ -34,7 +34,7 @@ Para cada bairro `b` da cidade e cada critério `c`:
 3. **Aderência:** `f = p` se o critério for `attract`, ou `f = 1 − p` se for `repel`.
 4. **Nota (0 a 100):** `nota(b) = 100 × Σ(w_c × f(b,c)) / Σ(w_c)`.
 5. **Posição:** nota decrescente.
-   - Empates são desfeitos pelo nome do bairro, em ordem alfabética, e depois pelo id.
+   - Empates são desfeitos pelo nome do bairro, em ordem de bytes (`COLLATE "C"`: a mesma em qualquer servidor; a ordem alfabética do idioma varia com a collation do banco), e depois pelo id.
    - Antes de ordenar, a nota é arredondada em 6 casas, para eliminar ruído de ponto flutuante.
 
 A nota é **relativa à cidade**. Ela diz como o bairro se posiciona em relação aos outros bairros da mesma cidade. Não é uma medida absoluta nem uma probabilidade.
@@ -137,7 +137,7 @@ Para cada cidade `m` e critério `c`:
    - por km²: `v = n / área do município` (Censo 2022).
    - As duas medidas e a contagem absoluta sempre vão na resposta e no tooltip; só a escolhida entra na nota.
 3. **Renda (se for critério):** `v` = mediana de renda do município.
-4. **Percentil, aderência, nota e posição:** iguais aos dos bairros. `p = PERCENT_RANK()` entre as cidades analisadas; `f = p` (perto) ou `1 − p` (longe); `nota = 100 × Σ(w × f) / Σ w`. A posição segue a nota decrescente, arredondada em 6 casas. O empate é desfeito pelo **nome da cidade** e depois pelo código IBGE (há nomes repetidos entre estados).
+4. **Percentil, aderência, nota e posição:** iguais aos dos bairros. `p = PERCENT_RANK()` entre as cidades analisadas; `f = p` (perto) ou `1 − p` (longe); `nota = 100 × Σ(w × f) / Σ w`. A posição segue a nota decrescente, arredondada em 6 casas. O empate é desfeito pelo **nome da cidade** (`COLLATE "C"`, como nos bairros) e depois pelo código IBGE (há nomes repetidos entre estados).
 
 Por que habitantes é o padrão: um município grande, com muita área rural, parece "vazio" por km² mesmo tendo cobertura suficiente para a população.
 

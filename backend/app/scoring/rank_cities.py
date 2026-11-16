@@ -69,8 +69,8 @@ CITY_RANK_SQL = text(
            count(*) AS analyzed
     FROM (
     SELECT c.ibge, c.name, c.uf, round(s.score::numeric, 1) AS score,
-           -- arredonda antes de ordenar (ruído de ponto flutuante); empate -> nome -> código IBGE
-           row_number() OVER (ORDER BY round(s.score::numeric, 6) DESC, c.name, c.ibge) AS rank,
+           -- arredonda antes de ordenar (ruído de ponto flutuante); empate -> nome (COLLATE "C": igual em qualquer servidor) -> código IBGE
+           row_number() OVER (ORDER BY round(s.score::numeric, 6) DESC, c.name COLLATE "C", c.ibge) AS rank,
            c.population, round(c.area_km2::numeric, 1) AS area_km2, c.total_active, c.located, c.income_median,
            CASE WHEN c.income_median IS NULL THEN NULL WHEN c.income_median <= q.q[1] THEN 1
                 WHEN c.income_median <= q.q[2] THEN 2 WHEN c.income_median <= q.q[3] THEN 3 ELSE 4 END AS income_quartile,

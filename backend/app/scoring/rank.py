@@ -91,8 +91,9 @@ RANK_SQL = text(
       FROM f GROUP BY id, name
     )
     SELECT s.id, s.name, round(s.score::numeric, 1) AS score,
-           -- arredonda antes de ordenar: elimina ruído de ponto flutuante; empate -> nome -> id
-           row_number() OVER (ORDER BY round(s.score::numeric, 6) DESC, s.name, s.id) AS rank,
+           -- arredonda antes de ordenar: elimina ruído de ponto flutuante; empate -> nome -> id.
+           -- COLLATE "C": a mesma ordem em qualquer servidor (o local é en_US, o Neon é C.UTF-8)
+           row_number() OVER (ORDER BY round(s.score::numeric, 6) DESC, s.name COLLATE "C", s.id) AS rank,
            c.level AS coverage_level, c.located_count, s.criteria,
            n.income_median, n.income_method,
            CASE WHEN n.income_median IS NULL THEN NULL WHEN n.income_median <= q.q[1] THEN 1
@@ -179,7 +180,7 @@ def rank(db: Session, ibge: int, criteria: list[dict]) -> dict:
         {"m": ibge, "keys": keys, "dirs": [c["direction"] for c in criteria], "weights": [c["weight"] for c in criteria]},
     ).mappings().all()
     excluded = db.execute(
-        text("SELECT id, name FROM neighborhoods WHERE municipality_ibge = :m AND NOT (area_km2 > 0) ORDER BY name"),
+        text("SELECT id, name FROM neighborhoods WHERE municipality_ibge = :m AND NOT (area_km2 > 0) ORDER BY name COLLATE \"C\""),
         {"m": ibge},
     ).mappings().all()
 
