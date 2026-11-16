@@ -97,7 +97,7 @@ escolha **São Paulo (gru1)** ali e faça **Redeploy**.
 
 ## O que cada arquivo faz
 
-- `vercel.json`: build, saída estática, função Python (`python3.12`, 1 GB, 60 s, região `gru1`), reescritas (`/api/*` ->
+- `vercel.json`: build, saída estática, função Python (runtime oficial detectado pelo `api/index.py`, Python 3.12 padrão; só `maxDuration` 60 s, pois `runtime` é só para runtimes da comunidade e `memory` não entra com Fluid compute; região `gru1`), reescritas (`/api/*` ->
   função; `/app/*` -> `index.html` do app), cache (assets com hash, marca e quadros do holograma por 1 ano; HTML sem cache)
   e cabeçalhos de segurança (CSP, HSTS, nosniff, Referrer-Policy, Permissions-Policy, X-Frame-Options).
 - `api/index.py`: expõe o `app` FastAPI de `backend/app` para a Vercel. `requirements.txt` da raiz: só o que a API usa.
