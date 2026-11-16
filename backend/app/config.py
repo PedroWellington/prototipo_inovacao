@@ -18,7 +18,10 @@ def flag(name: str, default: bool) -> bool:
 PROTOTYPE = flag("PROTOTYPE", False)  # selo "Protótipo" junto da logo
 DEMO_MODE = flag("DEMO_MODE", False)  # cadastro sem verificação de e-mail
 UPLOADS_ENABLED = flag("UPLOADS_ENABLED", True)  # logo da empresa em disco (DATA_DIR); na Vercel o disco não persiste
-GOOGLE_LOGIN_ENABLED = flag("GOOGLE_LOGIN_ENABLED", False)  # ainda não implementado (docs/EXTENSIONS.md)
+GOOGLE_LOGIN_ENABLED = flag("GOOGLE_LOGIN_ENABLED", False)  # app/auth/google.py; exige também as três variáveis abaixo
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")  # ex.: https://vircus-nu.vercel.app (monta o redirect do Google)
 PDF_ENABLED = flag("PDF_ENABLED", False)  # ainda não implementado (docs/EXTENSIONS.md)
 SESSION_COOKIE = f"{PRODUCT_NAME.lower()}_session"
 

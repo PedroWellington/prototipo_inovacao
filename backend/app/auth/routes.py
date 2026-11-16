@@ -15,8 +15,7 @@ from app.db import get_db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# TODO(fora do escopo): verificação de e-mail, redefinição de senha e login com Google (OAuth).
-# Ganchos descritos em docs/EXTENSIONS.md; a coluna users.email_verified já existe.
+# TODO(fora do escopo): verificação de e-mail e redefinição de senha (docs/EXTENSIONS.md). Login com Google: google.py.
 
 
 class RegisterIn(BaseModel):

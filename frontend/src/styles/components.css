@@ -1090,3 +1090,14 @@ img.avatar {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* Login com o Google: cores e medidas da especificação de marca do Google (branco, borda #747775, texto #1F1F1F),
+   por isso literais; a fonte é a do app. */
+.auth-google { margin-top: var(--space-4, 16px); }
+.auth-or { display: flex; align-items: center; gap: var(--space-3, 12px); color: var(--color-text-muted); font-size: var(--text-sm, 13px); }
+.auth-or::before, .auth-or::after { content: ''; flex: 1; border-top: 1px solid var(--color-border); }
+.btn-google { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 40px; margin-top: var(--space-3, 12px);
+  padding: 0 12px; border: 1px solid #747775; border-radius: 4px; background: #ffffff; color: #1f1f1f; font-weight: 500; font-size: 14px; text-decoration: none; }
+.btn-google:hover { background: #f2f2f2; }
+.btn-google:focus-visible { outline: 3px solid var(--color-focus, #4285f4); outline-offset: 2px; }
+.auth-google .hint { margin-top: var(--space-2, 8px); }

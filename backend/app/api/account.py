@@ -17,7 +17,7 @@ def export(user: CurrentUser = Depends(current_user), db: Session = Depends(get_
     """LGPD: todos os dados que guardamos sobre a conta (sem hash de senha nem tokens)."""
     q = lambda sql: [dict(r) for r in db.execute(text(sql), {"u": user.id}).mappings()]  # noqa: E731
     data = {
-        "account": q("SELECT id, name, email, email_verified, terms_accepted_at, created_at FROM users WHERE id = :u")[0],
+        "account": q("SELECT id, name, email, email_verified, google_sub IS NOT NULL AS google_linked, terms_accepted_at, created_at FROM users WHERE id = :u")[0],
         "business_profile": (q("SELECT * FROM business_profiles WHERE user_id = :u") or [None])[0],
         "criteria": q("SELECT business_type_key, direction, weight FROM profile_criteria WHERE user_id = :u ORDER BY business_type_key"),
         "sessions": q("SELECT created_at, expires_at FROM sessions WHERE user_id = :u ORDER BY created_at"),

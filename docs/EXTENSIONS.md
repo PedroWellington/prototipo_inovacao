@@ -44,7 +44,7 @@ Cada item abaixo diz onde encaixar a extensão sem mexer no motor de ranking.
 
 - **Hoje:** `users.email_verified` já existe e vale `false`.
 - **Verificação e redefinição:** tabela `email_tokens(user_id, purpose, token_hash, expires_at)`, mais um provedor de e-mail transacional (credencial no `.env`).
-- **Login com Google:** OAuth 2.0 / OpenID Connect com `state` + PKCE. Uma conta existente é vinculada pelo e-mail verificado.
+- **Login com Google:** implementado em `backend/app/auth/google.py` (OIDC, authorization code + PKCE, `state` + `nonce`, ID token validado no servidor). Liga com `GOOGLE_LOGIN_ENABLED` + `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL`. Conta existente é vinculada só com e-mail verificado pelo Google.
 
 ## Limite de tentativas de login distribuído
 

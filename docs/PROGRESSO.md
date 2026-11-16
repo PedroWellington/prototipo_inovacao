@@ -22,7 +22,7 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Deploy (protótipo) | Banco do Brasil inteiro em dois bancos pequenos para o Neon grátis (`vicus-dados` 253 MB, `vicus-contas` 24 MB), dois pools no backend, 20 consultas idênticas | ✅ | `docs/DATA.md` (fim); `scripts/build_prod_db.py`, `scripts/compare_rank.py` |
 | Deploy (protótipo) | Fase 1/2: site e API na Vercel (`vercel.json`, `api/index.py`, `scripts/build-vercel.mjs`), flags do protótipo (`/api/config`, selo "Protótipo", DEMO_MODE, uploads/Google/PDF desligados), cabeçalhos de segurança (Vercel e nginx), `docs/DEPLOY.md` passo a passo | ✅ (configurado e testado localmente; falta você criar os projetos) | `docs/DEPLOY.md`; journey/a11y com CSP no nginx |
 | Deploy | Fase 3: domínio, HTTPS, e-mail transacional, páginas legais (rascunho) | ❌ | |
-| Deploy | Fase 4: login com Google (preparado e desligado por flag) | ❌ | |
+| Deploy | Fase 4: login com Google (OIDC + PKCE, ID token validado no servidor; cadastro normal continua) | ✅ código; ⬜ chaves na Vercel | `backend/app/auth/google.py`, `tests/test_google_login.py`; liga com `GOOGLE_LOGIN_ENABLED` + `GOOGLE_CLIENT_ID`/`SECRET` + `PUBLIC_BASE_URL` |
 | Deploy | Fase 5: verificação em produção | 🔄 | no ar em `https://vircus-nu.vercel.app` (2026-11-16); corrigidos: `.vercelignore` apagava `landing/data`, pooler do Neon rejeitava `options` na conexão (`7d6bb3f`); falta cadastro/login/explorador de ponta a ponta com números |
 | Deploy | Fase 6: operação (`docs/DEPLOY.md`, CI, monitoramento) | ❌ | |
 
@@ -47,6 +47,9 @@ Protótipo publicado em `https://vircus-nu.vercel.app` (Vercel Hobby + Neon). Pr
 Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.mjs` gera `.vercel-out`, 9,9 MB, com os 360 quadros `ff24815a9b42`). **Próximo passo é seu:** criar os dois projetos no Neon e o projeto na Vercel seguindo `docs/DEPLOY.md` (passos 1 a 3). Depois: Fase 5 (verificação em produção com números) e Fase 3 (domínio, e-mail, páginas legais).
 
 ## Decisões tomadas
+
+- Cabeçalho da landing (2026-11-16): só marca + selo + "Entrar" (ou "Ir para a plataforma" logado); as seções continuam por rolagem.
+- Login com Google exige e-mail verificado pelo Google também para conta nova (evita que um e-mail não confirmado bloqueie o cadastro por senha do dono real).
 
 - Logo no produto = ícone PNG (2x/3x) + nome em texto na cor do tema; os PNGs originais ficam em `design/brand/` (versionados desde `654da32`, 5,8 MB).
 - `manifest.webmanifest` servido como `application/manifest+json` por um `location` próprio no nginx.

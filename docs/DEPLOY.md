@@ -79,6 +79,7 @@ deve terminar com `TUDO IGUAL`.
    | `DEMO_MODE` | `true` |
    | `UPLOADS_ENABLED` | `false` |
    | `GOOGLE_LOGIN_ENABLED` | `false` |
+   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL` | só quando ligar o login com Google: ID e segredo do OAuth Client (Google Cloud Console) e `https://<projeto>.vercel.app`; redirect URI = `https://<projeto>.vercel.app/api/auth/google/callback` |
    | `PDF_ENABLED` | `false` |
 
 4. Clique em **Deploy**. O primeiro build leva de 2 a 4 minutos. No fim aparece o endereço `https://<projeto>.vercel.app`.
