@@ -17,7 +17,7 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Modo escuro, logo e menu | Modo escuro | ❌ | só ganchos: `hologram.theme()` e conjunto por tema no manifesto do holograma; fundo previsto `#181512` (apple-touch-icon e `manifest.webmanifest`) |
 
 | Holograma trocado (2026-11-15) | Novos 360 PNG 720×720 -> WebP 486×396, 4,9 MB, versão `ff24815a9b42` | ✅ | `docs/visual/holograma2-*`; dist sem quadro antigo |
-| Holograma trocado de novo (2026-11-15, 20:57) | 360 PNG 900×900 em `design/holograma-360/.../frames-png`: a mesma loja, mas com o cone de projeção desenhado na imagem (o app já desenha o cone em CSS) e 18,7 MB em WebP (limite 6 MB; 8,1 MB mesmo a 520 px, q70 e alfa 50) | 🔄 aguardando decisão | o `ff24815a9b42` continua no app; nada foi commitado dos novos |
+| Holograma trocado de novo (2026-11-15, 20:57) | 360 PNG 900×900 em `design/holograma-360/.../frames-png`: a mesma loja, mas com o cone de projeção desenhado na imagem (o app já desenha o cone em CSS) e 18,7 MB em WebP (limite 6 MB; 8,1 MB mesmo a 520 px, q70 e alfa 50) | ⬜ descartado: Pedro vai exportar de novo sem cone nem brilho (720×720, fundo transparente); reprocessar quando avisar | o `ff24815a9b42` continua no app e no deploy; a pasta `design/holograma-360/` já está no `.gitignore` |
 | Deploy | Fase 0: auditoria (nginx, variáveis, banco, segredos, público) | ✅ | esta seção; relatório na conversa de 2026-11-15 |
 | Deploy (protótipo) | Banco do Brasil inteiro em dois bancos pequenos para o Neon grátis (`vicus-dados` 253 MB, `vicus-contas` 24 MB), dois pools no backend, 20 consultas idênticas | ✅ | `docs/DATA.md` (fim); `scripts/build_prod_db.py`, `scripts/compare_rank.py` |
 | Deploy (protótipo) | Fase 1/2: site e API na Vercel (`vercel.json`, `api/index.py`, `scripts/build-vercel.mjs`), flags do protótipo (`/api/config`, selo "Protótipo", DEMO_MODE, uploads/Google/PDF desligados), cabeçalhos de segurança (Vercel e nginx), `docs/DEPLOY.md` passo a passo | ✅ (configurado e testado localmente; falta você criar os projetos) | `docs/DEPLOY.md`; journey/a11y com CSP no nginx |
@@ -62,7 +62,7 @@ Deploy do protótipo configurado e commitado (`node scripts/build-vercel.mjs` ge
 
 ## Pendências
 
-- Holograma 900×900: decidir entre (a) exportar de novo sem o cone/brilho (como o conjunto 720×720) ou (b) aceitar o cone na imagem e reduzir (menos quadros, alfa com perda, 520 px) até ≤ 6 MB.
+- Holograma: quando Pedro trocar os quadros (720×720, sem cone nem brilho), rodar `python -I scripts/build-holograma.py design/holograma-360/VICUS-Holograma-360-Frames-PNG/frames-png`, conferir ≤ 6 MB e versão nova no manifesto, commitar e conferir no link publicado.
 
 - Colocar os prompts (`.md`) em `design/prompts/` e versionar: sem eles, os checklists de aceite não estão no repositório.
 - Modo escuro (ver quadro). Decidir: preferência do sistema, botão, ou os dois; mapa-base OSM no escuro; conjunto escuro do holograma.
