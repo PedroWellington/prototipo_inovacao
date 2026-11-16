@@ -21,7 +21,7 @@ async function check(page, name) {
 }
 
 for (const [device, viewport] of [['desktop', { width: 1440, height: 900 }], ['celular', { width: 390, height: 844 }]]) {
-  const ctx = await browser.newContext({ viewport, isMobile: device === 'celular', hasTouch: device === 'celular' });
+  const ctx = await browser.newContext({ bypassCSP: true, viewport, isMobile: device === 'celular', hasTouch: device === 'celular' });
   const page = await ctx.newPage();
   const d = (n) => `${device}: ${n}`;
   await page.goto(`${BASE}/`, { waitUntil: 'load' }); await check(page, d('landing (topo)'));

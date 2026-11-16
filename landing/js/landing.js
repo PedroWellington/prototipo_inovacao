@@ -589,28 +589,6 @@ for (const a of document.querySelectorAll('[data-app-route]')) a.href = APP_URL 
     .catch(() => {});
 }, { timeout: 4000 });
 
-// Menu do topo: o item ativo acompanha a seção que cruza o meio da tela (IntersectionObserver, sem ler layout).
-const navLinks = [...document.querySelectorAll('.nav-links a')];
-const setActive = (id) => navLinks.forEach((a) => {
-  const on = a.getAttribute('href') === `#${id}`;
-  a.classList.toggle('is-active', on);
-  if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
-});
-const sectionObserver = new IntersectionObserver((entries) => {
-  for (const e of entries) if (e.isIntersecting) setActive(e.target.id);
-}, { rootMargin: '-49% 0px -50% 0px' });
-for (const a of navLinks) {
-  const section = document.getElementById(a.getAttribute('href').slice(1));
-  if (section) sectionObserver.observe(section);
-  a.addEventListener('click', () => { setActive(section.id); closeMenu(); });
-}
-const toggle = document.querySelector('.nav-toggle');
-function closeMenu() { nav.classList.remove('menu-open'); toggle.setAttribute('aria-expanded', 'false'); }
-toggle.addEventListener('click', () => {
-  const open = nav.classList.toggle('menu-open');
-  toggle.setAttribute('aria-expanded', String(open));
-});
-addEventListener('keydown', (e) => e.key === 'Escape' && closeMenu());
 new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) { dirty = true; readScroll(); } }).observe(story);
 addEventListener('scroll', readScroll, { passive: true });
 addEventListener('resize', () => { size.maxDpr = 0; resize(); }, { passive: true });

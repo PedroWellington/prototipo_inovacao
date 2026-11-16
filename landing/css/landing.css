@@ -114,16 +114,6 @@ a:focus-visible{outline-color:var(--copper-soft)}
 /* --- Menu do topo --------------------------------------------------------------------------------- */
 /* Âncoras param abaixo da barra fixa; "Início" (a jornada) começa no topo da página. */
 .product,.sources,.plans,.end-section{scroll-margin-top:72px}
-.nav-links a{white-space:nowrap}
-.nav-toggle{display:none;font:inherit;font-size:12px;font-weight:730;color:var(--line);background:transparent;border:1px solid color-mix(in srgb, var(--line) 38%, transparent);border-radius:30px;padding:10px 14px;cursor:pointer}
-.nav-toggle:focus-visible{outline:3px solid var(--copper-soft);outline-offset:3px}
-@media(max-width:760px){
-  .nav-toggle{display:inline-block;margin-left:auto}
-  .navbar.menu-open .nav-links{display:flex;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;padding:6px 22px 14px;background:color-mix(in srgb, var(--coal) 97%, transparent);border-bottom:1px solid color-mix(in srgb, var(--sand) 20%, transparent);font-size:15px}
-  .navbar.menu-open .nav-links a{padding:13px 0;border-bottom:1px solid color-mix(in srgb, var(--sand) 10%, transparent)}
-  .navbar.menu-open .nav-links .is-active:after{width:28px}
-  .navbar.menu-open{background:color-mix(in srgb, var(--coal) 97%, transparent)}
-}
 
 /* --- Sessão: a landing não espera a rede; os pares trocam depois, abaixo da dobra ------------------- */
 [data-when="user"]{display:none!important}

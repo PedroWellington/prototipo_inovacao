@@ -4,6 +4,7 @@
 import { chromium } from 'playwright-core';
 
 const BASE = process.env.BASE || 'http://localhost:8080';
+// bypassCSP nos contextos: a CSP do nginx (nginx-security.inc) bloqueia o waitForFunction com string e o axe injetado; o site continua com a CSP.
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || 'msedge', headless: process.env.HEADED !== '1' });
 const results = [];
 const errors = [];
@@ -16,47 +17,28 @@ const watch = (page) => {
   page.on('console', (m) => m.type() === 'error' && !/401/.test(m.text()) && errors.push(m.text())); // 401 de /api/auth/me = visitante
 };
 
-// --- Menu do topo: clique em cada item, indo e voltando ------------------------------------------------
-async function menu(label, viewport, mobile) {
-  const ctx = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 3 : 1 });
+// --- Cabeçalho da landing: só a marca (com o selo) e "Entrar"; nada de menu ---------------------------
+async function header(label, viewport, mobile) {
+  const ctx = await browser.newContext({ bypassCSP: true, viewport, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 3 : 1 });
   const page = await ctx.newPage(); watch(page);
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
-  const order = ['#produto', '#fontes', '#planos', '#final', '#inicio', '#final', '#planos', '#fontes', '#produto', '#inicio'];
-  for (const href of order) {
-    await step(`${label}: menu ${href}`, async () => {
-      if (mobile) { await page.click('.nav-toggle'); await page.waitForSelector('.nav-links a', { state: 'visible' }); }
-      await page.click(`.nav-links a[href="${href}"]`);
-      await page.waitForTimeout(700);
-      const r = await page.evaluate((h) => {
-        const sec = document.querySelector(h), nav = document.getElementById('navbar');
-        return {
-          top: Math.round(sec.getBoundingClientRect().top), navBottom: Math.round(nav.getBoundingClientRect().bottom),
-          active: document.querySelector('.nav-links a.is-active')?.getAttribute('href'),
-          menuOpen: nav.classList.contains('menu-open'),
-          atBottom: Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 1,
-        };
-      }, href);
-      expect(r.active === href, `ativo = ${r.active}`);
-      if (href === '#inicio') expect(r.top === 0 || r.top > -2, `início fora do topo (${r.top})`);
-      // A última seção não sobe além do fim da página: basta estar visível com a página no fim.
-      else expect((r.top >= r.navBottom - 2 && r.top <= r.navBottom + 30) || (r.atBottom && r.top >= r.navBottom - 2), `seção em ${r.top}px, barra termina em ${r.navBottom}px`);
-      expect(!r.menuOpen, 'menu do celular não fechou');
-    });
-  }
-  // Rolagem manual: o destaque acompanha a seção visível
-  await step(`${label}: destaque acompanha a rolagem`, async () => {
-    await page.evaluate(() => scrollTo(0, document.getElementById('fontes').offsetTop));
-    await page.waitForTimeout(400);
-    const a = await page.evaluate(() => document.querySelector('.nav-links a.is-active')?.getAttribute('href'));
-    expect(a === '#fontes', `ativo = ${a}`);
+  await step(`${label}: cabeçalho = marca + Entrar`, async () => {
+    const r = await page.evaluate(() => ({
+      old: !!document.querySelector('#navbar .nav-links, #navbar .nav-toggle'),
+      links: [...document.querySelectorAll('#navbar a')].filter((a) => a.getBoundingClientRect().width > 0)
+        .map((a) => [a.textContent.trim().replace(/\s+/g, ' '), a.getAttribute('href')]),
+    }));
+    expect(!r.old, 'menu antigo ainda no cabeçalho');
+    expect(r.links.length === 2, `${r.links.length} links visíveis: ${JSON.stringify(r.links)}`);
+    expect(r.links[1][0] === 'Entrar' && r.links[1][1] === '/app/#/login', `botão = ${JSON.stringify(r.links[1])}`);
   });
   await ctx.close();
 }
-await menu('desktop', { width: 1440, height: 900 }, false);
-await menu('celular', { width: 390, height: 844 }, true);
+await header('desktop', { width: 1440, height: 900 }, false);
+await header('celular', { width: 390, height: 844 }, true);
 
 // --- Caminho completo: visitante -> conta -> onboarding -> home -> explorador -> landing -> app ---------
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const ctx = await browser.newContext({ bypassCSP: true, viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage(); watch(page);
 const email = `perf-${Date.now()}@example.com`;
 await step('landing: visitante vê "Criar conta" e "Entrar"', async () => {
@@ -263,7 +245,7 @@ await step('menu no explorador: "Minhas análises" leva à seção da Visão ger
   expect((await page.evaluate(() => document.querySelector('.right-head h2')?.textContent)) === 'Recife', 'cidade perdida');
 });
 await step('celular: menu (hambúrguer) com Explorador em destaque, abre e fecha pelo teclado', async () => {
-  const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
+  const m = await browser.newContext({ bypassCSP: true, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
   const p = await m.newPage(); watch(p);
   await p.goto(`${BASE}/app/#/home`); await p.waitForSelector('[data-dashboard]');
   expect(!(await p.isVisible('.topnav-cta')), 'menu aberto sem pedir');
@@ -274,7 +256,7 @@ await step('celular: menu (hambúrguer) com Explorador em destaque, abre e fecha
   await m.close();
 });
 await step('celular: gaveta de navegação e gaveta do ranking', async () => {
-  const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
+  const m = await browser.newContext({ bypassCSP: true, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
   const p = await m.newPage(); watch(p);
   await p.goto(`${BASE}/app/#/explorer?city=2611606`);
   await p.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
@@ -287,7 +269,7 @@ await step('celular: gaveta de navegação e gaveta do ranking', async () => {
   await m.close();
 });
 await step('prefers-reduced-motion: sem entrada escalonada e ranking sem FLIP', async () => {
-  const m = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', storageState: await ctx.storageState() });
+  const m = await browser.newContext({ bypassCSP: true, viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', storageState: await ctx.storageState() });
   const p = await m.newPage(); watch(p);
   await p.goto(`${BASE}/app/#/home`); await p.waitForSelector('[data-dashboard]');
   const anim = await p.evaluate(() => getComputedStyle(document.querySelector('.ov-animate')).animationName);
@@ -338,7 +320,7 @@ await step('"Ir para a plataforma" -> /app/#/home', async () => {
 await ctx.close();
 
 // --- Links diretos sem sessão ----------------------------------------------------------------------------
-const guest = await browser.newContext(); const g = await guest.newPage(); watch(g);
+const guest = await browser.newContext({ bypassCSP: true }); const g = await guest.newPage(); watch(g);
 await step('link direto /app/#/login (visitante) e recarregar', async () => {
   await g.goto(`${BASE}/app/#/login`); await g.waitForSelector('#email'); await g.reload(); await g.waitForSelector('#email');
 });
