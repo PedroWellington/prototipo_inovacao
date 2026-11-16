@@ -41,3 +41,6 @@ design/holograma-360/
 # Vercel (build local e saída montada por scripts/build-vercel.mjs)
 .vercel/
 .vercel-out/
+
+# Referências visuais (imagens de layout com conteúdo de exemplo): só locais
+design/referencia/
