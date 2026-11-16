@@ -332,6 +332,12 @@ export function createMap(container, handlers, opts = {}) {
       const cam = map.cameraForBounds(bounds, { padding: padding(), ...opts });
       if (cam) moveTo(cam.center, cam.zoom);
     },
+    // Centro e zoom que enquadram bounds com essa faixa de padding (o centro já vem deslocado), sem mover.
+    cameraFor(bounds, pad, maxZoom) {
+      const cam = map.cameraForBounds(bounds, { padding: pad, maxZoom });
+      return cam ? { center: cam.center, zoom: cam.zoom } : { center: map.getCenter(), zoom: map.getZoom() };
+    },
+    camera: () => ({ center: map.getCenter(), zoom: map.getZoom() }),
     // Painel recolhido/aberto ou gaveta do celular: o mapa não muda de tamanho (sem resize por quadro);
     // a câmera desliza meia faixa para o conteúdo continuar centrado na área livre.
     setInsets(next, { animate = true } = {}) {

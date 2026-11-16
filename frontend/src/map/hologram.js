@@ -191,6 +191,7 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
   let last = 0;
   let seconds = 0;
   let size = null;
+  let scale = 1; // fator sobre o tamanho base (explorer.js: proporcional ao bairro na tela)
   let paints = 0; // quadros de giro efetivamente desenhados (medição)
   const current = () => {
     const n = frames.set.count;
@@ -199,11 +200,12 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
   // Rótulo obrigatório: o do manifesto ou o padrão (nunca vazio).
   const label = () => slots.forEach((s) => (s.el.querySelector('.holo-label').textContent = frames.meta.label || DEFAULT_LABEL));
 
+  const baseWidth = () => (small() ? Math.min(200, Math.max(130, innerWidth * 0.34)) : 230); // celular: clamp(130px, 34vw, 200px)
   function measure() {
     const m = frames.set;
     if (!m) return null;
-    const k = frames.meta.scale || 1;
-    const w = (small() ? Math.min(200, Math.max(130, innerWidth * 0.34)) : 230) * k; // celular: clamp(130px, 34vw, 200px)
+    const k = (frames.meta.scale || 1) * scale;
+    const w = baseWidth() * k;
     const h = Math.round((w * m.height) / m.width);
     const ratio = Math.min(2, devicePixelRatio || 1);
     for (const s of slots) {
@@ -304,6 +306,15 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
       wake();
     },
     rise: (slot) => slots[slot].rise,
+    baseWidth,
+    // Fator de tamanho (1 = base). Muda só o que é medido no próximo quadro; os quadros são redecodificados nesse tamanho.
+    scale(k) {
+      if (k === scale) return;
+      scale = k;
+      size = null;
+      for (const s of slots) s.drawn = -1;
+      wake();
+    },
     // Onde o holograma está agora (px do mapa), para outros elementos não o cobrirem.
     bounds: () => slots.filter((s) => s.box && s.rise > 0.2).map((s) => s.box),
     anchor: (slot) => slots[slot].lngLat,

@@ -5,7 +5,7 @@ import { bbox, brl, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL,
 import { createHologram } from '../map/hologram.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
-import { topbar, wireTopbar } from '../components/topbar.js';
+import { setActiveNav, topbar, wireTopbar } from '../components/topbar.js';
 import { measure, rankListShell, updateRankList } from '../rankList.js';
 import { cityActive, creditsState, ensureCity, ensureSearch, loadCredits, onCredits } from '../credits.js';
 import { loadUser } from '../session.js';
@@ -29,11 +29,10 @@ const HOLO_VIEW_ANGLE_DEG = 50;
 const HOLO_PITCH = 90 - HOLO_VIEW_ANGLE_DEG;
 const HOLO_MS = 700; // inclinar e subir: a mesma animação
 const HOLO_SWAP_MS = 450; // trocar de bairro já inclinado
-const HOLO_ZOOM = 0; // aproximação ao inclinar: 0,15 fazia o mapa trocar o nível dos tiles no meio (medido)
+const HOLO_MAX_ZOOM = 16; // bairros muito pequenos não vão além do nível de quarteirão
+const HOLO_FRAME = 0.25; // folga de cada lado ao enquadrar o bairro: ele ocupa cerca de metade da área útil
 const PANEL_KEY = 'explorer-panel'; // preferência só deste navegador (aberto/recolhido)
 const METHOD_LINK = () => html`<a href="#/como-calculamos" target="_blank" rel="noopener">Como calculamos</a>`;
-const DISCLAIMER =
-  'Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.';
 
 // Explorador em três colunas: painel esquerdo (conta, navegação e critérios), mapa no centro e painel direito
 // (Ranking | Detalhes). Os painéis ficam sobre o mapa, que nunca muda de tamanho: só a câmera desconta as faixas.
@@ -69,7 +68,6 @@ export async function render(root) {
         <aside class="ex-right" id="ex-right" aria-label="Ranking e detalhes" data-right></aside>
         <div class="ex-scrim" data-scrim hidden></div>
       </div>
-      <footer class="ex-footer small">${DISCLAIMER} ${METHOD_LINK()}.</footer>
     </div>`,
   );
 
@@ -108,7 +106,7 @@ export async function render(root) {
     cities: [],
     hoods: new Map(), // id -> { name, bounds, label }
     tab: 'ranking', // painel direito: 'ranking' | 'detail'
-    holo: { state: 'PLANO', id: null, slot: 0, zoomed: 0 }, // máquina de estados do holograma
+    holo: { state: 'PLANO', id: null, slot: 0, prev: null }, // máquina de estados do holograma; prev = câmera antes do clique
     leftOpen: true,
     sheetOpen: false, // celular: gaveta do painel direito expandida
   };
@@ -134,6 +132,7 @@ export async function render(root) {
   Object.assign($('[data-holo]'), {
     holoState: () => ({ ...s.holo, pitch: map.pitch(), top: (s.rank?.neighborhoods || []).slice(0, 5).map((n) => n.id) }),
     holoPoint: (id) => map.project(labelOf(id)),
+    hoodAt: (pt) => map.hoodAt(pt),
   });
 
   // ---------- Painel lateral: blocos da conta + recolher (só transform: o mapa não muda de tamanho) ----------
@@ -444,6 +443,7 @@ export async function render(root) {
 
   // ---------- Painel ----------
   function renderAll() {
+    setActiveNav(root, s.mode === 'discover' ? 'compare' : 'explorer'); // menu: Comparar = ranking de cidades
     renderCrumbs();
     renderPanel();
     renderRight();
@@ -456,15 +456,31 @@ export async function render(root) {
   let lastWhere = '';
 
   // ---------- Holograma: máquina de estados PLANO <-> INCLINADO(bairro) ----------
-  // Clique num bairro: inclina e sobe o holograma (uma só animação). Mesmo bairro de novo: volta ao plano.
-  // Outro bairro já inclinado: o antigo desce, o novo sobe, a câmera desliza. "Voltar ao plano" e Esc: plano.
+  // Clique num bairro: a câmera aproxima até o bairro ocupar cerca de metade da área útil, inclina e sobe o
+  // holograma, numa só animação (curva --ease); o holograma ganha um tamanho proporcional ao bairro na tela.
+  // Mesmo bairro de novo, "fechar", "Voltar ao plano" ou Esc: volta à câmera de antes do clique. Outro bairro
+  // já inclinado: o antigo desce, o novo sobe, a câmera desliza (a câmera guardada continua a do primeiro clique).
   // Clicar no fundo ou arrastar não muda o estado. Qualquer clique no meio reverte do ponto atual.
   const labelOf = (id) => s.hoods.get(id)?.label;
+  // Faixas cobertas (painéis, gaveta) mais a reserva no alto para o corpo do holograma.
   const holoPadding = () => {
     const ins = { ...map.insets(), ...(wide.matches ? {} : { bottom: right.offsetHeight + 8 }) }; // celular: gaveta aberta
     const reserve = Math.round(Math.min(0.42 * $('.ex-map').clientHeight, wide.matches ? 280 : 200));
     return { top: reserve, right: ins.right, bottom: ins.bottom, left: ins.left };
   };
+  // Câmera que enquadra o bairro em ~metade da área útil (folga HOLO_FRAME de cada lado) e o fator de escala do
+  // holograma: metade do tamanho do bairro em pixels no zoom final, entre 0,8 e 2,4 do tamanho base.
+  function holoCamera(bounds) {
+    const box = $('.ex-map');
+    const p = holoPadding();
+    const w = Math.max(1, box.clientWidth - p.left - p.right), h = Math.max(1, box.clientHeight - p.top - p.bottom);
+    const padding = { top: p.top + h * HOLO_FRAME, bottom: p.bottom + h * HOLO_FRAME, left: p.left + w * HOLO_FRAME, right: p.right + w * HOLO_FRAME };
+    const cam = map.cameraFor(bounds, padding, HOLO_MAX_ZOOM);
+    const a = map.project(bounds[0]), b = map.project(bounds[1]);
+    const px = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) * 2 ** (cam.zoom - map.zoom());
+    const cap = (0.5 * Math.min(w, h)) / holo.baseWidth(); // nunca mais de metade da área útil
+    return { ...cam, scale: Math.max(0.6, Math.min(2.4, cap, Math.max(0.8, (0.5 * px) / holo.baseWidth()))) };
+  }
   function holoClick(id) {
     if (!labelOf(id)) return;
     if (s.holo.state === 'INCLINADO' && s.holo.id === id) return toPlane();
@@ -480,11 +496,13 @@ export async function render(root) {
     holo.set(slot, { lngLat: ll });
     const r0 = holo.rise(slot), ro = holo.rise(old);
     const swapping = from.state === 'INCLINADO' && map.pitch() > HOLO_PITCH - 1;
-    const zoomed = from.state === 'PLANO' && !from.zoomed ? HOLO_ZOOM : 0;
-    s.holo = { state: 'INCLINADO', id, slot, zoomed: from.zoomed + zoomed };
+    const prev = from.state === 'PLANO' ? map.camera() : from.prev; // guarda só ao sair do plano
+    const cam = holoCamera(s.hoods.get(id).bounds);
+    s.holo = { state: 'INCLINADO', id, slot, prev };
+    holo.scale(cam.scale);
     const dur = swapping ? HOLO_SWAP_MS : Math.max(250, HOLO_MS * (1 - map.pitch() / HOLO_PITCH));
     map.tiltTo(
-      { pitch: HOLO_PITCH, center: ll, zoom: map.zoom() + zoomed, padding: holoPadding() },
+      { pitch: HOLO_PITCH, center: cam.center, zoom: cam.zoom, padding: { top: 0, right: 0, bottom: 0, left: 0 } },
       {
         duration: dur,
         onUpdate: (e) => {
@@ -497,24 +515,25 @@ export async function render(root) {
   }
   function toPlane({ instant = false } = {}) {
     const r = [holo.rise(0), holo.rise(1)];
-    const zoomed = s.holo.zoomed;
-    s.holo = { ...s.holo, state: 'PLANO', id: null, zoomed: 0 };
+    const prev = s.holo.prev;
+    s.holo = { ...s.holo, state: 'PLANO', id: null, prev: null };
     const dur = instant ? 0 : Math.max(250, HOLO_MS * (map.pitch() / HOLO_PITCH));
     map.tiltTo(
-      { pitch: 0, zoom: map.zoom() - zoomed, padding: { top: 0, right: 0, bottom: 0, left: 0 } },
+      { pitch: 0, center: prev?.center, zoom: prev?.zoom, padding: { top: 0, right: 0, bottom: 0, left: 0 } },
       {
         duration: dur,
         onUpdate: (e) => {
           holo.set(0, { rise: r[0] * (1 - e) });
           holo.set(1, { rise: r[1] * (1 - e) });
         },
+        onDone: () => holo.scale(1),
       },
     );
     $('[data-plane]').hidden = true;
   }
 
   function renderCrumbs() {
-    const items = [{ label: 'Explorador', go: 'start' }];
+    const items = [{ label: 'Explorar', go: 'start' }];
     if (s.mode === 'discover') {
       if (s.level !== 'scope') items.push({ label: 'Alcance', go: 'scope' });
       if (s.scope && s.level !== 'scope') items.push({ label: `Cidades: ${s.scope.label}`, go: 'cities' });
@@ -524,7 +543,7 @@ export async function render(root) {
       if (s.state) items.push({ label: s.state.name, go: 'city' });
     }
     if (s.city) items.push({ label: s.city.name });
-    if (items.length === 1) items[0] = { label: 'Explorador' };
+    if (items.length === 1) items[0] = { label: 'Explorar' };
     mount(
       $('[data-crumbs]'),
       html`<ol>
@@ -1124,6 +1143,7 @@ export async function render(root) {
     if (d.closeDetail !== undefined) {
       s.selectedId = null;
       map.select(null);
+      if (s.holo.state === 'INCLINADO') toPlane(); // fechar o detalhe = desclicar o bairro
       return renderResults();
     }
     if (d.toggleAll !== undefined) {
@@ -1211,7 +1231,7 @@ export async function render(root) {
     if (s.sheetOpen) setSheet(false);
     if (s.leftOpen && !wide.matches) setPanel(false);
   });
-  // Vindo da tela inicial: #/explorer?city=<ibge> ou ?search=<alcance>
+  // Vindo da tela inicial ou do menu: #/explorer?city=<ibge>, ?search=<alcance> ou ?compare=1 (ranking de cidades)
   function openFromQuery() {
     const query = new URLSearchParams(location.hash.split('?')[1] || '');
     history.replaceState(null, '', '#/explorer'); // recarregar a página não repete a abertura
@@ -1220,6 +1240,8 @@ export async function render(root) {
       if (s.level === 'result' && s.city?.id === id) return; // já está aberta: nada a refazer
       openCityDirect(id);
     } else if (query.get('search')) openSearchDirect(query.get('search'));
+    else if (query.get('compare') && s.mode !== 'discover') goScope();
+    else if (query.get('compare')) setActiveNav(root, 'compare');
   }
   openFromQuery();
 

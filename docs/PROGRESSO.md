@@ -9,9 +9,11 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 |---|---|---|---|
 | Redesign premium (prompt de 2026-11-16) | 0. Exame da arquitetura + extras 13.1 (barra de progresso da landing) e 13.2 (domínio) | ✅ | `bfff907`; relatório na conversa |
 | Redesign premium | 1. Bugs (painel sem corte, tooltip compacto) e holograma trocável | ✅ já feito antes (`643c96f`, `654da32`); `perf/overflow.mjs` passa em 8 larguras × 3 zooms depois do ajuste da barra superior em telas estreitas | `docs/HOLOGRAMA.md`; `build-holograma.py --autoteste` |
-| Redesign premium | 2. Design system claro/escuro, logo, mapa no escuro, botão de tema | ⬜ | |
-| Redesign premium | 3. Navegação (Visão geral · Explorador · Análises · Comparar · Dados e fontes) | ⬜ | |
-| Redesign premium | 4 a 9. Visão geral, explorador, páginas, comparar, tema em círculo, verificação | ⬜ | |
+| Redesign premium | 2. Design system claro/escuro, logo, mapa no escuro, botão de tema | 🔄 tema claro/escuro, tokens escuros e botão feitos na PARTE A (`b2244de`); **falta o mapa-base no escuro** (depende do provedor de tiles) | `frontend/public/theme.js`, `tokens.css`, `docs/visual/parte-a/escuro-*` |
+| Redesign premium | 3. Navegação (Visão geral · Explorar · Análises · Comparar · Dados e fontes) | ✅ na PARTE A (`b2244de`): pílula que desliza por baixo do texto; "Comparar" abre o ranking de cidades (não há tela própria) | `topbar.js`; `journey.mjs` |
+| Redesign premium | 4 a 9. Visão geral, explorador, páginas, comparar, tema em círculo, verificação | ⬜ **o prompt do redesign (Fases 4 a 9) não está no repositório**; só a transição em círculo do tema (Fase 7) foi feita na PARTE A | pedir o texto do prompt ou colocá-lo em `design/prompts/` |
+| Landing e rolagem (PARTE A, 2026-11-16) | A1 a A12: progresso da esquerda para a direita, sem barra de rolagem, sem "Protótipo", tema na landing, textos novos, painel de produto (Conheça, Como funciona, Dados e fontes, Planos pagos, FAQ, rodapé legal), aviso legal fora do mapa, Comprar mais créditos, zoom ao bairro com holograma proporcional, menu Explorar | ✅ | `7704d8d`, `b2244de`, `917bdaa` e o commit seguinte; `docs/visual/parte-a/`; `docs/PERFORMANCE.md` (2026-11-16) |
+| Landing e rolagem | PARTE B: relatório em PDF + Google Maps | ⬜ espera a confirmação do Pedro (conta de faturamento e chave da API) | |
 | Redesign completo | 1. Paleta única (`shared/design-tokens.css`) | ✅ | `87e7a50`; `docs/visual/fase1-*` |
 | Redesign completo | 2. Visão geral com dados reais | ✅ | `fab9d46`; `docs/visual/fase2-*` |
 | Redesign completo | 3. Explorador em três colunas, ranking FLIP, câmera contínua | ✅ | `0f9ae09`; `docs/visual/fase3-*`; `docs/PERFORMANCE.md` |
@@ -47,12 +49,15 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 
 ## Agora
 
-Protótipo publicado em `https://vicus-inovacao.vercel.app` (Vercel Hobby + Neon). Próximo: Fase 5 completa (cadastro, ranking e explorador em produção, com tempos) e Fase 3.
+PARTE A (landing e rolagem) concluída e commitada em 2026-11-16. Próximo: PARTE B (relatório em PDF + Google Maps), só depois da confirmação do Pedro. Do redesign premium faltam o mapa-base no escuro (Fase 2) e as Fases 4 a 9, cujo prompt não está no repositório.
+
+Antes: protótipo publicado em `https://vicus-inovacao.vercel.app` (Vercel Hobby + Neon). Pendente: Fase 5 completa (cadastro, ranking e explorador em produção, com tempos) e Fase 3.
 
 Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.mjs` gera `.vercel-out`, 9,9 MB, com os 360 quadros `ff24815a9b42`). **Próximo passo é seu:** criar os dois projetos no Neon e o projeto na Vercel seguindo `docs/DEPLOY.md` (passos 1 a 3). Depois: Fase 5 (verificação em produção com números) e Fase 3 (domínio, e-mail, páginas legais).
 
 ## Decisões tomadas
 
+- PARTE A (2026-11-16): o herói da landing continua escuro nos dois temas (é escuro por design); as seções de página trocam a paleta clara pela grafite no tema escuro. "Comparar" no menu abre o ranking de cidades (não existe tela própria). Os planos da landing e de "Comprar mais créditos" são os do PDF (seção 8), com preços marcados como previstos; não há pacote avulso de créditos definido. O aviso legal sai do explorador e fica nos Termos ("Avisos legais"); regra 11 do CLAUDE.md atualizada.
 - Cabeçalho da landing (2026-11-16): só marca + selo + "Entrar" (ou "Ir para a plataforma" logado); as seções continuam por rolagem.
 - Login com Google exige e-mail verificado pelo Google também para conta nova (evita que um e-mail não confirmado bloqueie o cadastro por senha do dono real).
 
@@ -72,6 +77,10 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 
 ## Pendências
 
+- Mapa-base no tema escuro (os tiles do OSM continuam claros; depende do provedor de tiles a escolher).
+- Holograma: conjunto de quadros para o tema escuro (o manifesto já aceita `sets.escuro`).
+- Prompt do redesign premium (Fases 4 a 9) e o da PARTE A/B em `design/prompts/`.
+- Decidir o crédito inicial de cadastro (1, em `credit_settings.signup_grant`): aparece em "Plano Gratuito" (nome do plano em `api/credits.py`), no cartão Créditos da Visão geral e no cartão de créditos do explorador e da conta.
 - Holograma: quando Pedro trocar os quadros (720×720, sem cone nem brilho), rodar `python -I scripts/build-holograma.py design/holograma-360/VICUS-Holograma-360-Frames-PNG/frames-png`, conferir ≤ 6 MB e versão nova no manifesto, commitar e conferir no link publicado.
 
 - Colocar os prompts (`.md`) em `design/prompts/` e versionar: sem eles, os checklists de aceite não estão no repositório.

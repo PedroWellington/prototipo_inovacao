@@ -203,7 +203,7 @@ out.panel_toggle = {
 };
 
 // 9) Ranking de cidades ("Não"): Brasil inteiro, primeira coloração, recálculo e fluidez com ~5.570 municípios.
-await page.getByRole('button', { name: 'Explorador' }).click();
+await page.getByRole('button', { name: 'Explorar' }).click();
 await page.locator('[data-start="discover"]').click();
 const cityRank = async (action) => {
   await page.evaluate(() => performance.clearMeasures('app:city-recolor'));

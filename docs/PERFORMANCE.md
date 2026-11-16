@@ -166,6 +166,30 @@ O que foi feito para chegar aqui:
 - **Tiles raster sem fade de entrada e sem o zoom extra de +0,15:** são estáveis, mas não mudaram o p95 de forma mensurável.
 - **"Relevo" removido:** ele mudava o pitch fora da máquina de estados.
 
+### Zoom ao bairro com holograma proporcional e tema escuro (2026-11-16, PARTE A)
+
+Clicar num bairro agora **aproxima a câmera** (o bairro fica com cerca de metade da área útil, `maxZoom` 16, folga de 25 % de cada lado) ao mesmo tempo que inclina e sobe o holograma, numa só animação de 700 ms com a curva `--ease`; o holograma ganha um fator de tamanho proporcional ao bairro na tela (0,6 a 2,4 do tamanho base, nunca mais de metade da área útil). Desclicar volta à câmera de antes do clique. Medido com `perf/holo-fps.mjs` (`HEADLESS=1`, ~60 Hz de rAF em tela de 144 Hz):
+
+| Tela | CPU | Fase | fps | Quadro p95 / pior | Trabalho p95 / pior | Quadros > 50 ms |
+|---|---|---|---|---|---|---|
+| desktop | 1× | inclinar + aproximar + subir | 134 | 13,7 / 20,8 ms | 15,0 / 23,9 ms | 0 |
+| desktop | 1× | giro | 144 | 7,1 / 7,5 ms | 0,8 / 2,5 ms | 0 |
+| desktop | 1× | voltar à câmera anterior | 142 | 7,0 / 14,0 ms | 10,4 / 19,5 ms | 0 |
+| desktop | 4× | inclinar + aproximar + subir | 71 | 48,3 / 62,4 ms | 51,0 / 64,8 ms | 2 |
+| desktop | 4× | voltar à câmera anterior | 84 | 34,7 / 55,5 ms | 58,5 / 58,8 ms | 1 |
+| celular | 1× | inclinar + aproximar + subir | 141 | 7,1 / 14,0 ms | 5,7 / 9,5 ms | 0 |
+| celular | 1× | voltar à câmera anterior | 144 | 7,1 / 7,2 ms | 2,5 / 5,0 ms | 0 |
+| celular | 4× | inclinar + aproximar + subir | 124 | 13,9 / 34,7 ms | 16,7 / 19,6 ms | 0 |
+| celular | 4× | voltar à câmera anterior | 129 | 13,9 / 27,7 ms | 16,9 / 29,3 ms | 0 |
+
+- Com CPU normal, desktop e celular ficam acima de 55 fps e sem quadro acima de 50 ms; o trabalho p95 fica em 15 ms no desktop (meta: 12 ms) por causa do zoom: ao mudar de nível, o MapLibre pede tiles raster novos do OSM e refatia a fonte GeoJSON dos bairros no worker. Giro e memória (2,3 MB) não mudaram.
+- Com CPU 4× no desktop, a transição piorou em relação à inclinação sem zoom (p95 de 23,9–26,0 ms para 48,3 ms; 2 quadros acima de 50 ms). É o custo de trocar o nível dos tiles durante a animação, que a versão anterior evitava de propósito (`HOLO_ZOOM = 0`). Caminhos para reduzir, se for preciso: mapa-base vetorial em vez de raster (decisão pendente do provedor de tiles) e `maxzoom` menor na fonte dos bairros.
+- Interface e mapa não travam: nenhuma tarefa longa no clique; CLS 0.
+
+**Landing (2026-11-16, PARTE A).** `landing/perf/measure.mjs` com o build do nginx (`BASE=http://localhost:8080`, `HEADLESS=1`): desktop fps médio 94,5 (antes 94,8), trabalho p95 1,4 ms (antes 1,5), JS por quadro p95 0,5 ms, sem tarefa longa, CLS 0,0005; desktop 4× fps 93,2 e trabalho p95 5,0 ms (antes 6,4); celular 4× fps 86,4, trabalho p95 5,4 ms (antes 6,6), 1 quadro de 55 ms em 789. LCP 452 ms (desktop, cache frio). O painel de produto novo (revelação em cascata, números que contam, barras) não aparece no custo por quadro: tudo é `opacity`/`transform` disparado por IntersectionObserver.
+
+**Tema escuro.** A troca entra em círculo pela View Transitions API (550 ms); com `prefers-reduced-motion` ou sem suporte, troca na hora. Nenhuma medição extra: é um único `document.startViewTransition`.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**

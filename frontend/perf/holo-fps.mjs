@@ -104,10 +104,11 @@ for (const [device, viewport] of [['desktop', { width: 1440, height: 900 }], ['c
     const pt = await page.evaluate(() => { const L = document.querySelector('[data-holo]'); return L.holoPoint(L.holoState().top[0]); });
     const box = await page.locator('[data-map]').boundingBox();
     const inP = sample(page, 900);
-    if (device === 'celular') await page.touchscreen.tap(box.x + pt.x, box.y + pt.y + 8);
-    else await page.mouse.click(box.x + pt.x, box.y + pt.y + 8);
+    if (device === 'celular') await page.touchscreen.tap(box.x + pt.x, box.y + pt.y);
+    else await page.mouse.click(box.x + pt.x, box.y + pt.y);
     const tin = await inP;
     const spin = await sample(page, 4000);
+    if (device === 'celular') { await page.click('[data-scrim]', { position: { x: 12, y: 150 } }); await page.waitForTimeout(500); } // fecha a gaveta de detalhes, que cobre o botão
     const outP = sample(page, 900);
     await page.click('[data-plane]');
     const tout = await outP;

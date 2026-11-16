@@ -17,7 +17,7 @@ const watch = (page) => {
   page.on('console', (m) => m.type() === 'error' && !/401/.test(m.text()) && errors.push(m.text())); // 401 de /api/auth/me = visitante
 };
 
-// --- Cabeçalho da landing: só a marca (com o selo) e "Entrar"; nada de menu ---------------------------
+// --- Cabeçalho da landing: só a marca, o botão de tema e "Entrar"; nada de menu ------------------------
 async function header(label, viewport, mobile) {
   const ctx = await browser.newContext({ bypassCSP: true, viewport, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 3 : 1 });
   const page = await ctx.newPage(); watch(page);
@@ -46,8 +46,7 @@ await step('landing: visitante vê "Criar conta" e "Entrar"', async () => {
   await page.waitForTimeout(1500);
   expect(await page.isVisible('.end-actions [data-app-route="#/register"]'), '"Criar conta" invisível');
   expect(!(await page.isVisible('.end-actions [data-app-route="#/home"]')), '"Ir para a plataforma" visível para visitante');
-  const plan = await page.getAttribute('.plan [data-app-route="#/register"]', 'href');
-  expect(plan === '/app/#/register', `plano gratuito -> ${plan}`);
+  expect(await page.locator('.plan').count() === 3, 'três planos pagos, nenhum gratuito');
   expect(await page.locator('.plan-cta[disabled]').count() === 3, 'botões "Em breve" desativados');
 });
 await step('landing -> Criar conta abre /app/#/register', async () => {
@@ -79,9 +78,12 @@ await step('tela inicial: logo volta para #/home e há "Conhecer a VICUS"', asyn
   expect(await page.getAttribute('.logo-link', 'href') === '#/home', 'logo não aponta para #/home');
   expect(await page.getAttribute('.about-link', 'href') === '/', 'link da landing ausente');
 });
-await step('menu: ordem Visão geral · Minhas análises · Dados e fontes · Explorador (por último, em destaque)', async () => {
+await step('menu: ordem Visão geral · Explorar · Análises · Comparar · Dados e fontes; rótulo visível no hover', async () => {
   const items = await page.$$eval('.topbar .topnav [data-nav]', (els) => els.map((e) => e.textContent.trim()));
-  expect(JSON.stringify(items) === JSON.stringify(['Visão geral', 'Minhas análises', 'Dados e fontes', 'Explorador']), items.join(' · '));
+  expect(JSON.stringify(items) === JSON.stringify(['Visão geral', 'Explorar', 'Análises', 'Comparar', 'Dados e fontes']), items.join(' · '));
+  await page.hover('.topnav [data-nav="explorer"]'); await page.waitForTimeout(250);
+  const vis = await page.evaluate(() => { const a = document.querySelector('.topnav [data-nav="explorer"]'); const c = getComputedStyle(a); return c.opacity !== '0' && c.visibility === 'visible' && c.color !== c.backgroundColor; });
+  expect(vis, 'rótulo some no hover');
   expect(!(await page.evaluate(() => document.querySelector('.topbar').innerText.includes('Inteligência territorial'))), '"Inteligência territorial" ainda na barra');
   expect(await page.getAttribute('.topbar .logo-link', 'href') === '#/home', 'logo não leva à Visão geral');
 });
@@ -150,13 +152,14 @@ await step('explorador: aba Detalhes ao escolher um bairro', async () => {
 // --- Holograma: máquina de estados PLANO <-> INCLINADO(bairro) -----------------------------------------
 const hs = () => page.evaluate(() => document.querySelector('[data-holo]').holoState());
 // Calcula o ponto do bairro e clica no MESMO instante (dentro da página): com a câmera em movimento, um
-// clique de fora chega alguns ms depois, quando o bairro já saiu daquele ponto.
+// clique de fora chega alguns ms depois, quando o bairro já saiu daquele ponto. Clica no ponto do rótulo
+// (dentro do bairro): com a câmera aproximando, qualquer deslocamento cai no bairro vizinho.
 const clickHood = (id) =>
   page.evaluate((id) => {
     const pt = document.querySelector('[data-holo]').holoPoint(id);
     const canvas = document.querySelector('.maplibregl-canvas');
     const r = canvas.getBoundingClientRect();
-    const o = { bubbles: true, cancelable: true, clientX: r.left + pt.x, clientY: r.top + pt.y + 8, button: 0, buttons: 1, view: window };
+    const o = { bubbles: true, cancelable: true, clientX: r.left + pt.x, clientY: r.top + pt.y, button: 0, buttons: 1, view: window };
     canvas.dispatchEvent(new MouseEvent('mousedown', o));
     canvas.dispatchEvent(new MouseEvent('mouseup', { ...o, buttons: 0 }));
     canvas.dispatchEvent(new MouseEvent('click', { ...o, buttons: 0 }));
@@ -192,7 +195,8 @@ await step('holograma: outro bairro já inclinado troca sem voltar ao plano; bot
     const tick = () => (out.push(document.querySelector('[data-holo]').holoState().pitch), performance.now() - t0 < 600 ? requestAnimationFrame(tick) : done(out));
     requestAnimationFrame(tick);
   }));
-  await clickHood(b);
+  await page.click('[data-tab="ranking"]'); // com a câmera no bairro a, o b pode estar fora da tela: troca pelo ranking
+  await page.click(`[data-rank-list] [data-hood="${b}"]`);
   const min = Math.min(...(await pitches));
   await settled();
   expect((await hs()).id === b && min > 39, `trocou para ${(await hs()).id}, pitch mínimo ${min}`);
@@ -224,7 +228,7 @@ await step('explorador -> visão geral -> explorador: mesmo mapa, cidade e aba (
   await page.click('.ex-overview');
   await page.waitForSelector('#view [data-dashboard]');
   await page.waitForFunction(() => !document.querySelector('.view-layer').classList.contains('is-shown'));
-  await page.click('.topnav-cta[href="#/explorer"]');
+  await page.click('.topnav [data-nav="explorer"]');
   await page.waitForFunction(() => document.querySelector('.view-layer').classList.contains('is-shown'));
   const r = await page.evaluate(() => ({
     sameMap: document.querySelector('.maplibregl-canvas').__keep === true,
@@ -240,19 +244,19 @@ await step('menu no explorador: "Minhas análises" leva à seção da Visão ger
   await page.waitForTimeout(1600);
   const r = await page.evaluate(() => ({ top: Math.round(document.querySelector('#analises').getBoundingClientRect().top), y: Math.round(scrollY), h: document.scrollingElement.scrollHeight, end: Math.ceil(scrollY + innerHeight) >= document.scrollingElement.scrollHeight - 2 }));
   expect(r.top < 200 || r.end, `seção em ${JSON.stringify(r)}`);
-  await page.click('#view .topnav-cta');
+  await page.click('#view .topnav [data-nav="explorer"]');
   await page.waitForFunction(() => document.querySelector('.view-layer').classList.contains('is-shown'));
   expect((await page.evaluate(() => document.querySelector('.right-head h2')?.textContent)) === 'Recife', 'cidade perdida');
 });
-await step('celular: menu (hambúrguer) com Explorador em destaque, abre e fecha pelo teclado', async () => {
+await step('celular: menu (hambúrguer) com Explorar, abre e fecha pelo teclado', async () => {
   const m = await browser.newContext({ bypassCSP: true, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
   const p = await m.newPage(); watch(p);
   await p.goto(`${BASE}/app/#/home`); await p.waitForSelector('[data-dashboard]');
-  expect(!(await p.isVisible('.topnav-cta')), 'menu aberto sem pedir');
+  expect(!(await p.isVisible('.topnav [data-nav="explorer"]')), 'menu aberto sem pedir');
   await p.click('[data-topbar-menu]');
-  expect(await p.isVisible('.topnav-cta') && (await p.getAttribute('[data-topbar-menu]', 'aria-expanded')) === 'true', 'menu não abriu');
+  expect(await p.isVisible('.topnav [data-nav="explorer"]') && (await p.getAttribute('[data-topbar-menu]', 'aria-expanded')) === 'true', 'menu não abriu');
   await p.keyboard.press('Escape');
-  expect(!(await p.isVisible('.topnav-cta')), 'Esc não fechou o menu');
+  expect(!(await p.isVisible('.topnav [data-nav="explorer"]')), 'Esc não fechou o menu');
   await m.close();
 });
 await step('celular: gaveta de navegação e gaveta do ranking', async () => {
@@ -292,7 +296,7 @@ await step('prefers-reduced-motion: sem entrada escalonada e ranking sem FLIP', 
     const [id] = L.holoState().top;
     const pt = L.holoPoint(id);
     const c = document.querySelector('.maplibregl-canvas'), r = c.getBoundingClientRect();
-    const o = { bubbles: true, clientX: r.left + pt.x, clientY: r.top + pt.y + 8, button: 0, view: window };
+    const o = { bubbles: true, clientX: r.left + pt.x, clientY: r.top + pt.y, button: 0, view: window };
     for (const t of ['mousedown', 'mouseup', 'click']) c.dispatchEvent(new MouseEvent(t, o));
     await new Promise((d) => requestAnimationFrame(() => requestAnimationFrame(d)));
     const pitch = L.holoState().pitch;
