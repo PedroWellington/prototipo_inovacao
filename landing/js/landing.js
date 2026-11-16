@@ -468,8 +468,8 @@ function render(p) {
   drawTerritory(p);
   if (reduced) return; // versão estática: textos e loja ficam no fluxo normal (CSS)
   if (p < 0.29) updatePill(pill1, p < 0.14 ? 'Brasil' : 'Nordeste', p < 0.14 ? world(-54, -10) : world(-40.2, -6.4), easeOut(p, 0.27, 0.33) * easeOut(p, 0.75, 0.85), [24, -40]);
-  else if (p < 0.59) updatePill(pill1, p < 0.43 ? 'Pernambuco' : 'Recife · PE', p < 0.43 ? world(-38.2, -8.2) : world(-34.91, -8.065), easeIn(p, 0.27, 0.32) * easeOut(p, 0.57, 0.63), [20, -35]);
-  else updatePill(pill1, 'Recife · PE', DEST, easeIn(p, 0.59, 0.66) * easeOut(p, 0.74, 0.8), [25, -45]);
+  else if (p < 0.59) updatePill(pill1, p < 0.43 ? 'Pernambuco' : 'Recife · PE · exemplo', p < 0.43 ? world(-38.2, -8.2) : world(-34.91, -8.065), easeIn(p, 0.27, 0.32) * easeOut(p, 0.57, 0.63), [20, -35]);
+  else updatePill(pill1, 'Recife · PE · exemplo', DEST, easeIn(p, 0.59, 0.66) * easeOut(p, 0.74, 0.8), [25, -45]);
   updatePill(pill2, pill2.official ? 'Boa Viagem · Recife' : 'Bairros · composição ilustrativa', DEST, easeIn(p, 0.68, 0.74) * easeOut(p, 0.79, 0.83), [-20, 45]);
   updateStore(p);
   const idx = (() => { const i = SCENE_BORDERS.findIndex((b) => p < b); return i < 0 ? 7 : i; })();
@@ -482,7 +482,7 @@ function render(p) {
   updateChapters(p);
 }
 
-// --- Progresso da rolagem: linha no topo que enche da direita para a esquerda (scaleX, origem à direita) ---
+// --- Progresso da rolagem: linha no topo que enche da esquerda para a direita (scaleX, origem à esquerda) ---
 const scrollProgress = $('scrollProgress');
 let progressRaf = 0;
 function paintScrollProgress() {
@@ -592,11 +592,7 @@ for (const a of document.querySelectorAll('[data-app-route]')) a.href = APP_URL 
   fetch(SESSION_URL, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
     .then((r) => r.ok && document.documentElement.classList.add('is-user'))
     .catch(() => {}); // sem app (ex.: npm run serve): fica como visitante
-  // Selo "Protótipo" (GET /api/config), o mesmo do app.
-  fetch('/api/config', { headers: { Accept: 'application/json' } })
-    .then((r) => (r.ok ? r.json() : {}))
-    .then((f) => f.prototype && document.documentElement.setAttribute('data-prototype', '1'))
-    .catch(() => {});
+  loadSources();
 }, { timeout: 4000 });
 
 new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) { dirty = true; readScroll(); } }).observe(story);
@@ -611,3 +607,47 @@ $('stage').addEventListener('pointermove', (e) => {
 $('storeImg').decode?.().catch(() => {}); // decodifica fora do caminho crítico; o reveal começa bem depois
 resize();
 loadGeo();
+
+// --- Painel de produto: revelação em cascata, números que contam e fontes reais (GET /api/catalog/sources) ---
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+}, { rootMargin: '0px 0px -8% 0px' });
+document.querySelectorAll('.rv').forEach((el) => io.observe(el));
+
+function countUp(el, to) {
+  const show = (v) => (el.textContent = v.toLocaleString('pt-BR'));
+  if (reduced) return show(to);
+  const t0 = performance.now(), dur = 1200;
+  const step = (t) => { const k = clamp((t - t0) / dur); show(Math.round(to * (1 - (1 - k) ** 3))); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+// Sem a API (ex.: npm run serve), a lista fica só com nome e link: nenhuma data é inventada.
+const STATIC_SOURCES = [
+  ['Receita Federal: dados abertos do CNPJ', 'https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj'],
+  ['IBGE: malhas territoriais e Censo 2022', 'https://www.ibge.gov.br/'],
+  ['CNES / DATASUS: unidades de saúde', 'https://cnes.datasus.gov.br/'],
+];
+function fillSources(data) {
+  const ul = $('sourceList');
+  ul.replaceChildren();
+  ul.removeAttribute('aria-busy');
+  const rows = data ? data.sources.map((s) => [s.name, s.url, `ref. ${s.reference_date}`]) : STATIC_SOURCES.map(([n, u]) => [n, u, 'data de referência na plataforma']);
+  rows.push(['Mapa-base: © OpenStreetMap contributors', 'https://www.openstreetmap.org/copyright', 'ODbL']);
+  for (const [name, url, ref] of rows) {
+    const li = document.createElement('li'), a = document.createElement('a'), span = document.createElement('span');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = name;
+    span.textContent = ref;
+    li.append(a, span);
+    ul.append(li);
+  }
+  if (!data || !data.cities_with_data) return;
+  const stat = $('citiesStat');
+  stat.hidden = false;
+  const once = new IntersectionObserver(([e]) => { if (e.isIntersecting) { countUp($('citiesCount'), data.cities_with_data); once.disconnect(); } });
+  once.observe(stat);
+}
+function loadSources() {
+  fetch('/api/catalog/sources', { headers: { Accept: 'application/json' } })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then(fillSources, () => fillSources(null));
+}

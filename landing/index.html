@@ -21,26 +21,34 @@
   <meta property="og:image:height" content="630" />
   <link rel="preload" href="data/manifest.json" as="fetch" crossorigin="anonymous" />
   <link rel="preload" href="assets/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- Tema claro/escuro antes da primeira pintura (script clássico e bloqueante; a CSP não permite inline). -->
+  <script src="/app/theme.js"></script>
   <link rel="stylesheet" href="shared/design-tokens.css" />
   <link rel="stylesheet" href="css/landing.css" />
   <script type="module" src="js/landing.js"></script>
 </head>
 <body>
   <div class="scroll-progress" aria-hidden="true"><span id="scrollProgress"></span></div>
-  <a class="skip" href="#produto">Pular animação e conhecer a plataforma</a>
+  <a class="skip" href="#conheca">Pular animação e conhecer a plataforma</a>
   <header class="navbar" id="navbar">
     <a class="brand" href="#inicio" title="Início">
       <img class="brand-mark" src="/app/brand/vicus-icone-64.png" srcset="/app/brand/vicus-icone-96.png 1.5x, /app/brand/vicus-icone-128.png 2x" width="34" height="34" alt="" />
-      <strong>VICUS</strong><span class="proto-badge">Protótipo</span>
+      <strong>VICUS</strong>
     </a>
-    <div class="nav-actions"><a class="nav-cta" href="/app/#/login" data-app-route="#/login" data-when="guest">Entrar</a><a class="nav-cta" href="/app/#/home" data-app-route="#/home" data-when="user">Ir para a plataforma</a></div>
+    <div class="nav-actions">
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Alternar tema claro e escuro" title="Tema claro ou escuro">
+        <svg class="ico-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>
+        <svg class="ico-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <a class="nav-cta" href="/app/#/login" data-app-route="#/login" data-when="guest">Entrar</a><a class="nav-cta" href="/app/#/home" data-app-route="#/home" data-when="user">Ir para a plataforma</a>
+    </div>
   </header>
 
   <main>
-    <section class="story" id="inicio" aria-label="Jornada pelo território, do Brasil a um bairro do Recife">
+    <section class="story" id="inicio" aria-label="Jornada pelo território, do Brasil a um bairro (exemplo: Recife)">
       <div class="stage" id="stage">
         <div class="stage-bg" aria-hidden="true"></div>
-        <canvas id="mapCanvas" role="img" aria-label="Mapa animado do Brasil ao Nordeste, a Pernambuco, ao Recife e aos bairros do Recife, desenhado com as malhas territoriais do IBGE. Se os arquivos não carregarem, a tela avisa que a visualização é ilustrativa."></canvas>
+        <canvas id="mapCanvas" role="img" aria-label="Mapa animado do Brasil ao Nordeste, a Pernambuco, ao Recife e aos bairros do Recife (exemplo da demonstração), desenhado com as malhas territoriais do IBGE. Se os arquivos não carregarem, a tela avisa que a visualização é ilustrativa."></canvas>
         <div class="map-light" aria-hidden="true"></div>
         <div class="store-backdrop" id="storeBackdrop" aria-hidden="true"></div>
         <!-- Loja: ilustração conceitual, não um endereço real. Cresce a partir do ponto do bairro. -->
@@ -62,44 +70,43 @@
             <div class="chapter-kicker">01 <span></span> O COMEÇO DE TUDO</div>
             <h1>Expanda com <em>inteligência territorial.</em></h1>
             <p>Diga o que quer por perto e o que quer longe. A VICUS mostra como cada cidade e cada bairro do Brasil se encaixam nos seus critérios.</p>
-            <a class="chapter-button" href="#produto">Conheça a plataforma <b>↗</b></a>
           </article>
           <article class="chapter align-right" data-start=".15" data-end=".29">
             <div class="chapter-kicker">02 <span></span> REGIÕES</div>
-            <h2>Do Brasil ao <em>Nordeste.</em></h2>
-            <p>Dados abertos da Receita Federal, do IBGE e do Censo 2022 cobrem o país inteiro, de região em região.</p>
+            <h2>O país inteiro, <em>região por região.</em></h2>
+            <p>Dados abertos da Receita Federal, do IBGE e do Censo 2022 cobrem o Brasil de ponta a ponta.</p>
           </article>
           <article class="chapter align-left" data-start=".29" data-end=".43">
             <div class="chapter-kicker">03 <span></span> ESTADOS</div>
-            <h2>Pernambuco entra <em>em foco.</em></h2>
-            <p>Cada aproximação revela mais detalhe, sempre no mesmo mapa e com as malhas territoriais do IBGE.</p>
+            <h2>Do país ao <em>estado, com nitidez.</em></h2>
+            <p>A cada aproximação, o mapa revela mais detalhe, sempre com as malhas territoriais do IBGE.</p>
           </article>
           <article class="chapter align-right" data-start=".43" data-end=".57">
             <div class="chapter-kicker">04 <span></span> CIDADES</div>
-            <h2>Chegamos a <em>Recife.</em></h2>
+            <h2>Chegamos à <em>sua cidade.</em></h2>
             <p>Em cada cidade, você vê quantos estabelecimentos de cada tipo existem, com fonte e data de referência.</p>
           </article>
           <article class="chapter align-left" data-start=".57" data-end=".70">
             <div class="chapter-kicker">05 <span></span> BAIRROS</div>
-            <h2>Recife, bairro <em>por bairro.</em></h2>
-            <p>Os bairros são ordenados pelos critérios e pesos que você definiu. Cada um traz sua posição e os números por trás dela.</p>
+            <h2>Sua cidade, <em>bairro por bairro.</em></h2>
+            <p>Os bairros são ordenados pelos critérios e pesos que você definiu, com fonte e data em cada número.</p>
             <div class="floating-criteria"><span>⊕ Perto</span><span>⊖ Longe</span><span>☷ Peso 1 a 5</span></div>
           </article>
           <article class="chapter align-right" data-start=".70" data-end=".81">
             <div class="chapter-kicker">06 <span></span> DO BAIRRO AO PONTO</div>
-            <h2>Agora, imagine <em>sua unidade aqui.</em></h2>
-            <p>A câmera chega a um bairro, e uma unidade ilustrativa começa a ganhar forma.</p>
+            <h2>Em um bairro, <em>o território ganha forma.</em></h2>
           </article>
           <article class="chapter align-left" data-start=".81" data-end=".91">
             <div class="chapter-kicker">07 <span></span> A UNIDADE GANHA VIDA</div>
             <h2>Um bairro. <em>Uma nova unidade.</em></h2>
-            <p>A fachada aparece aos poucos, como uma possibilidade, não como uma recomendação.</p>
+            <p>Uma imagem ilustrativa de como o seu negócio poderia ocupar esse território.</p>
+            <small class="chapter-caption">Imagem ilustrativa, sem recomendação de ponto</small>
           </article>
           <article class="chapter align-left chapter-final" data-start=".91" data-end="1">
             <div class="chapter-kicker">08 <span></span> A DECISÃO CONTINUA SUA</div>
             <h2>O próximo capítulo <em>é você quem escreve.</em></h2>
             <p>A VICUS organiza dados e comparações. Você escolhe o caminho da sua expansão.</p>
-            <a class="chapter-button" href="#produto">Descubra como funciona <b>↗</b></a>
+            <a class="chapter-button" href="#conheca">Conheça a VICUS <b>↓</b></a>
           </article>
         </div>
 
@@ -109,41 +116,92 @@
       </div>
     </section>
 
-    <section class="product" id="produto">
+    <!-- Painel de produto: tudo abaixo é página (fundo claro no tema claro, grafite no escuro). -->
+    <section class="pg product" id="conheca" aria-labelledby="conhecaTitulo">
       <div class="product-shell">
-        <div class="section-meta"><span>VICUS / O QUE A PLATAFORMA ENTREGA</span><span>01 — 03</span></div>
-        <div class="product-intro"><div><div class="subheading">O território é só o começo</div><h2>Agora, <em>coloque os seus critérios no mapa.</em></h2></div><p>Dentro da VICUS, você define o que importa: o que quer perto, o que quer longe e o peso de cada critério. Nós mostramos os dados e de onde eles vêm.</p></div>
-        <div class="preview-card">
+        <div class="section-meta rv"><span>VICUS / CONHEÇA A VICUS</span><span>01 — 06</span></div>
+        <div class="product-intro"><div class="rv"><div class="subheading">Conheça a VICUS</div><h2 id="conhecaTitulo">Dados abertos, <em>critérios seus.</em></h2></div><p class="rv" style="--i:1">A VICUS é uma plataforma de inteligência territorial para quem vai abrir ou expandir um negócio. Ela organiza dados públicos e mostra como cada lugar se encaixa no que você definiu. A decisão é sua.</p></div>
+        <div class="benefits">
+          <div class="benefit rv" style="--i:0"><span>QUEM SOMOS</span><b>Uma equipe de dados e território</b><p>Trabalhamos com fontes abertas e um método transparente: cada número mostra de onde veio e de quando é.</p></div>
+          <div class="benefit rv" style="--i:1"><span>O QUE FAZEMOS</span><b>Comparamos lugares pelos seus critérios</b><p>Cidades e bairros do Brasil inteiro, ordenados pelo que você quer perto e longe, com o peso que você escolhe.</p></div>
+          <div class="benefit rv" style="--i:2"><span>PARA QUEM</span><b>Para quem decide onde abrir</b><p>Redes, franquias, clínicas, comércios e serviços que precisam escolher uma cidade ou um bairro com dados à mão.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg how" id="como-funciona" aria-labelledby="comoTitulo">
+      <div class="product-shell">
+        <div class="section-meta rv"><span>VICUS / COMO FUNCIONA</span><span>02 — 06</span></div>
+        <div class="product-intro"><div class="rv"><div class="subheading">Como funciona</div><h2 id="comoTitulo">Três passos, <em>no seu ritmo.</em></h2></div><p class="rv" style="--i:1">Você define, explora e compara. Cada etapa mostra os dados e as fontes por trás de cada posição.</p></div>
+        <ol class="steps">
+          <li class="step rv" style="--i:0"><span class="step-num">01</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><b>Defina os critérios</b><p>O que você quer perto, o que quer longe e o peso de cada item, de 1 a 5. Há sugestões por ramo para começar.</p></li>
+          <li class="step rv" style="--i:1"><span class="step-num">02</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg><b>Explore cidades e bairros</b><p>Do Brasil à região, ao estado, à cidade e ao bairro, em uma câmera contínua. Ou peça o ranking de cidades de um alcance.</p></li>
+          <li class="step rv" style="--i:2"><span class="step-num">03</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg><b>Compare e decida</b><p>Cada área mostra a posição, a nota, a cobertura dos dados, a fonte e a data. A escolha continua sua.</p></li>
+        </ol>
+        <div class="preview-card rv">
           <div class="preview-titlebar"><span class="preview-logo">◈ &nbsp; VICUS</span><span class="breadcrumb">Brasil <b>›</b> Pernambuco <b>›</b> Recife</span><span class="preview-tag">EXEMPLO ILUSTRATIVO</span></div>
           <div class="preview-body">
-            <div class="preview-filter"><div class="preview-filter-top"><div class="filter-overline">SEUS CRITÉRIOS</div><h3>O que importa para o seu negócio?</h3></div><div class="filter-row"><span>Hospitais</span><b>PERTO</b></div><div class="mini-range" role="img" aria-label="Peso 4 de 5"><span style="width:80%"></span></div><div class="filter-row"><span>Clínicas</span><b>PERTO</b></div><div class="mini-range" role="img" aria-label="Peso 3 de 5"><span style="width:60%"></span></div><div class="filter-row"><span>Farmácias</span><b>LONGE</b></div><div class="mini-range" role="img" aria-label="Peso 2 de 5"><span style="width:40%"></span></div><div class="filter-note">Critérios de exemplo. Na plataforma, você escolhe os tipos e dá a cada um um peso de 1 a 5.</div><div class="filter-bottom">Personalizar critérios <span>↗</span></div></div>
+            <div class="preview-filter"><div class="preview-filter-top"><div class="filter-overline">SEUS CRITÉRIOS</div><h3>O que importa para o seu negócio?</h3></div><div class="filter-row"><span>Hospitais</span><b>PERTO</b></div><div class="mini-range" role="img" aria-label="Peso 4 de 5"><span style="width:80%"></span></div><div class="filter-row"><span>Clínicas</span><b>PERTO</b></div><div class="mini-range" role="img" aria-label="Peso 3 de 5"><span style="width:60%"></span></div><div class="filter-row"><span>Farmácias</span><b>LONGE</b></div><div class="mini-range" role="img" aria-label="Peso 2 de 5"><span style="width:40%"></span></div><div class="filter-note">Critérios de exemplo. Na plataforma, os tipos e os pesos são seus.</div><div class="filter-bottom">Personalizar critérios <span>↗</span></div></div>
             <div class="preview-map"><div class="preview-map-label" id="previewGeoLabel">RECIFE · LIMITES DOS BAIRROS</div>
-              <canvas id="previewOfficialMap" class="preview-official-map" role="img" aria-label="Contornos dos bairros do Recife, sem classificação nem resultado"></canvas>
+              <canvas id="previewOfficialMap" class="preview-official-map" role="img" aria-label="Contornos dos bairros do Recife (exemplo), sem classificação nem resultado"></canvas>
               <div class="preview-map-state" id="previewMapState">Carregando os limites dos bairros…</div>
-              <div class="preview-map-caption">A prévia mostra só os contornos dos bairros, não classificações nem resultados de análise.</div>
+              <div class="preview-map-caption">Exemplo: contornos dos bairros do Recife, na malha do IBGE, sem resultados de análise.</div>
             </div>
             <div class="preview-info"><div class="filter-overline">TRANSPARÊNCIA</div><h3>Informação que você pode conferir.</h3><div class="info-line"><span>◈</span> Fonte e data de referência</div><div class="info-line"><span>◌</span> Cobertura de dados por área</div><div class="info-line"><span>↗</span> Renda do Censo 2022 como indicador de poder de compra</div><p>Sem previsão de lucro, de faturamento ou de chance de sucesso.</p></div>
           </div>
         </div>
-        <div class="benefits"><div class="benefit"><span>01 /</span><b>Explore</b><p>Brasil, regiões, estados, cidades e bairros em um fluxo contínuo.</p></div><div class="benefit"><span>02 /</span><b>Configure</b><p>O que quer perto e longe, pesos de 1 a 5 e sugestões conforme o seu ramo.</p></div><div class="benefit"><span>03 /</span><b>Compare</b><p>Bairros ordenados pelos seus critérios e, se ainda não tiver cidade em mente, também as cidades.</p></div></div>
       </div>
     </section>
-    <section class="sources" id="fontes"><div class="sources-inner"><span>DADOS & FONTES</span><h2>Um mapa bonito chama atenção. <em>Dados transparentes sustentam a análise.</em></h2><p>A VICUS usa dados abertos: estabelecimentos da Receita Federal (CNPJ), unidades de saúde do CNES e, do IBGE, limites territoriais, população e renda do Censo 2022. Cada informação mostra fonte e data. Cadastro não é prédio e pode estar desatualizado, por isso mostramos a cobertura de dados de cada área. A loja da animação é uma ilustração, não um estabelecimento real.</p><p>Os limites da animação: Malha Municipal 2022 e Malha de Bairros do Censo 2022, ambas do IBGE (<a href="data/FONTES.md">detalhes e datas</a>).</p><div class="source-links"><a href="https://www.ibge.gov.br/" target="_blank" rel="noopener noreferrer">IBGE <span>↗</span></a><a href="https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj" target="_blank" rel="noopener noreferrer">Receita Federal · dados abertos do CNPJ <span>↗</span></a><a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener noreferrer">CNES / DATASUS <span>↗</span></a><a href="https://dados.recife.pe.gov.br/dataset/mapas-de-limites-e-divisoes-territoriais" target="_blank" rel="noopener noreferrer">Dados Abertos do Recife <span>↗</span></a></div></div></section>
-    <section class="plans" id="planos" aria-labelledby="planosTitulo">
-      <div class="plans-inner">
-        <div class="section-meta"><span>VICUS / PLANOS E CRÉDITOS</span><span>CRÉDITOS</span></div>
-        <div class="plans-intro"><div><div class="subheading">Planos e créditos</div><h2 id="planosTitulo">Um crédito, <em>uma cidade.</em></h2></div><p>Cada crédito permite analisar uma cidade por 30 dias, e reabrir dentro do prazo não gasta outro. O ranking de cidades usa 1 crédito por busca.</p></div>
-        <p class="plans-note" role="note">Valores previstos, sujeitos a alteração antes do lançamento. Os planos pagos estarão disponíveis em breve.</p>
-        <div class="plan-grid">
-          <article class="plan"><h3>Gratuito</h3><p class="plan-price"><b>R$ 0</b></p><ul><li>1 crédito ao criar a conta</li><li>Sem cartão</li></ul><a class="plan-cta" href="/app/#/register" data-app-route="#/register" data-when="guest">Criar conta grátis</a><a class="plan-cta" href="/app/#/home" data-app-route="#/home" data-when="user">Ir para a plataforma</a></article>
-          <article class="plan"><h3>Essencial</h3><p class="plan-price"><b>R$ 89</b> <span>por mês</span></p><ul><li>5 créditos por mês</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
-          <article class="plan"><h3>Profissional</h3><p class="plan-price"><b>R$ 249</b> <span>por mês</span></p><ul><li>20 créditos por mês</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
-          <article class="plan"><h3>Rede</h3><p class="plan-price"><b>R$ 790</b> <span>por mês</span></p><ul><li>100 créditos por mês</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
+
+    <section class="pg sources" id="fontes" aria-labelledby="fontesTitulo">
+      <div class="product-shell">
+        <div class="section-meta rv"><span>VICUS / DADOS E FONTES</span><span>03 — 06</span></div>
+        <div class="product-intro"><div class="rv"><div class="subheading">Dados e fontes</div><h2 id="fontesTitulo">Um mapa bonito chama atenção. <em>Dados com fonte sustentam a análise.</em></h2></div><p class="rv" style="--i:1">Só dados abertos, cada um com data de referência. Cadastro não é prédio: por isso cada área mostra a cobertura dos seus dados.</p></div>
+        <div class="sources-grid">
+          <ul class="source-list rv" id="sourceList" aria-busy="true" aria-label="Fontes de dados">
+            <li class="sk"><span class="skeleton" style="width:62%"></span><span class="skeleton" style="width:18%"></span></li>
+            <li class="sk"><span class="skeleton" style="width:48%"></span><span class="skeleton" style="width:18%"></span></li>
+            <li class="sk"><span class="skeleton" style="width:70%"></span><span class="skeleton" style="width:18%"></span></li>
+            <li class="sk"><span class="skeleton" style="width:55%"></span><span class="skeleton" style="width:18%"></span></li>
+          </ul>
+          <div class="source-side rv" style="--i:1">
+            <div class="stat" id="citiesStat" hidden><b class="stat-num" id="citiesCount" data-count="0">0</b><span>cidades com dados carregados</span><small>Receita Federal (CNPJ) localizada por bairro ou área do IBGE</small></div>
+            <p class="source-note">Os limites da animação vêm da Malha Municipal 2022 e da Malha de Bairros do Censo 2022, ambas do IBGE (<a href="data/FONTES.md">detalhes e datas</a>). A loja da animação é uma ilustração.</p>
+            <div class="source-links"><a href="https://www.ibge.gov.br/" target="_blank" rel="noopener noreferrer">IBGE <span>↗</span></a><a href="https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj" target="_blank" rel="noopener noreferrer">Receita Federal · CNPJ <span>↗</span></a><a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener noreferrer">CNES / DATASUS <span>↗</span></a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap <span>↗</span></a></div>
+          </div>
         </div>
       </div>
     </section>
-    <section class="end-section" id="final"><div class="end-inner"><div><div class="subheading">VICUS · INTELIGÊNCIA TERRITORIAL</div><h2>Explore o território.<br /><em>A decisão é sua.</em></h2><p>Cidades e bairros que mais combinam com os critérios que você definiu.</p></div><div class="end-actions"><a class="end-cta" href="/app/#/register" data-app-route="#/register" data-when="guest">Criar conta <span aria-hidden="true">↗</span></a><a class="end-cta secondary" href="/app/#/login" data-app-route="#/login" data-when="guest">Entrar <span aria-hidden="true">↗</span></a><a class="end-cta" href="/app/#/home" data-app-route="#/home" data-when="user">Ir para a plataforma <span aria-hidden="true">↗</span></a><a class="end-cta ghost" href="#inicio">Rever a experiência <span aria-hidden="true">↑</span></a></div></div></section>
+
+    <section class="pg plans" id="planos" aria-labelledby="planosTitulo">
+      <div class="product-shell">
+        <div class="section-meta rv"><span>VICUS / PLANOS E CRÉDITOS</span><span>04 — 06</span></div>
+        <div class="product-intro"><div class="rv"><div class="subheading">Planos e créditos</div><h2 id="planosTitulo">Um crédito, <em>uma cidade.</em></h2></div><p class="rv" style="--i:1">Cada crédito abre uma cidade por 30 dias; reabrir dentro do prazo não gasta outro. O ranking de cidades usa 1 crédito por busca.</p></div>
+        <p class="plans-note rv" role="note">Valores previstos, sujeitos a alteração antes do lançamento. Os planos estarão disponíveis em breve.</p>
+        <div class="plan-grid">
+          <article class="plan rv" style="--i:0"><h3>Essencial</h3><p class="plan-price"><b>R$ 89</b> <span>por mês</span></p><ul><li>5 créditos por mês</li><li>Ranking de bairros</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
+          <article class="plan rv" style="--i:1"><h3>Profissional</h3><p class="plan-price"><b>R$ 249</b> <span>por mês</span></p><ul><li>20 créditos por mês</li><li>Ranking de bairros e de cidades</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
+          <article class="plan rv" style="--i:2"><h3>Rede</h3><p class="plan-price"><b>R$ 790</b> <span>por mês</span></p><ul><li>100 créditos por mês</li><li>Ranking de bairros e de cidades</li></ul><button class="plan-cta" type="button" disabled>Em breve</button></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg faq" id="perguntas" aria-labelledby="faqTitulo">
+      <div class="product-shell">
+        <div class="section-meta rv"><span>VICUS / PERGUNTAS FREQUENTES</span><span>05 — 06</span></div>
+        <div class="product-intro"><div class="rv"><div class="subheading">Perguntas frequentes</div><h2 id="faqTitulo">Respostas <em>diretas.</em></h2></div></div>
+        <div class="faq-list">
+          <details class="rv" style="--i:0"><summary>De onde vêm os dados?</summary><p>Da Receita Federal (dados abertos do CNPJ), do IBGE (malhas territoriais e Censo 2022: população, área e renda), do CNES/DATASUS (unidades de saúde) e do OpenStreetMap (mapa-base). Cada número leva a fonte e a data de referência.</p></details>
+          <details class="rv" style="--i:1"><summary>A plataforma garante que o negócio vai dar certo?</summary><p>Não. Ela organiza dados públicos para apoiar a sua análise. Não recomenda bairros, não prevê lucro, faturamento nem chance de sucesso. A decisão é sua.</p></details>
+          <details class="rv" style="--i:2"><summary>E se faltar dado na minha cidade?</summary><p>Mostramos que não encontramos, sem estimar nem inventar valores. A cobertura de dados de cada área fica sempre à vista.</p></details>
+          <details class="rv" style="--i:3"><summary>Como funcionam os créditos?</summary><p>1 crédito abre 1 cidade por 30 dias, e reabrir dentro do prazo não gasta outro. O ranking de cidades de um alcance (Brasil, uma região ou um estado) usa 1 crédito por busca.</p></details>
+          <details class="rv" style="--i:4"><summary>O que a VICUS não faz?</summary><p>Não usa avaliações nem fotos de terceiros, não guarda dados de sócios e não usa nenhum atributo pessoal no cálculo. Faturamento e sede da sua empresa não entram no ranking.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="end-section" id="final"><div class="end-inner"><div class="rv"><div class="subheading">VICUS · INTELIGÊNCIA TERRITORIAL</div><h2>Explore o território.<br /><em>A decisão é sua.</em></h2><p>Cidades e bairros que mais combinam com os critérios que você definiu.</p></div><div class="end-actions rv" style="--i:1"><a class="end-cta" href="/app/#/register" data-app-route="#/register" data-when="guest">Criar conta <span aria-hidden="true">↗</span></a><a class="end-cta secondary" href="/app/#/login" data-app-route="#/login" data-when="guest">Entrar <span aria-hidden="true">↗</span></a><a class="end-cta" href="/app/#/home" data-app-route="#/home" data-when="user">Ir para a plataforma <span aria-hidden="true">↗</span></a><a class="end-cta ghost" href="#inicio">Rever a experiência <span aria-hidden="true">↑</span></a></div></div></section>
   </main>
-  <footer class="footer"><span>© 2026 VICUS</span><span class="disclaimer">Informações de caráter informativo. Não substituem análise própria ou profissional.</span></footer>
+  <footer class="footer"><span>© 2026 VICUS</span><nav class="footer-links" aria-label="Avisos legais"><a href="/app/#/termos" data-app-route="#/termos">Avisos legais e termos de uso</a><a href="/app/#/privacidade" data-app-route="#/privacidade">Política de privacidade</a><a href="/app/#/como-calculamos" data-app-route="#/como-calculamos">Como calculamos</a></nav></footer>
 </body>
 </html>

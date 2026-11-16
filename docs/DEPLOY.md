@@ -83,7 +83,7 @@ deve terminar com `TUDO IGUAL`.
    | `PDF_ENABLED` | `false` |
 
 4. Clique em **Deploy**. O primeiro build leva de 2 a 4 minutos. No fim aparece o endereço `https://<projeto>.vercel.app` (o protótipo está em `https://vicus-inovacao.vercel.app`).
-5. Confira: `https://<projeto>.vercel.app/` (landing com o selo "Protótipo"), `/app/` (login), `/api/health` (`{"status":"ok"}`)
+5. Confira: `https://<projeto>.vercel.app/` (landing), `/app/` (login), `/api/health` (`{"status":"ok"}`)
    e `/api/config` (as flags acima).
 
 Região da função: `vercel.json` pede `gru1` (São Paulo). Se o painel mostrar outra região em **Settings -> Functions**,
