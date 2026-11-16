@@ -21,7 +21,7 @@ UPLOADS_ENABLED = flag("UPLOADS_ENABLED", True)  # logo da empresa em disco (DAT
 GOOGLE_LOGIN_ENABLED = flag("GOOGLE_LOGIN_ENABLED", False)  # app/auth/google.py; exige também as três variáveis abaixo
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")  # ex.: https://vircus-nu.vercel.app (monta o redirect do Google)
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")  # ex.: https://vicus-inovacao.vercel.app (monta o redirect do Google)
 PDF_ENABLED = flag("PDF_ENABLED", False)  # ainda não implementado (docs/EXTENSIONS.md)
 SESSION_COOKIE = f"{PRODUCT_NAME.lower()}_session"
 

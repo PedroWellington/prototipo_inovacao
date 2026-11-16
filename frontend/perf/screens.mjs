@@ -33,7 +33,7 @@ async function onboarding(page) {
 }
 
 for (const [device, viewport] of [['desktop', { width: 1440, height: 900 }], ['celular', { width: 390, height: 844 }]]) {
-  const ctx = await browser.newContext({ viewport, deviceScaleFactor: device === 'celular' ? 2 : 1, isMobile: device === 'celular', hasTouch: device === 'celular' });
+  const ctx = await browser.newContext({ bypassCSP: true, viewport, deviceScaleFactor: device === 'celular' ? 2 : 1, isMobile: device === 'celular', hasTouch: device === 'celular' });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.log('pageerror', e.message));
   const d = (n) => `${device}-${n}`;

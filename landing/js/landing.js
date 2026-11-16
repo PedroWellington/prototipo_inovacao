@@ -15,7 +15,6 @@ const story = document.querySelector('.story');
 const nav = $('navbar');
 const source = $('geoSource');
 const chapters = [...document.querySelectorAll('.chapter')];
-const steps = [...document.querySelectorAll('.scene-stepper i')];
 const pill1 = { el: $('geoPill'), text: $('geoPillText') };
 const pill2 = { el: $('geoPill2'), text: $('geoPillText2') };
 const stepName = $('sceneName');
@@ -478,11 +477,22 @@ function render(p) {
     sceneIdx = idx;
     stepName.textContent = SCENE_LABELS[idx];
     stepNumber.textContent = String(idx + 1).padStart(2, '0');
-    steps.forEach((s, i) => s.classList.toggle('active', i === idx));
   }
   put(progressLine, 'transform', `scaleX(${p.toFixed(4)})`);
   updateChapters(p);
 }
+
+// --- Progresso da rolagem: linha no topo que enche da direita para a esquerda (scaleX, origem à direita) ---
+const scrollProgress = $('scrollProgress');
+let progressRaf = 0;
+function paintScrollProgress() {
+  progressRaf = 0;
+  const max = document.documentElement.scrollHeight - innerHeight;
+  scrollProgress.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max).toFixed(4) : 0})`;
+}
+addEventListener('scroll', () => { if (!progressRaf) progressRaf = requestAnimationFrame(paintScrollProgress); }, { passive: true });
+addEventListener('resize', paintScrollProgress, { passive: true });
+paintScrollProgress();
 
 // --- Loop: um único rAF, só quando algo mudou; pausa fora da tela -----------------------------------------
 const STATIC_P = 0.7; // movimento reduzido: bairros do Recife com Boa Viagem em destaque

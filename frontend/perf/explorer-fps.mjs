@@ -12,7 +12,7 @@ const stats = (xs) => {
   return { n: s.length, p50: +at(50).toFixed(1), p95: +at(95).toFixed(1), max: +s.at(-1).toFixed(1), over50: s.filter((x) => x > 50).length };
 };
 
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const ctx = await browser.newContext({ bypassCSP: true, viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
 await page.goto(`${BASE}/app/#/register`);
 await page.fill('#name', 'Fps Teste'); await page.fill('#email', `fps-${Date.now()}@example.com`); await page.fill('#password', 'fps-senha-12345');

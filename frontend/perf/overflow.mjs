@@ -12,7 +12,7 @@ const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || 'msed
 const fails = [];
 
 // Usuário com sede no Recife e o Recife liberado (uma vez); as larguras reaproveitam a sessão.
-const setup = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const setup = await browser.newContext({ bypassCSP: true, viewport: { width: 1440, height: 900 } });
 const sp = await setup.newPage();
 await sp.goto(`${BASE}/app/#/register`);
 await sp.fill('#name', 'Maria Aparecida de Albuquerque Cavalcanti'); // nome longo de propósito
@@ -56,7 +56,7 @@ for (const w of WIDTHS) {
   for (const z of ZOOMS) {
     const vw = Math.round(w / z);
     const mobile = vw <= 860;
-    const ctx = await browser.newContext({ viewport: { width: vw, height: Math.round(900 / z) }, deviceScaleFactor: z, storageState: state });
+    const ctx = await browser.newContext({ bypassCSP: true, viewport: { width: vw, height: Math.round(900 / z) }, deviceScaleFactor: z, storageState: state });
     const page = await ctx.newPage();
     await page.goto(`${BASE}/app/#/explorer?city=2611606`);
     await page.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });

@@ -74,7 +74,7 @@ const sample = (page, ms) =>
   );
 
 for (const [device, viewport] of [['desktop', { width: 1440, height: 900 }], ['celular', { width: 390, height: 844 }]]) {
-  const ctx = await browser.newContext({ viewport, deviceScaleFactor: device === 'celular' ? 3 : 1, isMobile: device === 'celular', hasTouch: device === 'celular' });
+  const ctx = await browser.newContext({ bypassCSP: true, viewport, deviceScaleFactor: device === 'celular' ? 3 : 1, isMobile: device === 'celular', hasTouch: device === 'celular' });
   const page = await ctx.newPage();
   await page.bringToFront(); // janela encoberta: o Edge limita o rAF a ~1 por segundo
   await onboard(page);

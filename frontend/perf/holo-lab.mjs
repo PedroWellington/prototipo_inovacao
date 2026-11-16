@@ -13,7 +13,7 @@ const stats = (xs) => {
 
 for (const [device, viewport] of [['desktop', { width: 1440, height: 900 }], ['celular', { width: 390, height: 844 }]]) {
   for (const cpu of [1, 4]) {
-    const ctx = await browser.newContext({ viewport, deviceScaleFactor: device === 'celular' ? 3 : 1, isMobile: device === 'celular' });
+    const ctx = await browser.newContext({ bypassCSP: true, viewport, deviceScaleFactor: device === 'celular' ? 3 : 1, isMobile: device === 'celular' });
     const page = await ctx.newPage();
     const cdp = await ctx.newCDPSession(page);
     await page.goto(LAB);

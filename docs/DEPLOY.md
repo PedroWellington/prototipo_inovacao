@@ -79,10 +79,10 @@ deve terminar com `TUDO IGUAL`.
    | `DEMO_MODE` | `true` |
    | `UPLOADS_ENABLED` | `false` |
    | `GOOGLE_LOGIN_ENABLED` | `false` |
-   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL` | só quando ligar o login com Google: ID e segredo do OAuth Client (Google Cloud Console) e `https://<projeto>.vercel.app`; redirect URI = `https://<projeto>.vercel.app/api/auth/google/callback` |
+   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL` | só quando ligar o login com Google: ID e segredo do OAuth Client (Google Cloud Console) e `https://vicus-inovacao.vercel.app`; no Google: origem JavaScript `https://vicus-inovacao.vercel.app`, redirect URI `https://vicus-inovacao.vercel.app/api/auth/google/callback` |
    | `PDF_ENABLED` | `false` |
 
-4. Clique em **Deploy**. O primeiro build leva de 2 a 4 minutos. No fim aparece o endereço `https://<projeto>.vercel.app`.
+4. Clique em **Deploy**. O primeiro build leva de 2 a 4 minutos. No fim aparece o endereço `https://<projeto>.vercel.app` (o protótipo está em `https://vicus-inovacao.vercel.app`).
 5. Confira: `https://<projeto>.vercel.app/` (landing com o selo "Protótipo"), `/app/` (login), `/api/health` (`{"status":"ok"}`)
    e `/api/config` (as flags acima).
 

@@ -8,7 +8,7 @@ import { chromium } from 'playwright-core';
 const BASE = process.env.APP_URL || 'http://localhost:8080';
 const RECIFE = 2611606;
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || 'msedge', headless: process.env.HEADLESS === '1' });
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const ctx = await browser.newContext({ bypassCSP: true, viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
 const out = {};
 const stats = (xs) => {

@@ -32,7 +32,7 @@ def google_on(monkeypatch):
     monkeypatch.setattr(config, "GOOGLE_LOGIN_ENABLED", True)
     monkeypatch.setattr(config, "GOOGLE_CLIENT_ID", CLIENT_ID)
     monkeypatch.setattr(config, "GOOGLE_CLIENT_SECRET", "segredo")
-    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://vircus-nu.vercel.app/")
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://vicus-inovacao.vercel.app/")
     monkeypatch.setattr(google, "signing_key", lambda token: PUBLIC_PEM)
 
 
@@ -42,7 +42,7 @@ def start(client):
     q = parse_qs(urlparse(r.headers["location"]).query)
     state, nonce, _verifier = client.cookies[google.OAUTH_COOKIE].split(".")
     assert q["state"] == [state] and q["nonce"] == [nonce] and q["code_challenge_method"] == ["S256"]
-    assert q["redirect_uri"] == ["https://vircus-nu.vercel.app/api/auth/google/callback"]
+    assert q["redirect_uri"] == ["https://vicus-inovacao.vercel.app/api/auth/google/callback"]
     return state, nonce
 
 

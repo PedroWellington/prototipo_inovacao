@@ -23,7 +23,7 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Deploy (protótipo) | Fase 1/2: site e API na Vercel (`vercel.json`, `api/index.py`, `scripts/build-vercel.mjs`), flags do protótipo (`/api/config`, selo "Protótipo", DEMO_MODE, uploads/Google/PDF desligados), cabeçalhos de segurança (Vercel e nginx), `docs/DEPLOY.md` passo a passo | ✅ (configurado e testado localmente; falta você criar os projetos) | `docs/DEPLOY.md`; journey/a11y com CSP no nginx |
 | Deploy | Fase 3: domínio, HTTPS, e-mail transacional, páginas legais (rascunho) | ❌ | |
 | Deploy | Fase 4: login com Google (OIDC + PKCE, ID token validado no servidor; cadastro normal continua) | ✅ código; ⬜ chaves na Vercel | `backend/app/auth/google.py`, `tests/test_google_login.py`; liga com `GOOGLE_LOGIN_ENABLED` + `GOOGLE_CLIENT_ID`/`SECRET` + `PUBLIC_BASE_URL` |
-| Deploy | Fase 5: verificação em produção | 🔄 | no ar em `https://vircus-nu.vercel.app` (2026-11-16); corrigidos: `.vercelignore` apagava `landing/data`, pooler do Neon rejeitava `options` na conexão (`7d6bb3f`); falta cadastro/login/explorador de ponta a ponta com números |
+| Deploy | Fase 5: verificação em produção | 🔄 | no ar em `https://vicus-inovacao.vercel.app` (2026-11-16); corrigidos: `.vercelignore` apagava `landing/data`, pooler do Neon rejeitava `options` na conexão (`7d6bb3f`); falta cadastro/login/explorador de ponta a ponta com números |
 | Deploy | Fase 6: operação (`docs/DEPLOY.md`, CI, monitoramento) | ❌ | |
 
 ## Mudança de rumo (2026-11-15): protótipo no Neon grátis, sem servidor próprio
@@ -42,7 +42,7 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 
 ## Agora
 
-Protótipo publicado em `https://vircus-nu.vercel.app` (Vercel Hobby + Neon). Próximo: Fase 5 completa (cadastro, ranking e explorador em produção, com tempos) e Fase 3.
+Protótipo publicado em `https://vicus-inovacao.vercel.app` (Vercel Hobby + Neon). Próximo: Fase 5 completa (cadastro, ranking e explorador em produção, com tempos) e Fase 3.
 
 Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.mjs` gera `.vercel-out`, 9,9 MB, com os 360 quadros `ff24815a9b42`). **Próximo passo é seu:** criar os dois projetos no Neon e o projeto na Vercel seguindo `docs/DEPLOY.md` (passos 1 a 3). Depois: Fase 5 (verificação em produção com números) e Fase 3 (domínio, e-mail, páginas legais).
 
@@ -71,7 +71,6 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 
 - Colocar os prompts (`.md`) em `design/prompts/` e versionar: sem eles, os checklists de aceite não estão no repositório.
 - Modo escuro (ver quadro). Decidir: preferência do sistema, botão, ou os dois; mapa-base OSM no escuro; conjunto escuro do holograma.
-- `og:image` com URL absoluta quando houver domínio.
 - Medir a transição do holograma em celular de verdade (`docs/PERFORMANCE.md`).
 
 ## Último commit
