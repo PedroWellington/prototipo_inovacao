@@ -101,3 +101,42 @@
   --panel-width: 380px;
   --control-h: 40px;
 }
+
+/* Tema escuro (public/theme.js escreve html[data-theme]). Só os tokens por função mudam: a paleta é a mesma. */
+:root[data-theme='dark'] {
+  --color-bg: #14191d;
+  --color-surface: #1c2328;
+  --color-surface-2: #222a30;
+  --color-surface-3: #2a333a;
+  --color-border: #2f3940;
+  --color-border-strong: #3e4a52;
+  --color-text: var(--on-dark);
+  --color-text-muted: var(--on-dark-muted);
+  --color-text-subtle: var(--on-dark-muted);
+  --color-text-on-sand: var(--on-dark-muted);
+
+  --color-accent: var(--copper-soft); /* texto grafite sobre cobre-claro: 11:1 */
+  --color-accent-hover: #f0dcc8;
+  --color-accent-soft: #3a2f27;
+  --color-on-accent: var(--coal);
+  --color-focus: var(--copper-soft);
+  --color-focus-ring: rgb(226 198 174 / 0.3);
+
+  --color-top: #0f1316;
+  --color-top-2: #232c33;
+
+  --color-positive: #9fbab3;
+  --color-positive-soft: #22302d;
+  --color-danger: #e2a497;
+  --color-danger-hover: #f0b9ae;
+  --color-danger-soft: #3a2724;
+  --color-warning: var(--copper-soft);
+  --color-warning-soft: #3a2f27;
+  --color-info-soft: #22302d;
+  --color-scrim: rgb(0 0 0 / 0.55);
+  --color-overlay: rgb(28 35 40 / 0.94);
+  --map-line: #14191d;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 14px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.5);
+}

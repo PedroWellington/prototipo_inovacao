@@ -10,8 +10,6 @@ import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css';
 
-const DISCLAIMER =
-  'Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.';
 const DIRECTION = { attract: 'Quero perto', repel: 'Não quero perto' };
 const NO_DATA = (item) => `Não foi possível encontrar dados de ${item} desta área.`;
 let entered = false; // entrada escalonada só na primeira exibição da sessão
@@ -101,6 +99,7 @@ export async function render(root) {
             <div class="ov-metric-top">Créditos<span class="ov-miniicon">${icon('coin', 16)}</span></div>
             <strong class="tabular">${fmt.int(credits.balance)}</strong>
             <small>1 crédito = 1 cidade por ${r.city_unlock_days} dias. O ranking de cidades usa ${r.city_search_cost} por busca.</small>
+            <a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a>
           </div>
           <div class="ov-metric ov-animate">
             <div class="ov-metric-top">Análises ativas<span class="ov-miniicon">${icon('map', 16)}</span></div>
@@ -159,14 +158,14 @@ export async function render(root) {
               : html`<p class="ov-empty">Nenhuma análise ainda. Abra uma cidade para começar: cada análise fica aqui com os dias de validade.</p>`}
           </section>
           <section class="ov-block ov-animate" id="fontes" aria-labelledby="ovSrc">
-            <div class="ov-block-header"><h3 id="ovSrc">Dados e fontes</h3></div>
+            <div class="ov-block-header"><h3 id="ovSrc">Dados e fontes</h3><a class="ov-textlink" href="#/termos">Avisos legais ${icon('chevron', 14)}</a></div>
             <div class="ov-sources" data-sources aria-busy="true">
               <span class="skeleton" style="height:14px;width:70%"></span><span class="skeleton" style="height:14px;width:85%"></span>
               <span class="skeleton" style="height:14px;width:60%"></span><span class="skeleton" style="height:14px;width:75%"></span>
             </div>
           </section>
         </div>
-        <p class="ov-footnote ov-animate">${DISCLAIMER}</p>
+        <nav class="ov-footer ov-animate" aria-label="Avisos legais"><a href="#/termos">Avisos legais e termos de uso</a><a href="#/privacidade">Política de privacidade</a><a href="#/como-calculamos">Como calculamos</a></nav>
       </main>
     </div>`,
   );

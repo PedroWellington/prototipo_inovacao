@@ -126,7 +126,7 @@ export async function render(root) {
             <input type="file" class="sr-only" accept="${ACCEPT.join(',')}" data-logo /></label>
           ${s.logo_url ? html`<button type="button" class="btn btn-ghost btn-sm" data-remove-logo>Remover</button>` : ''}
         </div>
-        <p class="small muted">PNG, JPG ou WebP, até 2 MB. Opcional: sem imagem, mostramos as iniciais (${initials(s.company_name)}).</p>` : html`<p class="small muted">Neste protótipo a imagem da empresa está desligada: mostramos as iniciais (${initials(s.company_name)}).</p>`}
+        <p class="small muted">PNG, JPG ou WebP, até 2 MB. Opcional: sem imagem, mostramos as iniciais (${initials(s.company_name)}).</p>` : html`<p class="small muted">O envio de imagem está desligado por enquanto: mostramos as iniciais (${initials(s.company_name)}).</p>`}
         ${s.logoError ? html`<p class="small field-error" role="alert">${s.logoError}</p>` : ''}
       </div>
     </section>`;

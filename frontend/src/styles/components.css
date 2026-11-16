@@ -201,64 +201,51 @@ img.avatar {
   text-decoration: none;
 }
 .topnav {
-  display: flex;
-  align-self: stretch;
-  gap: 2px;
-}
-.topnav-link {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 0 var(--space-3);
+  align-self: stretch;
+  gap: 2px;
+}
+/* Pílula do item ativo: desliza por baixo do texto (só transform + width). O rótulo fica sempre visível,
+   em todos os estados: normal, hover, foco, ativo e pressionado. */
+.topnav-pill {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 0;
+  width: 0;
+  height: 34px;
+  margin-top: -17px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-mark);
+  opacity: 0;
+  transition: transform var(--dur-ui) var(--ease-spring), width var(--dur-ui) var(--ease-spring), opacity var(--dur-fast);
+}
+.topnav-link {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--color-on-top-muted);
   text-decoration: none;
   white-space: nowrap;
-  transition: color var(--dur-fast);
+  transition: color var(--dur-fast), background-color var(--dur-fast);
 }
 .topnav-link:hover,
-.topnav-link.is-active {
+.topnav-link:focus-visible {
   color: var(--color-on-top);
+  background: rgb(255 255 255 / 0.08);
 }
-.topnav-link::after {
-  content: '';
-  position: absolute;
-  left: var(--space-3);
-  right: var(--space-3);
-  bottom: 0;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: var(--color-brand-mark);
-  transform: scaleX(0);
-  transition: transform var(--dur-ui) var(--ease-spring);
-}
-.topnav-link.is-active::after {
-  transform: scaleX(1);
-}
-/* Explorador: outra tela, por isso por último e em destaque (pílula em cobre). */
-.topnav-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: center;
-  margin-left: var(--space-3);
-  padding: 8px 14px;
-  border-radius: var(--radius-full);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: transform var(--dur-ui) var(--ease-spring), background-color var(--dur-fast);
-}
-.topnav-cta:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-.topnav-cta.is-active {
-  box-shadow: 0 0 0 2px var(--color-top), 0 0 0 4px var(--color-brand-mark);
+.topnav-link.is-active,
+.topnav-link.is-active:hover {
+  color: var(--color-top); /* texto grafite sobre a pílula cobre-claro: 11:1 */
+  background: transparent;
 }
 .topbar-menu {
   display: none;
@@ -342,25 +329,18 @@ img.avatar {
   .menu-open .topnav {
     display: flex;
   }
+  /* Lista vertical: a pílula não desliza; o item ativo ganha fundo cobre-claro inteiro. */
+  .topnav-pill {
+    display: none;
+  }
   .topnav-link {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--color-top-2);
+    height: auto;
+    padding: 12px 12px;
+    border-radius: var(--radius-sm);
   }
-  .topnav-link::after {
-    left: 0;
-    right: auto;
-    width: 3px;
-    height: 60%;
-    bottom: 20%;
-    transform: scaleY(0);
-  }
-  .topnav-link.is-active::after {
-    transform: scaleY(1);
-  }
-  .topnav-cta {
-    justify-content: center;
-    margin: var(--space-3) 0 0;
-    padding: 12px 16px;
+  .topnav-link.is-active,
+  .topnav-link.is-active:hover {
+    background: var(--color-brand-mark);
   }
   .hide-sm {
     display: none;
@@ -965,12 +945,20 @@ img.avatar {
   line-height: 1.65;
   color: var(--color-text-muted);
 }
-.ov-footnote {
-  max-width: 860px;
-  margin: 20px 0 0;
+.ov-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 28px 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
   font-size: var(--text-xs);
-  line-height: 1.7;
+}
+.ov-footer a {
   color: var(--color-text-muted);
+}
+.ov-metric .ov-textlink {
+  margin-top: 8px;
 }
 
 /* Entrada escalonada: só opacity + transform, só na primeira exibição da sessão. */
@@ -1047,7 +1035,7 @@ img.avatar {
     animation: none;
   }
   .ov-hero-art,
-  .topnav-link::after,
+  .topnav-pill,
   .ov-metric,
   .ov-criterion,
   .ov-analysis,
@@ -1096,7 +1084,6 @@ img.avatar {
 @media (max-width: 860px) {
   .topbar .logo-link { min-width: 0; }
   .topbar .logo-word { font-size: var(--text-base); letter-spacing: 0.12em; margin-right: -0.12em; }
-  .topbar .proto-badge { margin-left: var(--space-1); padding: 2px 5px; font-size: 10px; letter-spacing: 0.03em; }
 }
 @media (max-width: 480px) {
   .topbar { flex-wrap: wrap; height: auto; min-height: 56px; padding: 8px 12px; row-gap: 4px; }
@@ -1116,3 +1103,40 @@ img.avatar {
 .btn-google:hover { background: #f2f2f2; }
 .btn-google:focus-visible { outline: 3px solid var(--color-focus, #4285f4); outline-offset: 2px; }
 .auth-google .hint { margin-top: var(--space-2, 8px); }
+
+/* ---------- Comprar mais créditos (views/billing.js) ---------- */
+.page-wide {
+  max-width: 960px;
+}
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-6) 0 var(--space-4);
+}
+.plans-grid .card + .card {
+  margin-top: 0;
+}
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.plan-card h2 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.plan-card .plan-price b {
+  font-size: var(--text-2xl);
+  letter-spacing: -0.03em;
+}
+.plan-card .btn {
+  margin-top: auto;
+}
+.page .btn-ghost.btn-sm:first-child {
+  margin-left: calc(-1 * var(--space-3));
+}

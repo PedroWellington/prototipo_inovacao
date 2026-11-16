@@ -1,6 +1,7 @@
 import { html, mount } from '../html.js';
 import { PRODUCT_NAME } from '../brand.js';
 import { aboutLink, icon, logo } from '../icons.js';
+import { themeButton } from '../components/topbar.js';
 
 const DRAFT = 'Texto provisório, sujeito a revisão jurídica antes de uso real.';
 
@@ -11,7 +12,7 @@ function page(root, title, body, draft = true) {
       <div class="page">
         <header class="page-header">
           <a href="#/" class="logo-link">${logo()}</a>
-          <span class="header-actions">${aboutLink()}<a class="btn btn-ghost btn-sm" href="#/">${icon('back', 16)} Voltar</a></span>
+          <span class="header-actions">${aboutLink()}${themeButton()}<a class="btn btn-ghost btn-sm" href="#/">${icon('back', 16)} Voltar</a></span>
         </header>
         <h1>${title}</h1>
         ${body}
@@ -29,7 +30,11 @@ export function terms(root) {
       <h2>O que o ${PRODUCT_NAME} não faz</h2>
       <p>Não recomenda bairros, não promete lucro, faturamento ou sucesso e não faz projeções financeiras. As informações têm caráter informativo e não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.</p>
       <h2>Dados ausentes</h2>
-      <p>Quando um dado não existe para uma área, a plataforma informa que ele não foi encontrado, sem estimar valores.</p>`,
+      <p>Quando um dado não existe para uma área, a plataforma informa que ele não foi encontrado, sem estimar valores.</p>
+      <h2 id="avisos">Avisos legais</h2>
+      <p>Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.</p>
+      <p>Todo dado mostrado traz fonte e data de referência. A nota de cada área é relativa aos demais lugares comparados: não é uma medida absoluta nem uma previsão.</p>
+      <p><a class="btn btn-secondary btn-sm" href="#/como-calculamos">${icon('info', 16)} Como calculamos</a></p>`,
   );
 }
 

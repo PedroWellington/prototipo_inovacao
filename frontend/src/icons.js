@@ -44,5 +44,5 @@ export const aboutLink = () => raw(`<a class="about-link" href="${LANDING_URL}">
 const BRAND = `${import.meta.env.BASE_URL}brand/`;
 export const logo = () =>
   raw(
-    `<span class="logo"><img class="logo-mark" src="${BRAND}vicus-icone-32.png" srcset="${BRAND}vicus-icone-64.png 2x, ${BRAND}vicus-icone-96.png 3x" width="28" height="28" alt="" decoding="async" /><span class="logo-word">${escape(PRODUCT_NAME)}</span><span class="proto-badge">Protótipo</span></span>`,
+    `<span class="logo"><img class="logo-mark" src="${BRAND}vicus-icone-32.png" srcset="${BRAND}vicus-icone-64.png 2x, ${BRAND}vicus-icone-96.png 3x" width="28" height="28" alt="" decoding="async" /><span class="logo-word">${escape(PRODUCT_NAME)}</span></span>`,
   );

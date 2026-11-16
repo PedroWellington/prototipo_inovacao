@@ -7,6 +7,16 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  scrollbar-width: none; /* sem barra de rolagem da página (a rolagem continua normal); painéis internos mantêm a fina */
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+/* Tema (public/theme.js): a troca entra em círculo a partir do botão; os pseudoelementos não cruzam em fade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 body {
   margin: 0;
@@ -144,21 +154,6 @@ textarea {
   flex: none;
   width: 28px;
   height: 28px;
-}
-/* Selo do protótipo (GET /api/config): só aparece com html[data-prototype]. */
-.proto-badge {
-  display: none;
-  margin-left: var(--space-2);
-  padding: 2px 8px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  font: var(--weight-bold) var(--text-xs) / 1.4 var(--font-body);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.85;
-}
-html[data-prototype] .proto-badge {
-  display: inline-block;
 }
 .logo-word {
   font: 600 var(--text-md) / 1 var(--font-display);
@@ -785,4 +780,40 @@ html[data-prototype] .proto-badge {
   display: block;
   margin-top: 2px;
   font-weight: var(--weight-medium);
+}
+
+/* ---------- Botão de tema (sol/lua), na barra superior ---------- */
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--color-top-2);
+  border-radius: 50%;
+  background: none;
+  color: var(--color-on-top);
+  cursor: pointer;
+  transition: background-color var(--dur-fast), transform var(--dur-fast);
+}
+.theme-toggle:hover {
+  background: var(--color-top-2);
+  transform: translateY(-1px);
+}
+.theme-toggle svg {
+  grid-area: 1 / 1;
+}
+.theme-toggle .ico-sun,
+html[data-theme='dark'] .theme-toggle .ico-moon {
+  display: none;
+}
+html[data-theme='dark'] .theme-toggle .ico-sun {
+  display: block;
+}
+.page-header .theme-toggle {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+.page-header .theme-toggle:hover {
+  background: var(--color-surface-2);
 }

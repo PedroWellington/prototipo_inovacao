@@ -1,30 +1,43 @@
 // Barra superior grafite do app (visão geral, explorador e conta). Só estrutura: visual em styles/components.css.
-// Ordem: as três seções da Visão geral (mesma página: rolam) e, por último, em destaque, o Explorador (outra tela).
+// Ordem combinada: Visão geral · Explorar · Análises · Comparar · Dados e fontes. "Explorar" abre o mapa de uma
+// cidade; "Comparar" abre o ranking de cidades (o mesmo explorador, no caminho "Onde procurar?").
 import { PRODUCT_NAME } from '../brand.js';
-import { html } from '../html.js';
+import { html, raw } from '../html.js';
 import { aboutLink, icon, logo } from '../icons.js';
 import { initials } from '../lib.js';
 
 const NAV = [
   { key: 'home', label: 'Visão geral', href: '#/home' },
-  { key: 'analises', label: 'Minhas análises', href: '#/home?s=analises' },
+  { key: 'explorer', label: 'Explorar', href: '#/explorer' },
+  { key: 'analises', label: 'Análises', href: '#/home?s=analises' },
+  { key: 'compare', label: 'Comparar', href: '#/explorer?compare=1' },
   { key: 'fontes', label: 'Dados e fontes', href: '#/home?s=fontes' },
 ];
+const SCREEN = new Set(['explorer', 'compare']); // itens que trocam de tela (os outros rolam na Visão geral)
 
-// active: 'home' | 'analises' | 'fontes' | 'explorer' | null.
+// Botão claro/escuro (public/theme.js troca o tema ao clicar em [data-theme-toggle]).
+export const themeButton = () =>
+  raw(
+    `<button type="button" class="theme-toggle" data-theme-toggle aria-label="Alternar tema claro e escuro" title="Tema claro ou escuro">` +
+      `<svg class="ico-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>` +
+      `<svg class="ico-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>`,
+  );
+
+// active: 'home' | 'explorer' | 'analises' | 'compare' | 'fontes' | null.
 export function topbar({ active, user, profile }) {
   const name = profile?.company_name || user?.name || '';
   return html`<header class="topbar on-dark">
     <a href="#/home" class="logo-link" data-nav="home">${logo()}</a>
     <button type="button" class="topbar-menu" data-topbar-menu aria-label="Menu" aria-expanded="false" aria-controls="topnav">${icon('list', 18)}<span>Menu</span></button>
     <nav class="topnav" id="topnav" aria-label="Navegação principal">
+      <span class="topnav-pill" aria-hidden="true"></span>
       ${NAV.map(
         (n) => html`<a class="topnav-link ${n.key === active ? 'is-active' : ''}" href="${n.href}" data-nav="${n.key}" ${n.key === active ? 'aria-current="page"' : ''}>${n.label}</a>`,
       )}
-      <a class="topnav-cta ${active === 'explorer' ? 'is-active' : ''}" href="#/explorer" data-nav="explorer" ${active === 'explorer' ? 'aria-current="page"' : ''}>${icon('map', 15)}Explorador</a>
     </nav>
     <div class="topbar-right">
       <span class="hide-sm">${aboutLink()}</span>
+      ${themeButton()}
       <a class="topbar-profile" href="#/conta">
         <span class="topbar-avatar" aria-hidden="true">${initials(name || PRODUCT_NAME)}</span><span class="sr-only-sm">Minha conta</span>
       </a>
@@ -32,7 +45,18 @@ export function topbar({ active, user, profile }) {
   </header>`;
 }
 
-// Liga o menu do celular e, na Visão geral, a rolagem suave até as seções (sem recarregar a tela).
+// A pílula do item ativo desliza por baixo do texto (só transform + width; o texto fica por cima).
+function movePill(bar) {
+  const pill = bar.querySelector('.topnav-pill');
+  const a = bar.querySelector('.topnav-link.is-active');
+  if (!pill) return;
+  if (!a) return pill.style.setProperty('opacity', '0');
+  pill.style.transform = `translateX(${a.offsetLeft}px)`;
+  pill.style.width = `${a.offsetWidth}px`;
+  pill.style.opacity = '1';
+}
+
+// Liga o menu do celular, a pílula e, na Visão geral, a rolagem suave até as seções (sem recarregar a tela).
 // onSection(key): se a tela atual tem as seções, rola e devolve true; senão o link segue normal.
 export function wireTopbar(root, { onSection, signal } = {}) {
   const bar = root.querySelector('.topbar');
@@ -58,11 +82,14 @@ export function wireTopbar(root, { onSection, signal } = {}) {
     const a = e.target.closest('[data-nav]');
     if (!a) return;
     close();
-    if (onSection && a.dataset.nav !== 'explorer' && onSection(a.dataset.nav)) e.preventDefault();
+    if (onSection && !SCREEN.has(a.dataset.nav) && onSection(a.dataset.nav)) e.preventDefault();
   }, { signal });
+  movePill(bar);
+  document.fonts?.ready.then(() => movePill(bar)); // a fonte Inter muda a largura dos itens
+  addEventListener('resize', () => movePill(bar), { signal, passive: true });
 }
 
-// Marca o item ativo (e aria-current) sem redesenhar a barra.
+// Marca o item ativo (e aria-current) sem redesenhar a barra; a pílula desliza até ele.
 export function setActiveNav(root, key) {
   for (const a of root.querySelectorAll('.topbar [data-nav]')) {
     if (a.classList.contains('logo-link')) continue;
@@ -71,4 +98,6 @@ export function setActiveNav(root, key) {
     if (on) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
+  const bar = root.querySelector('.topbar');
+  if (bar) movePill(bar);
 }
