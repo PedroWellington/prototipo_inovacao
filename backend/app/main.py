@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api import account, catalog, cities, credits, geo, profile
+from app.billing import routes as billing_routes
 from app.auth import google
 from app.auth import routes as auth_routes
 from app import config
@@ -14,7 +15,7 @@ from app.db import get_db
 
 app = FastAPI(title=f"{PRODUCT_NAME} API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-for module in (auth_routes, google, account, catalog, cities, credits, geo, profile):
+for module in (auth_routes, google, account, catalog, cities, credits, geo, profile, billing_routes):
     app.include_router(module.router)
 
 
@@ -42,9 +43,9 @@ async def validation_error(_: Request, exc: RequestValidationError):
 
 @app.get("/api/config")
 def public_config():
-    """Só flags públicas do protótipo: nada de segredo nem de regra de negócio aqui."""
+    """Só flags públicas: nada de segredo nem de regra de negócio aqui."""
     return {"prototype": config.PROTOTYPE, "demo_mode": config.DEMO_MODE, "uploads": config.UPLOADS_ENABLED,
-            "google_login": google.enabled(), "pdf": config.PDF_ENABLED}
+            "google_login": google.enabled(), "pdf": config.PDF_ENABLED, "payments": config.PAYMENTS_ENABLED}
 
 
 @app.get("/api/health")

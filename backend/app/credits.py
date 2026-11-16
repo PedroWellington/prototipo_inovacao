@@ -42,7 +42,7 @@ def search_active(db, user_id: int, key: str) -> bool:
 def no_credits(cost: int, have: int):
     raise HTTPException(402, {"code": "no_credits", "message":
                               f"Você não tem créditos suficientes: isto usa {cost} e restam {have}. "
-                              "Peça mais créditos à equipe para continuar."})
+                              "Compre mais créditos em Minha conta para continuar."})
 
 
 def _spend(db, user_id: int, cost: int, reason: str, ibge: int | None = None, key: str | None = None) -> int:

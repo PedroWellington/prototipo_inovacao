@@ -26,7 +26,7 @@ export const cityActive = (ibge) => Boolean(current?.cities.some((c) => c.ibge =
 export const searchActive = (key) => Boolean(current?.searches.some((s) => s.scope_key === key && s.active));
 
 const NO_CREDITS = (cost, balance) =>
-  `Esta análise usa ${cost === 1 ? '1 crédito' : `${cost} créditos`} e você tem ${balance}. Peça mais créditos à equipe para continuar.`;
+  `Esta análise usa ${cost === 1 ? '1 crédito' : `${cost} créditos`} e você tem ${balance}. Compre mais créditos em Minha conta para continuar.`;
 
 async function spend({ active, cost, title, url, body }) {
   if (active) return true; // já liberada e no prazo: o servidor também não cobra

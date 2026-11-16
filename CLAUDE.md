@@ -19,7 +19,7 @@ O VICUS ajuda o dono de um negócio a comparar bairros pelos critérios dele: o 
 8. **Notas vêm sempre do banco (SQL).** O frontend não calcula nota.
 9. **Não guardar nem exibir dados de sócios ou MEI.** Na tabela de estabelecimentos fica só: hash do CNPJ, CNAE, situação, bairro (texto), CEP, município e `location_id` (hash de CNPJ de outro cadastro do mesmo endereço; nunca o endereço nem hash dele). Do CNES, só código, tipo de unidade, município e bairro.
 10. **Nenhum atributo pessoal ou protegido entra em cálculo.** Faturamento e sede não entram no ranking.
-11. **Aviso fixo no rodapé do explorador:** caráter informativo; não é aconselhamento jurídico nem financeiro.
+11. **Aviso legal fora do mapa:** o texto "caráter informativo; não é aconselhamento jurídico nem financeiro" fica na página de Termos (seção "Avisos legais", com o botão "Como calculamos"), linkada no rodapé da Visão geral e em "Dados e fontes". Nada de aviso jurídico sobre o mapa nem em rodapé fixo do explorador.
 12. **Sem Google nesta etapa.** O mapa-base é OSM, com atribuição visível.
 13. **Sem segredos no Git** (o repositório é público). `.env` e `data/raw/` ficam no `.gitignore`.
 
@@ -30,12 +30,15 @@ backend/   FastAPI + SQLAlchemy Core (SQL explícito) + Alembic
   app/auth     sessão (cookie httpOnly + hash SHA-256 no banco), CSRF, argon2id, limite de tentativas
   app/api      catalog, geo (malhas do IBGE com cache), profile (+ logo), cities (status/geojson/rank), credits, account (LGPD)
   app/credits.py  única autoridade de saldo e liberação (regras em credit_settings); app/logos.py valida e recodifica imagens
+  app/billing     ponto único do pagamento (planos, interesse em credit_purchase_interest, gancho checkout); PAYMENTS_ENABLED=false
   app/scoring  rank.py (bairros) e rank_cities.py (cidades): o mesmo motor em SQL
   app/etl      seed_catalog, ibge_boundaries (bairros ou áreas por setor), cnpj, locate, counts, census, cnes, load_city/load_uf/load_br, report
   app/seed     CSVs também definem a fonte de cada tipo (business_types.source: cnpj|cnes) e tipo -> TP_UNIDADE do CNES
   scripts/     medição (perf_rank) e auditoria de dados (audit_establishments, compare_cnes); só desenvolvimento
   app/seed     CSVs editáveis: segmentos, tipos, tipo→CNAE, sugestões por ramo
 frontend/  Vite + JS puro (ES modules), roteador por hash, MapLibre só no explorador
+  public/theme.js        tema claro/escuro (landing e app): bloqueante no <head>, preferência em localStorage, [data-theme-toggle]
+  src/views/billing.js   "Comprar mais créditos" (ponto único do pagamento no frontend)
   src/styles/tokens.css  nomes por função (cor, fonte, espaço) mapeados para a paleta de shared/
   src/map/camera.js      câmera contínua (zoom logarítmico + deslocamento atrelado); src/rankList.js: ranking com FLIP
   src/map/mapView.js     mapa: fontes criadas uma vez, feature-state para cor e hover
@@ -75,6 +78,8 @@ cd landing; npm run build-geo                                                 # 
 - **Idioma:** identificadores em inglês; textos de interface em português do Brasil; comentários curtos em português.
 - **Banco:** toda mudança de esquema passa por migration Alembic. O SQL é escrito à mão: PostGIS e views materializadas ficam mais claros assim.
 - **Tipos de negócio, CNAEs e fonte (CNPJ/CNES):** são dados (CSV), não código. "Estabelecimento" = local distinto (CEP + logradouro + número; ver docs/DATA.md). Nunca escreva `if segmento == ...` no motor.
+- **Tema:** cores só por tokens de função (`tokens.css`); o escuro redefine os tokens em `:root[data-theme='dark']`. Na landing, o escuro remapeia a paleta das seções `.pg`.
+- **Textos proibidos na interface (além do item 2):** "protótipo" em qualquer tela; flags internas (`PROTOTYPE`, `DEMO_MODE`) nunca viram texto.
 - **Nada específico de cidade:** toda cidade com `city_data_status` fica disponível no explorador; nunca escreva código para uma cidade em particular.
 - **Dados brutos:** os .zip do CNPJ e as malhas ficam em `data/raw/` e nunca são apagados pelo ETL.
 - **Mapa:**

@@ -26,6 +26,7 @@ def export(user: CurrentUser = Depends(current_user), db: Session = Depends(get_
             "ledger": q("SELECT delta, reason, municipality_ibge, scope_key, note, created_at FROM credit_ledger WHERE user_id = :u ORDER BY id"),
             "cities": q("SELECT municipality_ibge, unlocked_at, expires_at FROM city_unlocks WHERE user_id = :u"),
             "searches": q("SELECT scope_key, unlocked_at, expires_at FROM search_unlocks WHERE user_id = :u"),
+            "purchase_interest": q("SELECT package, created_at FROM credit_purchase_interest WHERE user_id = :u ORDER BY id"),
         },
     }
     return Response(

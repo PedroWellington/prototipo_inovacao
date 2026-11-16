@@ -1,12 +1,15 @@
 import { del, post } from '../api.js';
+import { creditsCard } from '../components/account.js';
 import { html, mount } from '../html.js';
 import { topbar, wireTopbar } from '../components/topbar.js';
+import { loadCredits } from '../credits.js';
 import { icon } from '../icons.js';
 import { go } from '../router.js';
 import { clearUser, loadUser } from '../session.js';
+import '../styles/components.css';
 
 export async function render(root) {
-  const user = await loadUser();
+  const [user, credits] = await Promise.all([loadUser(), loadCredits(true).catch(() => null)]);
   mount(
     root,
     html`<div class="app-shell">${topbar({ active: null, user })}<div class="page">
@@ -22,6 +25,13 @@ export async function render(root) {
         </div>
       </section>
       <section class="card">
+        <h2>Créditos</h2>
+        ${creditsCard(credits)}
+        <div class="card-actions">
+          <a class="btn btn-primary btn-sm" href="#/creditos">${icon('coin', 16)} Comprar mais créditos</a>
+        </div>
+      </section>
+      <section class="card">
         <h2>Seus dados (LGPD)</h2>
         <p class="muted small">Baixe uma cópia de tudo o que guardamos sobre você, ou exclua a conta de forma definitiva.</p>
         <div class="card-actions">
@@ -33,7 +43,8 @@ export async function render(root) {
     </div></div>`,
   );
 
-  wireTopbar(root);
+  const ac = new AbortController();
+  wireTopbar(root, { signal: ac.signal });
   root.querySelector('[data-logout]').addEventListener('click', async () => {
     await post('/api/auth/logout').catch(() => {});
     clearUser();
@@ -51,4 +62,5 @@ export async function render(root) {
       e.currentTarget.removeAttribute('aria-busy');
     }
   });
+  return () => ac.abort();
 }
