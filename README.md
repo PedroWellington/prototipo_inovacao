@@ -129,6 +129,7 @@ docker compose run --rm backend python -m app.etl.load_br --local-path /data/raw
 - [docs/SCORING.md](docs/SCORING.md): fórmula do ranking, com exemplo numérico.
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md): metas de fluidez e números medidos.
 - [docs/DATA.md](docs/DATA.md#banco-de-produção-do-protótipo-dois-bancos-pequenos-neon-plano-grátis) (fim): os dois bancos de produção do protótipo e como montá-los.
+- [docs/DEPLOY.md](docs/DEPLOY.md): protótipo na Vercel (site + API) com dois bancos no Neon; passo a passo e limites.
 - [docs/MARCA.md](docs/MARCA.md): ícone, logo, favicon e manifesto; como regenerar.
 - [docs/EXTENSIONS.md](docs/EXTENSIONS.md): Google Places, tiles de produção, CNEFE, pagamentos e demais extensões.
 - [CLAUDE.md](CLAUDE.md): princípios, estrutura e convenções.

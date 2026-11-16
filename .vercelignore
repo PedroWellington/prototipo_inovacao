@@ -1,0 +1,18 @@
+# Só o que a função Python e o build precisam sobe para a Vercel (limite de 250 MB por função).
+data/
+design/
+docs/
+backend/tests/
+backend/scripts/
+backend/alembic/
+landing/node_modules/
+landing/perf/
+landing/scripts/
+frontend/node_modules/
+frontend/perf/
+frontend/dist/
+scripts/build-marca.py
+scripts/build-og.mjs
+scripts/build-holograma.py
+.env
+.env.*

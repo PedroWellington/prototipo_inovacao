@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api import account, catalog, cities, credits, geo, profile
 from app.auth import routes as auth_routes
+from app import config
 from app.config import PRODUCT_NAME
 from app.db import get_db
 
@@ -36,6 +37,13 @@ async def validation_error(_: Request, exc: RequestValidationError):
         {"error": {"code": "validation_error", "message": message, "details": details}},
         status_code=422,
     )
+
+
+@app.get("/api/config")
+def public_config():
+    """Só flags públicas do protótipo: nada de segredo nem de regra de negócio aqui."""
+    return {"prototype": config.PROTOTYPE, "demo_mode": config.DEMO_MODE, "uploads": config.UPLOADS_ENABLED,
+            "google_login": config.GOOGLE_LOGIN_ENABLED, "pdf": config.PDF_ENABLED}
 
 
 @app.get("/api/health")

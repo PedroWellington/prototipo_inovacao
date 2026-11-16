@@ -24,7 +24,7 @@ body{background:var(--on-dark);color:var(--coal-2)}
 a:focus-visible{outline-color:var(--copper-soft)}
 .navbar{background:color-mix(in srgb, var(--coal) 10%, transparent)}
 .navbar.scrolled{background:color-mix(in srgb, var(--coal) 89%, transparent);border-bottom-color:color-mix(in srgb, var(--sand) 20%, transparent)}
-.brand-mark{flex:none;display:block}.nav-links{color:color-mix(in srgb, var(--on-dark) 75%, transparent)}
+.brand-mark{flex:none;display:block}.proto-badge{display:none;margin-left:10px;padding:3px 9px;border:1px solid currentColor;border-radius:999px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;opacity:.85}html[data-prototype] .proto-badge{display:inline-block}.nav-links{color:color-mix(in srgb, var(--on-dark) 75%, transparent)}
 .nav-links .is-active:after{background:var(--on-dark-muted)}
 .text-link{color:var(--line)}.nav-cta,.chapter-button,.end-cta{background:var(--copper-soft);color:var(--ink)}
 .nav-cta:hover,.chapter-button:hover,.end-cta:hover{background:var(--copper-wash)}

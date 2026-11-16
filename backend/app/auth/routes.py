@@ -53,7 +53,9 @@ def start_session(db: Session, response: Response, user_id: int) -> None:
 
 
 def client_ip(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
+    # Atrás de proxy confiável (nginx, Vercel): o primeiro endereço de X-Forwarded-For é o do cliente.
+    fwd = request.headers.get("x-forwarded-for")
+    return fwd.split(",")[0].strip() if fwd else request.client.host if request.client else "unknown"
 
 
 @router.post("/register", status_code=201)

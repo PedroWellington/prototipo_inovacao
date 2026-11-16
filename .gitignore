@@ -37,3 +37,7 @@ design/dashboard-cinematico/
 # Holograma: PNGs brutos e demonstração (27 MB). Só os WebP otimizados (frontend/public/holograma) vão para o Git.
 design/holograma-360/
 *.zip
+
+# Vercel (build local e saída montada por scripts/build-vercel.mjs)
+.vercel/
+.vercel-out/

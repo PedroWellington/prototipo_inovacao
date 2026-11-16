@@ -582,6 +582,11 @@ for (const a of document.querySelectorAll('[data-app-route]')) a.href = APP_URL 
   fetch(SESSION_URL, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
     .then((r) => r.ok && document.documentElement.classList.add('is-user'))
     .catch(() => {}); // sem app (ex.: npm run serve): fica como visitante
+  // Selo "Protótipo" (GET /api/config), o mesmo do app.
+  fetch('/api/config', { headers: { Accept: 'application/json' } })
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((f) => f.prototype && document.documentElement.setAttribute('data-prototype', '1'))
+    .catch(() => {});
 }, { timeout: 4000 });
 
 // Menu do topo: o item ativo acompanha a seção que cruza o meio da tela (IntersectionObserver, sem ler layout).

@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import logos
+from app.config import UPLOADS_ENABLED
 from app.api.http_cache import etag_of
 from app.auth.deps import CurrentUser, current_user
 from app.db import get_db
@@ -160,6 +161,8 @@ def put_criteria(body: CriteriaIn, user: CurrentUser = Depends(current_user), db
 
 @router.put("/logo")
 async def put_logo(request: Request, user: CurrentUser = Depends(current_user), db: Session = Depends(get_db)):
+    if not UPLOADS_ENABLED:
+        raise HTTPException(503, {"code": "uploads_disabled", "message": "O envio de imagem está desligado neste protótipo."})
     declared = request.headers.get("content-length")
     if declared and declared.isdigit() and int(declared) > logos.MAX_BYTES:
         logos.too_large()

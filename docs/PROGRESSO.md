@@ -17,10 +17,10 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Modo escuro, logo e menu | Modo escuro | ❌ | só ganchos: `hologram.theme()` e conjunto por tema no manifesto do holograma; fundo previsto `#181512` (apple-touch-icon e `manifest.webmanifest`) |
 
 | Holograma trocado (2026-11-15) | Novos 360 PNG 720×720 -> WebP 486×396, 4,9 MB, versão `ff24815a9b42` | ✅ | `docs/visual/holograma2-*`; dist sem quadro antigo |
+| Holograma trocado de novo (2026-11-15, 20:57) | 360 PNG 900×900 em `design/holograma-360/.../frames-png`: a mesma loja, mas com o cone de projeção desenhado na imagem (o app já desenha o cone em CSS) e 18,7 MB em WebP (limite 6 MB; 8,1 MB mesmo a 520 px, q70 e alfa 50) | 🔄 aguardando decisão | o `ff24815a9b42` continua no app; nada foi commitado dos novos |
 | Deploy | Fase 0: auditoria (nginx, variáveis, banco, segredos, público) | ✅ | esta seção; relatório na conversa de 2026-11-15 |
 | Deploy (protótipo) | Banco do Brasil inteiro em dois bancos pequenos para o Neon grátis (`vicus-dados` 253 MB, `vicus-contas` 24 MB), dois pools no backend, 20 consultas idênticas | ✅ | `docs/DATA.md` (fim); `scripts/build_prod_db.py`, `scripts/compare_rank.py` |
-| Deploy (protótipo) | Fase 1: frontend na Vercel (`vercel.json`) | ❌ | o prompt de deploy de protótipo (Vercel Hobby, DEMO_MODE, banner) não está em `design/prompts/` |
-| Deploy | Fase 2: backend e banco em servidor próprio (Compose de produção, Caddy, backups, restore) | ❌ | |
+| Deploy (protótipo) | Fase 1/2: site e API na Vercel (`vercel.json`, `api/index.py`, `scripts/build-vercel.mjs`), flags do protótipo (`/api/config`, selo "Protótipo", DEMO_MODE, uploads/Google/PDF desligados), cabeçalhos de segurança (Vercel e nginx), `docs/DEPLOY.md` passo a passo | ✅ (configurado e testado localmente; falta você criar os projetos) | `docs/DEPLOY.md`; journey/a11y com CSP no nginx |
 | Deploy | Fase 3: domínio, HTTPS, e-mail transacional, páginas legais (rascunho) | ❌ | |
 | Deploy | Fase 4: login com Google (preparado e desligado por flag) | ❌ | |
 | Deploy | Fase 5: verificação em produção | ❌ | |
@@ -42,7 +42,7 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 
 ## Agora
 
-Fase 0 entregue. **Parado à espera de decisões** (abaixo). Depois: modo escuro (prompt em `design/prompts/`) ou Fase 1 do deploy, conforme a ordem que for definida.
+Deploy do protótipo configurado e commitado (`node scripts/build-vercel.mjs` gera `.vercel-out`, 9,9 MB, com os 360 quadros `ff24815a9b42`). **Próximo passo é seu:** criar os dois projetos no Neon e o projeto na Vercel seguindo `docs/DEPLOY.md` (passos 1 a 3). Depois: Fase 5 (verificação em produção com números) e Fase 3 (domínio, e-mail, páginas legais).
 
 ## Decisões tomadas
 
@@ -52,14 +52,17 @@ Fase 0 entregue. **Parado à espera de decisões** (abaixo). Depois: modo escuro
 
 ## Decisões que dependem do Pedro
 
-- Onde roda a API FastAPI do protótipo (o Neon é só o banco): precisa de um host para o container ou de adaptação para funções da Vercel.
-- Colocar o prompt de deploy de protótipo (Vercel Hobby, DEMO_MODE, banner de protótipo) em `design/prompts/`.
+- Criar os projetos Neon (`vicus-dados`, `vicus-contas`, São Paulo) e o projeto Vercel; carregar os bancos (`docs/DEPLOY.md`).
+- Mapa-base em produção: o servidor público do OSM não cobre produção; escolher MapTiler, Stadia ou PMTiles próprio antes de divulgar.
+- Colocar o prompt de deploy de protótipo (texto completo) em `design/prompts/`.
 - Licença do repositório (padrão: "todos os direitos reservados").
 - Manter públicos `docs/LOCUS-logica-do-produto.pdf` e `design/brand/`.
 - Vercel: uso comercial exige o plano Pro (US$ 20/mês por pessoa); o Hobby é só para uso pessoal.
 - Provedor de tiles do mapa-base (Fase 2).
 
 ## Pendências
+
+- Holograma 900×900: decidir entre (a) exportar de novo sem o cone/brilho (como o conjunto 720×720) ou (b) aceitar o cone na imagem e reduzir (menos quadros, alfa com perda, 520 px) até ≤ 6 MB.
 
 - Colocar os prompts (`.md`) em `design/prompts/` e versionar: sem eles, os checklists de aceite não estão no repositório.
 - Modo escuro (ver quadro). Decidir: preferência do sistema, botão, ou os dois; mapa-base OSM no escuro; conjunto escuro do holograma.

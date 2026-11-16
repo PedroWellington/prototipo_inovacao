@@ -1,4 +1,5 @@
 import { del, get, getCached, put } from '../api.js';
+import { flags } from '../config.js';
 import { avatar } from '../components/account.js';
 import '../styles/components.css';
 import { showError } from '../forms.js';
@@ -120,12 +121,12 @@ export async function render(root) {
       <div class="identity-fields">
         <div class="field"><label class="label" for="company">Nome da empresa <span class="muted">(opcional)</span></label>
           <input class="input" id="company" data-input="company_name" value="${s.company_name}" maxlength="80" autocomplete="organization" /></div>
-        <div class="identity-actions">
+        ${flags.uploads ? html`<div class="identity-actions">
           <label class="btn btn-secondary btn-sm file-btn" ${s.logoBusy ? 'aria-busy="true"' : ''}>${icon('image', 15)} ${s.logo_url ? 'Trocar foto ou logo' : 'Enviar foto ou logo'}
             <input type="file" class="sr-only" accept="${ACCEPT.join(',')}" data-logo /></label>
           ${s.logo_url ? html`<button type="button" class="btn btn-ghost btn-sm" data-remove-logo>Remover</button>` : ''}
         </div>
-        <p class="small muted">PNG, JPG ou WebP, até 2 MB. Opcional: sem imagem, mostramos as iniciais (${initials(s.company_name)}).</p>
+        <p class="small muted">PNG, JPG ou WebP, até 2 MB. Opcional: sem imagem, mostramos as iniciais (${initials(s.company_name)}).</p>` : html`<p class="small muted">Neste protótipo a imagem da empresa está desligada: mostramos as iniciais (${initials(s.company_name)}).</p>`}
         ${s.logoError ? html`<p class="small field-error" role="alert">${s.logoError}</p>` : ''}
       </div>
     </section>`;

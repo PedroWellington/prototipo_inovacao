@@ -14,6 +14,7 @@ RUN test -n "$PRODUCT_NAME" && npm run build
 # (docker-compose.yml: additional_contexts); copiamos só o que a página publica.
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx-security.inc /etc/nginx/conf.d/security.inc
 COPY --from=landing index.html /usr/share/nginx/html/
 COPY --from=landing css /usr/share/nginx/html/css
 COPY --from=landing js /usr/share/nginx/html/js

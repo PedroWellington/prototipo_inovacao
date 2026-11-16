@@ -39,7 +39,8 @@ frontend/  Vite + JS puro (ES modules), roteador por hash, MapLibre só no explo
   src/styles/tokens.css  nomes por função (cor, fonte, espaço) mapeados para a paleta de shared/
   src/map/camera.js      câmera contínua (zoom logarítmico + deslocamento atrelado); src/rankList.js: ranking com FLIP
   src/map/mapView.js     mapa: fontes criadas uma vez, feature-state para cor e hover
-docs/      DATA, SCORING, PERFORMANCE, EXTENSIONS
+docs/      DATA, SCORING, PERFORMANCE, EXTENSIONS, DEPLOY (Vercel + Neon), MARCA, PROGRESSO
+api/       index.py: a API como função Python da Vercel; vercel.json e scripts/build-vercel.mjs montam o site (docs/DEPLOY.md)
 shared/    design-tokens.css: paleta única (app e landing); troque o visual do site inteiro por aqui
 design/    referência do protótipo (dashboard-cinematico/, fora do Git) e check-leak.sh
 landing/   landing estática (HTML/CSS/JS puro, Canvas 2D); limites do IBGE pré-gerados em landing/data (ver landing/README.md)

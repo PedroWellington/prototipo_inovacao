@@ -145,6 +145,21 @@ textarea {
   width: 28px;
   height: 28px;
 }
+/* Selo do protótipo (GET /api/config): só aparece com html[data-prototype]. */
+.proto-badge {
+  display: none;
+  margin-left: var(--space-2);
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font: var(--weight-bold) var(--text-xs) / 1.4 var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+html[data-prototype] .proto-badge {
+  display: inline-block;
+}
 .logo-word {
   font: 600 var(--text-md) / 1 var(--font-display);
   letter-spacing: 0.16em;
