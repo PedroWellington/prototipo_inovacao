@@ -1,11 +1,12 @@
 import { get, getCached, post, put } from '../api.js';
 import { fmt, html, mount } from '../html.js';
 import { icon } from '../icons.js';
-import { bbox, brl, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
+import { bbox, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
+import { incomeBlock } from '../components/income.js';
 import { createHologram } from '../map/hologram.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
-import { setActiveNav, topbar, wireTopbar } from '../components/topbar.js';
+import { topbar, wireTopbar } from '../components/topbar.js';
 import { measure, rankListShell, updateRankList } from '../rankList.js';
 import { cityActive, creditsState, ensureCity, ensureSearch, loadCredits, onCredits } from '../credits.js';
 import { loadUser } from '../session.js';
@@ -57,7 +58,7 @@ export async function render(root) {
           <div class="legend" data-legend hidden>
             <div class="legend-bar" aria-hidden="true"></div>
             <div class="legend-scale small"><span>combina menos</span><span>combina mais</span></div>
-            <p class="small">Tom mais escuro = combina mais com seus critérios; mais claro = combina menos. O número em cada área é a posição.</p>
+            <p class="small">A cor segue a barra acima, de combina menos a combina mais com seus critérios. O número em cada área é a posição.</p>
           </div>
           <div class="tooltip" data-tooltip role="tooltip" hidden></div>
         </section>
@@ -443,7 +444,6 @@ export async function render(root) {
 
   // ---------- Painel ----------
   function renderAll() {
-    setActiveNav(root, s.mode === 'discover' ? 'compare' : 'explorer'); // menu: Comparar = ranking de cidades
     renderCrumbs();
     renderPanel();
     renderRight();
@@ -714,16 +714,6 @@ export async function render(root) {
     </div>`;
   }
 
-  // Renda: valor, quartil, frase padrão, fonte, data e a nota fixa. Sem dado: a mensagem padrão (nunca estimativa).
-  function incomeBlock(inc, among) {
-    if (!inc) return '';
-    if (!inc.available) return html`<p class="inc small"><strong>Renda:</strong> ${inc.message} <span class="muted">${inc.note}</span></p>`;
-    return html`<div class="inc small"><strong>Renda (Censo 2022):</strong> mediana do rendimento mensal do responsável pelo domicílio
-      <span class="tabular">${brl(inc.median)}</span>${inc.approximate ? html` <span class="tag">aproximado</span>` : ''};
-      ${inc.quartile}º quartil (de 4) entre ${among}.<br />${inc.text}<br />
-      <span class="muted">${inc.note} Fonte: ${inc.source?.name || 'IBGE, Censo 2022'}, ref. ${inc.source?.reference_date || '2022'}.</span></div>`;
-  }
-
   function cityControls() {
     return html`<div class="section-head"><h2>Como comparar</h2></div>
       <div class="ctl">
@@ -865,7 +855,7 @@ export async function render(root) {
     const r = s.rank;
     const shown = s.showAll ? r.count : Math.min(TOP, r.count);
     return html`${coverageLine()}
-      <div class="section-head"><h2>${s.showAll ? unit().all(r.count) : unit().top(shown)}</h2></div>
+      <div class="section-head"><h2>${s.showAll ? unit().all(r.count) : unit().top(shown)}</h2><a class="small" href="#/criterios">Editar critérios</a></div>
       ${rankListShell(`${unit().Many} em ordem de posição (${shown})`)}
       ${r.count > TOP ? html`<button type="button" class="btn btn-ghost btn-sm btn-block" data-toggle-all>${s.showAll ? 'Mostrar só os 10 primeiros' : html`${icon('list', 16)} ${unit().seeAll}`}</button>` : ''}
       ${r.excluded.length ? html`<p class="small muted">Fora do ranking: ${r.excluded.map((e) => `${e.name} (${e.reason})`).join('; ')}.</p>` : ''}
@@ -898,7 +888,7 @@ export async function render(root) {
         <span class="rank-pos tabular">${x.rank}</span>
         <span class="rank-name" title="${x.name} – ${x.uf}">${x.name} <span class="muted small">${x.uf}</span>${bar(x.score)}</span>
         <span class="rank-score tabular">${fmt.dec(x.score)}</span></button>`;
-    return html`<button type="button" class="rank-row ${x.id === s.selectedId ? 'is-selected' : ''}" data-hood="${x.id}" ${x.id === s.selectedId ? 'aria-current="true"' : ''}>
+    return html`<button type="button" class="rank-row ${x.id === s.selectedId ? 'is-selected' : ''}" data-hood="${x.id}" ${x.id === s.selectedId ? html`aria-current="true"` : ''}>
       <span class="rank-pos tabular">${x.rank}</span>
       <span class="rank-name" title="${x.name}">${x.name}${bar(x.score)}</span>
       <span class="rank-score tabular">${fmt.dec(x.score)}</span></button>`;
@@ -939,6 +929,7 @@ export async function render(root) {
         (${establishmentsText(cov.located_count)} localizados${cov.located_count === 0 ? '; poucos dados localizados nesta área' : ''})</p>
       ${incomeBlock(n.income, `${unit().among} da cidade`)}
       <p class="hd-src">${sourcesLine(r)}</p>
+      <a class="btn btn-secondary btn-sm" href="#/bairro/${n.id}?city=${s.city.id}">${icon('chevron', 14)} Ver detalhe completo</a>
     </div>`;
   }
 
@@ -1240,8 +1231,7 @@ export async function render(root) {
       if (s.level === 'result' && s.city?.id === id) return; // já está aberta: nada a refazer
       openCityDirect(id);
     } else if (query.get('search')) openSearchDirect(query.get('search'));
-    else if (query.get('compare') && s.mode !== 'discover') goScope();
-    else if (query.get('compare')) setActiveNav(root, 'compare');
+    else if (query.get('compare') && s.mode !== 'discover') goScope(); // "Comparar cidades" -> ranking de cidades
   }
   openFromQuery();
 
@@ -1256,6 +1246,12 @@ export async function render(root) {
   };
   // O roteador mantém o explorador vivo ao ir para a visão geral ou a conta (router.js): ao voltar, mapa,
   // cidade, critérios e aba estão como ficaram; só o saldo é relido e um ?city= novo é aberto.
+  // Critérios salvos no editor (#/criterios): o explorador vivo recalcula com eles (nota sempre do banco).
+  on(window, 'criteria:saved', (e) => {
+    s.criteria = e.detail.map((c) => ({ ...c }));
+    renderCriteria();
+    if (s.level === 'result' || s.level === 'cities') scheduleRank();
+  });
   cleanup.resume = () => {
     loadCredits(true).catch(() => {});
     map.resize();
