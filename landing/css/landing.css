@@ -103,6 +103,9 @@ a:focus-visible{outline-color:var(--copper-soft)}
   .chapters{position:relative;inset:auto;grid-row:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:56px 48px;padding:72px clamp(24px,5vw,94px);pointer-events:auto}
   .chapter,.chapter.align-right{position:relative;left:auto;right:auto;top:auto;bottom:auto;margin:0;height:auto;width:auto;max-width:none;transform:none;opacity:1;visibility:visible;pointer-events:auto;text-shadow:none}
   .chapter h1,.chapter h2,.chapter-final h2{font-size:clamp(30px,3vw,44px)}
+  .store-reveal{position:relative;grid-row:3;grid-column:1;width:100%!important;height:100%!important;border-radius:0;visibility:visible;opacity:1;transform:none!important;-webkit-mask-image:none;mask-image:none}
+  .store-reveal picture{inset:0!important;width:100%!important;height:100%!important;left:0!important;top:0!important}
+  .store-reveal picture{transform:none!important}
   .store-backdrop,.store-vignette,.ambient-lines,.geo-pill,.scene-scale,.scroll-instruction,.progress-line,.stage-mobile-caption{display:none}
   .stage-bottom{position:absolute;top:calc(min(72svh,720px) - 48px);bottom:auto}
 }
@@ -186,13 +189,3 @@ html{scrollbar-width:none}html::-webkit-scrollbar{display:none}
 html[data-theme=dark] body{background:var(--bg)}html[data-theme=dark] .navbar.scrolled{background:color-mix(in srgb, var(--bg) 90%, transparent)}
 html[data-theme=dark] :is(.pg,.skip){--paper:var(--bg-2);--stone:var(--bg-2);--sand:var(--bg);--on-dark:var(--surface);--line:#4a3f38;--ink:var(--text);--coal-2:var(--text);--muted-dark:var(--text-2);--muted-ink:var(--text-2);--on-dark-muted:#5c514a;--copper-wash:#3f2f24;--copper-dark:var(--accent);--copper-deep:var(--accent);--copper:var(--accent-2);--sage:#9fbab3;--sage-light:#263330;--muted:#8a7d74}
 html[data-theme=dark] .plan-cta:not([disabled]){background:var(--copper-soft);color:var(--coal)}
-
-/* --- Cena do hero (js/hero-seq.js; docs/HERO-360.md): sequência ilustrativa, decorativa, sem dado ---------- */
-/* Camada inteira do palco; só a opacidade muda (o quadro troca dentro do vídeo ou do canvas). */
-.hero-seq{position:absolute;inset:0;z-index:4;pointer-events:none;visibility:hidden;opacity:0;background:var(--coal);will-change:opacity}
-.hero-seq-still,.hero-seq-video,.hero-seq-frames{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
-.hero-seq-video{opacity:0}.hero-seq-video.is-on{opacity:1}
-.hero-seq-credit{position:absolute;right:12px;bottom:10px;z-index:1;padding:3px 8px;border-radius:6px;background:color-mix(in srgb, var(--coal) 72%, transparent);color:var(--copper-soft);font-size:10px;letter-spacing:.02em}
-@media(max-width:760px){.hero-seq-credit{bottom:auto;top:72px}}
-/* Movimento reduzido: sem sequência; o último quadro fica estático no fluxo, abaixo dos textos (vem depois da regra base). */
-@media(prefers-reduced-motion:reduce){.hero-seq{position:relative;grid-row:3;grid-column:1;inset:auto;width:100%;height:100%;visibility:visible;opacity:1}}

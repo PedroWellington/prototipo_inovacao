@@ -21,13 +21,11 @@
   <meta property="og:image:height" content="630" />
   <link rel="preload" href="data/manifest.json" as="fetch" crossorigin="anonymous" />
   <link rel="preload" href="assets/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/app/hero-360/v1/f/000.webp" as="image" type="image/webp" fetchpriority="low" media="(prefers-reduced-motion: no-preference)" />
   <!-- Tema claro/escuro antes da primeira pintura (script clássico e bloqueante; a CSP não permite inline). -->
   <script src="/app/theme.js"></script>
   <link rel="stylesheet" href="shared/design-tokens.css" />
   <link rel="stylesheet" href="css/landing.css" />
   <script type="module" src="js/landing.js"></script>
-  <noscript><style>.hero-seq{opacity:1;visibility:visible}</style></noscript>
 </head>
 <body>
   <div class="scroll-progress" aria-hidden="true"><span id="scrollProgress"></span></div>
@@ -52,12 +50,13 @@
         <div class="stage-bg" aria-hidden="true"></div>
         <canvas id="mapCanvas" role="img" aria-label="Mapa animado do Brasil ao Nordeste, a Pernambuco, ao Recife e aos bairros do Recife (exemplo da demonstração), desenhado com as malhas territoriais do IBGE. Se os arquivos não carregarem, a tela avisa que a visualização é ilustrativa."></canvas>
         <div class="map-light" aria-hidden="true"></div>
-        <!-- Cena do hero (capítulos 6 a 8): mergulho ilustrativo do mapa do Recife até o holograma da unidade.
-             Decorativa e sem dado (docs/HERO-360.md). Sem JS ou com movimento reduzido: o último quadro, estático. -->
-        <div class="hero-seq" id="heroSeq" aria-hidden="true">
-          <img class="hero-seq-still" src="/app/hero-360/v1/f/359.webp" width="1280" height="720" alt="" decoding="async" />
-          <canvas class="hero-seq-frames" hidden></canvas>
-          <span class="hero-seq-credit">Cena ilustrativa · mapa-base © OpenStreetMap contributors</span>
+        <div class="store-backdrop" id="storeBackdrop" aria-hidden="true"></div>
+        <!-- Loja: ilustração conceitual, não um endereço real. Cresce a partir do ponto do bairro. -->
+        <div class="store-reveal" id="storeReveal">
+          <picture id="storePicture">
+            <source type="image/webp" srcset="assets/loja-esquina-960.webp 960w, assets/loja-esquina-1280.webp 1280w, assets/loja-esquina-1672.webp 1672w" sizes="100vw" />
+            <img id="storeImg" src="assets/loja-esquina-1280.jpg" srcset="assets/loja-esquina-960.jpg 960w, assets/loja-esquina-1280.jpg 1280w, assets/loja-esquina-1672.jpg 1672w" sizes="100vw" width="1672" height="941" alt="Ilustração de uma loja de esquina numa rua arborizada, ao entardecer. Imagem conceitual, não é um estabelecimento real." decoding="async" fetchpriority="low" />
+          </picture>
         </div>
         <div class="store-vignette" aria-hidden="true"></div>
         <div class="ambient-lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
