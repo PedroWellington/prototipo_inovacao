@@ -24,6 +24,14 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")  # ex.: https://vicus-inovacao.vercel.app (monta o redirect do Google)
 PDF_ENABLED = flag("PDF_ENABLED", False)  # ainda não implementado (docs/EXTENSIONS.md)
 PAYMENTS_ENABLED = flag("PAYMENTS_ENABLED", False)  # gateway de pagamento (app/billing); desligado = só registra interesse
+
+# Assistente de IA (app/assistant.py; docs/ASSISTENTE-IA.md). Desligado ou sem chave: o botão não aparece.
+AI_ASSISTANT_ENABLED = flag("AI_ASSISTANT_ENABLED", False)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # só no servidor; nunca no frontend nem no Git
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")  # lista consultada em 2026-11-17 (docs/ASSISTENTE-IA.md)
+AI_DAILY_LIMIT = int(os.getenv("AI_DAILY_LIMIT", "30"))  # mensagens por conta por dia
+AI_MAX_CHARS = int(os.getenv("AI_MAX_CHARS", "600"))  # tamanho máximo da pergunta
+AI_TIMEOUT_SECONDS = float(os.getenv("AI_TIMEOUT_SECONDS", "20"))
 SESSION_COOKIE = f"{PRODUCT_NAME.lower()}_session"
 
 IBGE_API = "https://servicodados.ibge.gov.br/api"

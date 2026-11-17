@@ -597,6 +597,13 @@ export async function render(root) {
   // Barras e marcas do painel direito crescem quando entram na tela (uma vez por desenho).
   let shapesOff = () => {};
   function shapesIn() {
+    // Tela atual para o assistente (o servidor confere se a cidade está liberada para a conta).
+    dispatchEvent(new CustomEvent('screen:context', { detail: { city: s.city?.id ?? null, neighborhood: s.selectedId ?? null } }));
+    const meta = right.querySelector('.right-head .overline'); // cabeçalho que informa: atualiza quando o status chega
+    if (meta && meta.textContent !== rightMeta()) {
+      meta.textContent = rightMeta();
+      if (!wide.matches) syncInsets(false); // a gaveta do celular mudou de altura: a atribuição do OSM sobe junto
+    }
     shapesOff();
     shapesOff = animateOnView(right);
   }

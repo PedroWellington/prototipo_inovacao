@@ -45,6 +45,10 @@ for (const [device, viewport, theme] of [['desktop', { width: 1440, height: 900 
   await page.waitForSelector('.tour.is-open .tour-card', { timeout: 15000 }); await page.waitForTimeout(400); await check(page, d('tutorial (passo 1)'));
   await page.keyboard.press('Escape');
   await page.waitForSelector('[data-dashboard] .ov-hero'); await check(page, d('visão geral'));
+  if (await page.$('.ai-fab')) { // assistente ligado neste servidor: painel aberto também passa pelo axe
+    await page.click('.ai-fab'); await page.waitForSelector('.ai.is-open .ai-panel'); await page.waitForTimeout(400); await check(page, d('assistente aberto'));
+    await page.click('[data-ai-close]'); await page.waitForTimeout(300);
+  }
   await page.goto(`${BASE}/app/#/analises`); await page.waitForSelector('.ov-analyses, .ov-empty-big'); await check(page, d('análises'));
   await page.goto(`${BASE}/app/#/dados`); await page.waitForSelector('.src-table'); await check(page, d('dados e fontes'));
   await page.goto(`${BASE}/app/#/explorer`); await page.waitForSelector('.maplibregl-canvas'); await check(page, d('explorador (início)'));

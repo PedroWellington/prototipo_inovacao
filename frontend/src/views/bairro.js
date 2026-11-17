@@ -51,6 +51,7 @@ export async function render(root) {
       if (r.status !== 'ok') return html`<div class="alert alert-warning" data-cx>${icon('info', 16)}<span>${r.message}</span></div>`;
       const n = r.neighborhoods.find((x) => x.id === id);
       if (!n) return html`<p class="ov-empty" data-cx>Bairro não encontrado no ranking desta cidade.</p>`;
+      dispatchEvent(new CustomEvent('screen:context', { detail: { city: ibge, neighborhood: id } }));
       const area = r.division_kind === 'area';
       const unit = area ? 'área' : 'bairro';
       const typeOf = (k) => r.criteria.find((x) => x.business_type_key === k);

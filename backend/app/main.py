@@ -5,17 +5,17 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api import account, catalog, cities, credits, geo, profile
+from app.api import account, assistant as assistant_api, catalog, cities, credits, geo, profile
 from app.billing import routes as billing_routes
 from app.auth import google
 from app.auth import routes as auth_routes
-from app import config
+from app import assistant, config
 from app.config import PRODUCT_NAME
 from app.db import get_db
 
 app = FastAPI(title=f"{PRODUCT_NAME} API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-for module in (auth_routes, google, account, catalog, cities, credits, geo, profile, billing_routes):
+for module in (auth_routes, google, account, catalog, cities, credits, geo, profile, billing_routes, assistant_api):
     app.include_router(module.router)
 
 
@@ -45,7 +45,8 @@ async def validation_error(_: Request, exc: RequestValidationError):
 def public_config():
     """Só flags públicas: nada de segredo nem de regra de negócio aqui."""
     return {"prototype": config.PROTOTYPE, "demo_mode": config.DEMO_MODE, "uploads": config.UPLOADS_ENABLED,
-            "google_login": google.enabled(), "pdf": config.PDF_ENABLED, "payments": config.PAYMENTS_ENABLED}
+            "google_login": google.enabled(), "pdf": config.PDF_ENABLED, "payments": config.PAYMENTS_ENABLED,
+            "assistant": assistant.enabled()}
 
 
 @app.get("/api/health")
