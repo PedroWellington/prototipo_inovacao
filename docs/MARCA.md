@@ -30,6 +30,10 @@ Só é preciso rodar de novo se `design/brand/` mudar. O ícone original tem qua
 - O nome do produto continua vindo só de `PRODUCT_NAME` (`src/brand.js`); as imagens não têm texto.
 - Nunca usar os PNGs de `design/brand/` diretamente no produto (pesam de 0,5 a 1,7 MB cada).
 
+## Aviso sobre a origem da marca
+
+A logo foi criada por IA (painel e PNGs em `design/brand/`). Antes de investir em material impresso ou registrar a marca: **verificar disponibilidade no INPI** e **pedir o arquivo vetorial profissional** (as SVGs daqui são reconstruções: ícone rasterizado + nome em Inter). No app e na landing a marca segue o tema sem piscar: o ícone é o mesmo e o nome é texto, na cor do tema (grafite no claro, off-white no escuro), trocado pelo mesmo `html[data-theme]` de `public/theme.js`.
+
 ## Pendência
 
 - `og:image` precisa de URL absoluta para os crawlers; hoje é `/app/brand/og-image.png`. Trocar quando houver domínio.

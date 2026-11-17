@@ -35,17 +35,48 @@ function baseStyle() {
     layers: [
       { id: 'bg', type: 'background', paint: { 'background-color': css('--color-bg') } },
       { id: 'osm', type: 'raster', source: 'osm', // Sem fade de entrada: na inclinação, tiles novos com fade obrigavam a desenhar duas camadas por quadro.
-        paint: { 'raster-saturation': -0.85, 'raster-opacity': 0.85, 'raster-contrast': -0.05, 'raster-fade-duration': 0 } },
+        paint: { ...themePaints().osm, 'raster-fade-duration': 0 } },
     ],
   };
 }
 
 const hover = (on, off) => ['case', ['boolean', ['feature-state', 'hover'], false], on, off];
+const dark = () => document.documentElement.dataset.theme === 'dark';
+
+// Cores que dependem do tema (tokens), por camada. Usadas ao criar as camadas e reaplicadas na troca de tema
+// com setPaintProperty: instantâneo, mesmos tiles, mesma fonte. Os mesmos layers nos dois temas.
+function themePaints() {
+  const accent = css('--color-accent');
+  const text = css('--color-text');
+  const line = css('--map-line');
+  const stops = [1, 2, 3, 4, 5].map((i) => css(`--score-${i}`));
+  const scoreFill = [
+    'case',
+    ['==', ['typeof', ['feature-state', 'score']], 'number'],
+    ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
+    css('--score-none'),
+  ];
+  return {
+    bg: { 'background-color': css('--color-bg') },
+    // Escuro: mapa-base raster escurecido e sem cor (só pintura; nada é recarregado).
+    osm: dark()
+      ? { 'raster-saturation': -1, 'raster-brightness-max': 0.4, 'raster-brightness-min': 0.05, 'raster-contrast': -0.15, 'raster-opacity': 0.9 }
+      : { 'raster-saturation': -0.85, 'raster-brightness-max': 1, 'raster-brightness-min': 0, 'raster-contrast': -0.05, 'raster-opacity': 0.85 },
+    'regions-fill': { 'fill-color': accent },
+    'regions-line': { 'line-color': accent },
+    'states-fill': { 'fill-color': accent },
+    'states-line': { 'line-color': accent },
+    'munis-fill': { 'fill-color': ['case', ['boolean', ['feature-state', 'hasData'], false], accent, css('--color-text-subtle')] },
+    'munis-line': { 'line-color': css('--color-border-strong') },
+    'hoods-fill': { 'fill-color': scoreFill },
+    'hoods-line': { 'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], css('--color-selected'), line] },
+    'cities-fill': { 'fill-color': scoreFill },
+    'cities-line': { 'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], text, line] },
+  };
+}
 
 function addLayers(map, opts) {
-  const accent = css('--color-accent');
-  const stops = [1, 2, 3, 4, 5].map((i) => css(`--score-${i}`));
-  const text = css('--color-text');
+  const P = themePaints();
   for (const id of ['regions', 'states', 'munis', 'hoods', 'labels', 'cityLabels']) {
     map.addSource(id, { type: 'geojson', data: EMPTY, promoteId: 'id' });
   }
@@ -55,16 +86,16 @@ function addLayers(map, opts) {
     minzoom: 0,
     maxzoom: 12, // acima disso o MapLibre amplia o tile 12 (geometria já simplificada a ~30 m)
   });
-  map.addLayer({ id: 'regions-fill', type: 'fill', source: 'regions', paint: { 'fill-color': accent, 'fill-opacity': hover(0.38, 0.16) } });
-  map.addLayer({ id: 'regions-line', type: 'line', source: 'regions', paint: { 'line-color': accent, 'line-width': 1.2 } });
-  map.addLayer({ id: 'states-fill', type: 'fill', source: 'states', paint: { 'fill-color': accent, 'fill-opacity': hover(0.4, 0.14) } });
-  map.addLayer({ id: 'states-line', type: 'line', source: 'states', paint: { 'line-color': accent, 'line-width': 1 } });
+  map.addLayer({ id: 'regions-fill', type: 'fill', source: 'regions', paint: { ...P['regions-fill'], 'fill-opacity': hover(0.38, 0.16) } });
+  map.addLayer({ id: 'regions-line', type: 'line', source: 'regions', paint: { ...P['regions-line'], 'line-width': 1.2 } });
+  map.addLayer({ id: 'states-fill', type: 'fill', source: 'states', paint: { ...P['states-fill'], 'fill-opacity': hover(0.4, 0.14) } });
+  map.addLayer({ id: 'states-line', type: 'line', source: 'states', paint: { ...P['states-line'], 'line-width': 1 } });
   map.addLayer({
     id: 'munis-fill',
     type: 'fill',
     source: 'munis',
     paint: {
-      'fill-color': ['case', ['boolean', ['feature-state', 'hasData'], false], accent, css('--color-text-subtle')],
+      ...P['munis-fill'],
       'fill-opacity': [
         'case',
         ['boolean', ['feature-state', 'hasData'], false],
@@ -73,44 +104,25 @@ function addLayers(map, opts) {
       ],
     },
   });
-  map.addLayer({ id: 'munis-line', type: 'line', source: 'munis', paint: { 'line-color': css('--color-border-strong'), 'line-width': 0.6 } });
-  map.addLayer({
-    id: 'hoods-fill',
-    type: 'fill',
-    source: 'hoods',
-    paint: {
-      // Cor pela nota que veio do backend (feature-state): recolorir não recria camada nem fonte.
-      'fill-color': [
-        'case',
-        ['==', ['typeof', ['feature-state', 'score']], 'number'],
-        ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
-        css('--score-none'),
-      ],
-      'fill-opacity': hover(0.95, 0.86),
-    },
-  });
+  map.addLayer({ id: 'munis-line', type: 'line', source: 'munis', paint: { ...P['munis-line'], 'line-width': 0.6 } });
+  // Cor pela nota que veio do backend (feature-state): recolorir não recria camada nem fonte.
+  map.addLayer({ id: 'hoods-fill', type: 'fill', source: 'hoods', paint: { ...P['hoods-fill'], 'fill-opacity': hover(0.95, 0.86) } });
   map.addLayer({
     id: 'hoods-line',
     type: 'line',
     source: 'hoods',
     paint: {
-      'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], text, css('--map-line')],
+      ...P['hoods-line'],
       'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, ['boolean', ['feature-state', 'hover'], false], 2, 0.8],
     },
   });
-  const scoreFill = [
-    'case',
-    ['==', ['typeof', ['feature-state', 'score']], 'number'],
-    ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
-    css('--score-none'),
-  ];
   map.addLayer({
     id: 'cities-fill',
     type: 'fill',
     source: 'cities',
     'source-layer': 'munis',
     paint: {
-      'fill-color': scoreFill,
+      ...P['cities-fill'],
       'fill-opacity': ['case', ['==', ['typeof', ['feature-state', 'score']], 'number'], hover(0.92, 0.75), hover(0.25, 0.12)],
     },
   });
@@ -119,10 +131,7 @@ function addLayers(map, opts) {
     type: 'line',
     source: 'cities',
     'source-layer': 'munis',
-    paint: {
-      'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], text, css('--map-line')],
-      'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.15, 7, 0.6, 10, 1.2],
-    },
+    paint: { ...P['cities-line'], 'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.15, 7, 0.6, 10, 1.2] },
   });
   // Número da posição: ícones desenhados em canvas (não depende de servidor de fontes).
   const badge = (id, filter, minzoom, source = 'labels') =>
@@ -198,6 +207,16 @@ export function createMap(container, handlers, opts = {}) {
     const m = /^rank-(\d+)$/.exec(e.id);
     if (m) addBadge(Number(m[1]));
   });
+  // Troca de tema: só pintura (setPaintProperty) e os números refeitos no lugar (updateImage). Nada recarrega.
+  function applyTheme() {
+    for (const [layer, props] of Object.entries(themePaints())) for (const [k, v] of Object.entries(props)) map.setPaintProperty(layer, k, v);
+    for (const id of map.listImages()) {
+      const m = /^rank-(\d+)$/.exec(id);
+      if (m) map.updateImage(id, drawBadge(Number(m[1])).image);
+    }
+  }
+  const onTheme = () => ready.then(applyTheme);
+  document.documentElement.addEventListener('themechange', onTheme);
   // Os números acima de 10 só aparecem perto (zoom 12,4+): desenhá-los todos no primeiro zoom custava uma
   // tarefa de ~75 ms. Aqui eles são preparados antes, em lotes pequenos, quando o navegador está ocioso.
   const idle = window.requestIdleCallback || ((fn) => setTimeout(() => fn({ timeRemaining: () => 8 }), 50));
@@ -424,6 +443,7 @@ export function createMap(container, handlers, opts = {}) {
     destroy: () => {
       stopCamera();
       stopTilt();
+      document.documentElement.removeEventListener('themechange', onTheme);
       map.remove();
     },
   };

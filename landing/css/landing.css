@@ -186,6 +186,6 @@ html{scrollbar-width:none}html::-webkit-scrollbar{display:none}
 @media(max-width:760px){.pg{padding:70px 0 55px}.source-list li{flex-direction:column;gap:4px}.source-list li span:last-child{white-space:normal}.steps{grid-template-columns:1fr}.step{padding:22px}.stat-num{font-size:38px}.faq summary{font-size:15px}.footer-links{flex-direction:column;gap:8px;margin-top:10px}.theme-toggle{width:34px;height:34px}.nav-actions{gap:12px}}
 
 /* --- Tema escuro: as seções de página trocam a paleta clara pela grafite; o herói já é escuro por design --- */
-html[data-theme=dark] body{background:var(--coal)}
-html[data-theme=dark] :is(.pg,.skip){--paper:#1c2328;--stone:#20272d;--sand:#232b31;--on-dark:#1a2126;--line:#36414a;--ink:#f5f1ea;--coal-2:#f5f1ea;--muted-dark:#b9c0bf;--muted-ink:#b9c0bf;--on-dark-muted:#55616a;--copper-wash:#3a2f27;--copper-dark:#e2c6ae;--copper-deep:#e2c6ae;--copper:#d9b394;--sage:#9fbab3;--sage-light:#2a3a36;--muted:#87908e}
+html[data-theme=dark] body{background:var(--bg)}html[data-theme=dark] .navbar.scrolled{background:color-mix(in srgb, var(--bg) 90%, transparent)}
+html[data-theme=dark] :is(.pg,.skip){--paper:var(--bg-2);--stone:var(--bg-2);--sand:var(--bg);--on-dark:var(--surface);--line:#4a3f38;--ink:var(--text);--coal-2:var(--text);--muted-dark:var(--text-2);--muted-ink:var(--text-2);--on-dark-muted:#5c514a;--copper-wash:#3f2f24;--copper-dark:var(--accent);--copper-deep:var(--accent);--copper:var(--accent-2);--sage:#9fbab3;--sage-light:#263330;--muted:#8a7d74}
 html[data-theme=dark] .plan-cta:not([disabled]){background:var(--copper-soft);color:var(--coal)}

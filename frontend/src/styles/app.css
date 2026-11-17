@@ -124,13 +124,14 @@ textarea {
   }
 }
 #view.view-enter {
-  animation: view-in var(--dur) var(--ease-out);
+  animation: view-in var(--dur-2) var(--ease-out);
 }
 /* Só opacidade: um deslocamento vertical fazia a barra de rolagem aparecer e sumir na entrada de telas da
    altura da janela, recentrando o conteúdo (salto de layout). */
 @keyframes view-in {
   from {
     opacity: 0;
+    transform: translate3d(0, 8px, 0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -449,9 +450,20 @@ textarea {
   width: 100%;
   max-width: 400px;
 }
-.auth-card .logo-link {
-  display: inline-block;
+.auth-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--space-8);
+}
+.auth-top .theme-toggle,
+.ob-top .theme-toggle {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+.auth-top .theme-toggle:hover,
+.ob-top .theme-toggle:hover {
+  background: var(--color-surface-2);
 }
 /* No desktop a marca já está no painel grafite: o link some inteiro (nada de link vazio na tabulação). */
 @media (min-width: 960px) {
@@ -599,6 +611,11 @@ textarea {
   width: 100%;
   max-width: 640px;
   padding: var(--space-4) 0 var(--space-10);
+}
+.ob-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 .ob-progress {
   height: 4px;

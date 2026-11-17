@@ -50,10 +50,24 @@ for (const theme of ['claro', 'escuro']) {
     });
     await settle(1800); await shot('app-bairro-holograma');
     await page.keyboard.press('Escape'); await settle(1200); await shot('app-bairro-volta');
+    const hood = await page.evaluate(() => document.querySelector('[data-holo]').holoState().top[0]);
+    await page.goto(`${BASE}/app/#/bairro/${hood}?city=${RECIFE}`); await page.waitForSelector('.ring', { timeout: 30000 }); await settle(1500); await shot('app-detalhe-bairro', { fullPage: true });
+    await page.goto(`${BASE}/app/#/criterios`); await page.waitForSelector('[data-body] h2'); await settle(1800); await shot('app-criterios');
     await page.goto(`${BASE}/app/#/conta`); await page.waitForSelector('.page'); await settle(); await shot('app-conta');
+    await page.goto(`${BASE}/app/#/termos`); await page.waitForSelector('.page'); await settle(); await shot('app-termos');
+    await page.goto(`${BASE}/app/#/analises`); await settle(1500); await shot('app-analises');
+    await page.goto(`${BASE}/app/#/comparar`); await settle(1500); await shot('app-comparar');
+    await page.goto(`${BASE}/app/#/dados`); await settle(1500); await shot('app-dados');
     await page.goto(`${BASE}/app/#/creditos`); await page.waitForSelector('.plans-grid'); await settle(); await shot('app-creditos');
     await page.click('[data-buy="essencial"]'); await page.waitForSelector('dialog[open]'); await settle(400); await shot('app-creditos-modal');
     await ctx.close();
+    // Visitante: login nos dois temas
+    const guest = await browser.newContext({ bypassCSP: true, viewport, deviceScaleFactor: mobile ? 2 : 1, isMobile: mobile, hasTouch: mobile });
+    await guest.addInitScript((t) => localStorage.setItem('theme', t), theme === 'escuro' ? 'dark' : 'light');
+    const g = await guest.newPage();
+    await g.goto(`${BASE}/app/#/login`); await g.waitForSelector('#email'); await g.waitForTimeout(800);
+    await g.screenshot({ path: `${OUT}/${theme}-${device}-app-login.png` });
+    await guest.close();
   }
 }
 await browser.close();

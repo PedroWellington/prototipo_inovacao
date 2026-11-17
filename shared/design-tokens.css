@@ -51,5 +51,34 @@
   --scale-none: #d9d6cd;
 
   --shadow-soft: 0 22px 70px rgb(34 41 43 / 0.08);
+
+  /* Movimento (uma linguagem só, em todas as telas) */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 160ms;
+  --dur-2: 280ms;
+  --dur-3: 550ms;
+  --stagger: 57ms; /* cascata: 40 a 70 ms entre elementos */
+
+  /* Papéis semânticos do tema claro (o escuro redefine abaixo; theme.js escreve html[data-theme]) */
+  --bg: var(--stone);
+  --bg-2: var(--sand);
+  --surface: var(--paper);
+  --accent: var(--copper-dark);
+  --accent-2: var(--copper);
+  --text: var(--ink);
+  --text-2: var(--muted-dark);
+  --holo: var(--copper-soft);
+}
+
+/* Tema escuro: tons quentes e sóbrios, sem preto puro. Tudo o mais deriva destes oito. */
+:root[data-theme='dark'] {
+  --bg: #181512;
+  --bg-2: #221d1a;
+  --surface: #352d27;
+  --accent: #eba774;
+  --accent-2: #c58a62;
+  --text: #f3ede7;
+  --text-2: #b8aba2;
+  --holo: #61828a;
 }

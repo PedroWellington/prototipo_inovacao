@@ -102,40 +102,59 @@
   --control-h: 40px;
 }
 
-/* Tema escuro (public/theme.js escreve html[data-theme]). Só os tokens por função mudam: a paleta é a mesma. */
+/* Holograma e seleção no mapa (o escuro troca abaixo) */
+:root {
+  --color-holo: var(--holo);
+  --color-selected: var(--ink);
+}
+
+/* Tema escuro: só os tokens por função mudam, derivados dos papéis de shared/design-tokens.css. */
 :root[data-theme='dark'] {
-  --color-bg: #14191d;
-  --color-surface: #1c2328;
-  --color-surface-2: #222a30;
-  --color-surface-3: #2a333a;
-  --color-border: #2f3940;
-  --color-border-strong: #3e4a52;
-  --color-text: var(--on-dark);
-  --color-text-muted: var(--on-dark-muted);
-  --color-text-subtle: var(--on-dark-muted);
-  --color-text-on-sand: var(--on-dark-muted);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--bg-2);
+  --color-surface-3: #3f3630;
+  --color-border: #4a3f38;
+  --color-border-strong: #5c514a;
+  --color-text: var(--text);
+  --color-text-muted: var(--text-2);
+  --color-text-subtle: var(--text-2);
+  --color-text-on-sand: var(--text-2);
 
-  --color-accent: var(--copper-soft); /* texto grafite sobre cobre-claro: 11:1 */
-  --color-accent-hover: #f0dcc8;
-  --color-accent-soft: #3a2f27;
-  --color-on-accent: var(--coal);
-  --color-focus: var(--copper-soft);
-  --color-focus-ring: rgb(226 198 174 / 0.3);
+  --color-accent: var(--accent); /* texto #181512 sobre #eba774: 9,5:1 */
+  --color-accent-hover: #f2bd92;
+  --color-accent-soft: #3f2f24;
+  --color-on-accent: var(--bg);
+  --color-focus: var(--accent);
+  --color-focus-ring: rgb(235 167 116 / 0.32);
 
-  --color-top: #0f1316;
-  --color-top-2: #232c33;
+  --color-top: var(--bg-2);
+  --color-top-2: var(--surface);
+  --color-on-top: var(--text);
+  --color-on-top-muted: var(--text-2);
+  --color-brand-mark: var(--accent);
 
   --color-positive: #9fbab3;
-  --color-positive-soft: #22302d;
-  --color-danger: #e2a497;
+  --color-positive-soft: #263330;
+  --color-danger: #e8a496;
   --color-danger-hover: #f0b9ae;
-  --color-danger-soft: #3a2724;
-  --color-warning: var(--copper-soft);
-  --color-warning-soft: #3a2f27;
-  --color-info-soft: #22302d;
-  --color-scrim: rgb(0 0 0 / 0.55);
-  --color-overlay: rgb(28 35 40 / 0.94);
-  --map-line: #14191d;
+  --color-danger-soft: #3d2a26;
+  --color-warning: var(--accent);
+  --color-warning-soft: #3f2f24;
+  --color-info-soft: #263330;
+  --color-scrim: rgb(0 0 0 / 0.6);
+  --color-overlay: rgb(34 29 26 / 0.94);
+  --color-holo: var(--holo);
+  --color-selected: var(--accent);
+
+  /* Escala dos bairros no escuro: luminosidade crescente (combina mais = mais claro), tons de cobre */
+  --score-5: var(--accent);
+  --score-4: #bf8a62;
+  --score-3: #8a6448;
+  --score-2: #5c4537;
+  --score-1: #3b302a;
+  --score-none: #2b2522;
+  --map-line: var(--bg);
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 14px rgb(0 0 0 / 0.35);
   --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.5);

@@ -5,6 +5,7 @@ import '../styles/components.css';
 import { showError } from '../forms.js';
 import { html, mount } from '../html.js';
 import { aboutLink, icon, logo } from '../icons.js';
+import { themeButton } from '../components/topbar.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import { initials } from '../lib.js';
@@ -122,7 +123,7 @@ export async function render(root) {
         <div class="field"><label class="label" for="company">Nome da empresa <span class="muted">(opcional)</span></label>
           <input class="input" id="company" data-input="company_name" value="${s.company_name}" maxlength="80" autocomplete="organization" /></div>
         ${flags.uploads ? html`<div class="identity-actions">
-          <label class="btn btn-secondary btn-sm file-btn" ${s.logoBusy ? 'aria-busy="true"' : ''}>${icon('image', 15)} ${s.logo_url ? 'Trocar foto ou logo' : 'Enviar foto ou logo'}
+          <label class="btn btn-secondary btn-sm file-btn" ${s.logoBusy ? html`aria-busy="true"` : ''}>${icon('image', 15)} ${s.logo_url ? 'Trocar foto ou logo' : 'Enviar foto ou logo'}
             <input type="file" class="sr-only" accept="${ACCEPT.join(',')}" data-logo /></label>
           ${s.logo_url ? html`<button type="button" class="btn btn-ghost btn-sm" data-remove-logo>Remover</button>` : ''}
         </div>
@@ -227,7 +228,7 @@ export async function render(root) {
           <div class="ob-progress" role="progressbar" aria-label="Progresso" aria-valuemin="1" aria-valuemax="${STEPS}" aria-valuenow="${s.step}">
             <span style="transform: scaleX(${s.step / STEPS})"></span>
           </div>
-          <span class="small muted tabular">${s.step} de ${STEPS}</span>
+          <span class="ob-right"><span class="small muted tabular">${s.step} de ${STEPS}</span>${themeButton()}</span>
         </header>
         <form class="ob-card" novalidate>
           <h1 tabindex="-1">${scr.title}</h1>

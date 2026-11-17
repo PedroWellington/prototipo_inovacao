@@ -3,6 +3,7 @@ import { flags, flagsReady } from '../config.js';
 import { bindForm, showError } from '../forms.js';
 import { html, mount, raw } from '../html.js';
 import { aboutLink, icon, logo } from '../icons.js';
+import { themeButton } from '../components/topbar.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css'; // botão "Continuar com o Google"
@@ -30,7 +31,7 @@ function shell(title, subtitle, form) {
       </aside>
       <main class="auth-main">
         <div class="auth-card">
-          <a href="#/" class="logo-link">${logo()}</a>
+          <div class="auth-top"><a href="#/" class="logo-link">${logo()}</a>${themeButton()}</div>
           <h2>${title}</h2>
           <p>${subtitle}</p>
           ${form}
