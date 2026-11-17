@@ -6,6 +6,7 @@
  - A loja é uma ilustração conceitual, não um endereço real.
 */
 import { APP_URL, SESSION_URL } from './config.js';
+import { createHeroSequence } from './hero-seq.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('mapCanvas');
@@ -20,9 +21,7 @@ const pill2 = { el: $('geoPill2'), text: $('geoPillText2') };
 const stepName = $('sceneName');
 const stepNumber = $('sceneNumber');
 const progressLine = $('progressLine');
-const reveal = $('storeReveal');
-const picture = $('storePicture');
-const backdrop = $('storeBackdrop');
+const seqLayer = $('heroSeq');
 const vignette = document.querySelector('.store-vignette');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -425,24 +424,30 @@ function updatePill(pill, text, [wx, wy], opacity, [ox, oy]) {
 }
 const SCENE_BORDERS = [0.15, 0.29, 0.43, 0.57, 0.7, 0.81, 0.91];
 const SCENE_LABELS = ['BRASIL', 'NORDESTE', 'PERNAMBUCO', 'RECIFE', 'BAIRROS', 'AMPLIANDO O BAIRRO', 'A LOJA SURGE', 'SUA DECISÃO'];
-let mouseX = 0, mouseY = 0, sceneIdx = -1;
-const store = { D: 0, picW: 0, picH: 0 };
-
-function updateStore(p) {
-  // A loja nasce no ponto do bairro e cresce: círculo de máscara fixa, só transform e opacity (compositor).
-  const k = easeIn(p, 0.795, 0.965);
-  put(backdrop, 'opacity', (k * 0.95).toFixed(3));
-  put(vignette, 'opacity', (k * 0.8).toFixed(3));
-  put(reveal, 'visibility', k > 0.002 ? 'visible' : 'hidden');
-  if (k <= 0.002) return;
-  put(reveal, 'opacity', easeIn(p, 0.807, 0.878).toFixed(3));
-  const [mx, my] = project(DEST[0], DEST[1]);
-  const half = store.D / 2;
-  put(reveal, 'transform', `translate3d(${(mx - half).toFixed(1)}px,${(my - half).toFixed(1)}px,0) scale(${k.toFixed(4)})`);
-  const m = mix(1.48, 1.015, k), tx = mouseX * 0.13 * k, ty = mouseY * 0.09 * k;
-  // Composição: escala m em torno do marcador + paralaxe, compensando a escala k do círculo.
-  const bx = half + (tx - m * mx) / k, by = half + (ty - m * my) / k;
-  put(picture, 'transform', `translate3d(${bx.toFixed(1)}px,${by.toFixed(1)}px,0) scale(${(m / k).toFixed(4)})`);
+let sceneIdx = -1;
+// Cena do hero (docs/HERO-360.md): do capítulo 6 ao fim, a sequência ilustrativa substitui a imagem da loja.
+// SEQ_FROM é onde ela começa (0 = o hero inteiro); KNOTS amarra os quadros aos capítulos 6, 7 e 8.
+const SEQ_FROM = 0.7, SEQ_FADE = 0.035;
+const KNOTS = [[SEQ_FROM, 0], [0.81, 235], [0.91, 320], [0.965, 359]]; // progresso do hero -> quadro (0 a 359)
+const seq = reduced ? null : createHeroSequence(seqLayer, { onFrame: () => { dirty = true; requestFrame(); } });
+window.__heroSeq = seq; // leitura para os testes (perf/hero.mjs): caminho escolhido e motivo
+function seqFrame(p) {
+  if (p <= KNOTS[0][0]) return 0;
+  for (let i = 1; i < KNOTS.length; i++) {
+    const [p1, f1] = KNOTS[i], [p0, f0] = KNOTS[i - 1];
+    if (p <= p1) return f0 + ((p - p0) / (p1 - p0)) * (f1 - f0);
+  }
+  return 359;
+}
+// Opacidade da cena: só depois que há imagem pronta (pôster ou quadro); até lá o mapa continua. Nunca tela preta.
+const seqAlpha = (p) => (seq?.ready() ? easeIn(p, SEQ_FROM, SEQ_FROM + SEQ_FADE) : 0);
+function updateSeq(p, a) {
+  put(seqLayer, 'opacity', a.toFixed(3));
+  // Visível (ainda transparente) um pouco antes de entrar: a camada é preparada antes do primeiro quadro do fade,
+  // em vez de no meio dele (medido: um quadro de 55 ms na entrada, celular com CPU 4×).
+  put(seqLayer, 'visibility', a > 0.002 || (seq.ready() && p > SEQ_FROM - 0.04) ? 'visible' : 'hidden');
+  put(vignette, 'opacity', (a * 0.8).toFixed(3));
+  seq.update(seqFrame(p) / 359);
 }
 function updateChapters(p) {
   chapters.forEach((el, i) => {
@@ -462,16 +467,20 @@ function updateChapters(p) {
 }
 
 function render(p) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  setCamera(p);
-  drawTerritory(p);
-  if (reduced) return; // versão estática: textos e loja ficam no fluxo normal (CSS)
+  const a = reduced ? 0 : seqAlpha(p);
+  if (a < 1) { // com a cena cobrindo a tela inteira, o mapa não precisa ser desenhado
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setCamera(p);
+    drawTerritory(p);
+  }
+  if (reduced) return; // versão estática: textos e a cena (último quadro) ficam no fluxo normal (CSS)
+  const hide = 1 - a; // os rótulos do mapa somem quando a cena entra (ela não é o mapa)
   if (p < 0.29) updatePill(pill1, p < 0.14 ? 'Brasil' : 'Nordeste', p < 0.14 ? world(-54, -10) : world(-40.2, -6.4), easeOut(p, 0.27, 0.33) * easeOut(p, 0.75, 0.85), [24, -40]);
   else if (p < 0.59) updatePill(pill1, p < 0.43 ? 'Pernambuco' : 'Recife · PE · exemplo', p < 0.43 ? world(-38.2, -8.2) : world(-34.91, -8.065), easeIn(p, 0.27, 0.32) * easeOut(p, 0.57, 0.63), [20, -35]);
-  else updatePill(pill1, 'Recife · PE · exemplo', DEST, easeIn(p, 0.59, 0.66) * easeOut(p, 0.74, 0.8), [25, -45]);
-  updatePill(pill2, pill2.official ? 'Boa Viagem · Recife' : 'Bairros · composição ilustrativa', DEST, easeIn(p, 0.68, 0.74) * easeOut(p, 0.79, 0.83), [-20, 45]);
-  updateStore(p);
+  else updatePill(pill1, 'Recife · PE · exemplo', DEST, easeIn(p, 0.59, 0.66) * easeOut(p, 0.74, 0.8) * hide, [25, -45]);
+  updatePill(pill2, pill2.official ? 'Boa Viagem · Recife' : 'Bairros · composição ilustrativa', DEST, easeIn(p, 0.68, 0.74) * easeOut(p, 0.79, 0.83) * hide, [-20, 45]);
+  updateSeq(p, a);
   const idx = (() => { const i = SCENE_BORDERS.findIndex((b) => p < b); return i < 0 ? 7 : i; })();
   if (idx !== sceneIdx) {
     sceneIdx = idx;
@@ -546,14 +555,7 @@ function resize() {
   ctx.lineJoin = 'round'; // (redimensionar o canvas zera o estado) cantos em ponta viram "espinhos" nos traços largos
   storyTop = story.getBoundingClientRect().top + scrollY;
   storyRange = Math.max(1, story.offsetHeight - innerHeight);
-  if (!reduced) {
-    // Círculo da loja: cobre o canto mais distante do marcador com folga (raio = 1,6 × essa distância).
-    const fx = 0.5, fy = size.mobile ? 0.665 : 0.52;
-    store.D = Math.ceil(2 * 1.6 * Math.hypot(Math.max(fx, 1 - fx) * size.w, Math.max(fy, 1 - fy) * size.h));
-    reveal.style.width = reveal.style.height = `${store.D}px`;
-    picture.style.width = `${size.w}px`; picture.style.height = `${size.h}px`;
-    for (const el of [reveal, picture]) delete el._v_transform;
-  }
+  seq?.resize(); // redesenha o quadro atual no tamanho novo, sem recarregar nada
   dirty = true;
   drawMiniMap();
   readScroll();
@@ -598,13 +600,6 @@ for (const a of document.querySelectorAll('[data-app-route]')) a.href = APP_URL 
 new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) { dirty = true; readScroll(); } }).observe(story);
 addEventListener('scroll', readScroll, { passive: true });
 addEventListener('resize', () => { size.maxDpr = 0; resize(); }, { passive: true });
-$('stage').addEventListener('pointermove', (e) => {
-  if (e.pointerType === 'touch' || reduced) return;
-  mouseX = clamp((e.clientX / size.w - 0.5) * 25, -12, 12);
-  mouseY = clamp((e.clientY / size.h - 0.5) * 19, -10, 10);
-  if (current > 0.79) { dirty = true; requestFrame(); }
-}, { passive: true });
-$('storeImg').decode?.().catch(() => {}); // decodifica fora do caminho crítico; o reveal começa bem depois
 resize();
 loadGeo();
 
