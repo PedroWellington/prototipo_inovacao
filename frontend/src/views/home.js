@@ -1,18 +1,19 @@
-// Visão geral (tela inicial pós-login): tudo com dados reais da conta. O que é ilustração diz que é.
+// Visão geral (ref. 01): tudo com dados reais da conta. Esqueleto primeiro, cascata na primeira exibição,
+// números que contam. O que é ilustração diz que é.
 import { get, getCached } from '../api.js';
 import { companyCard, daysText } from '../components/account.js';
-import { setActiveNav, topbar, wireTopbar } from '../components/topbar.js';
+import { appPage, legalFooter } from '../components/page.js';
 import { loadCredits } from '../credits.js';
-import { fmt, html, mount } from '../html.js';
+import { html } from '../html.js';
 import { icon } from '../icons.js';
 import { activeCities, firstName, lastCity } from '../lib.js';
+import { countNumber, growBar, skeleton } from '../motion.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css';
 
 const DIRECTION = { attract: 'Quero perto', repel: 'Não quero perto' };
-const NO_DATA = (item) => `Não foi possível encontrar dados de ${item} desta área.`;
-let entered = false; // entrada escalonada só na primeira exibição da sessão
+const entered = { done: false }; // cascata só na primeira exibição da sessão
 
 // Desenho abstrato (não é mapa de lugar nenhum): só ilustra a ideia de aproximar um bairro.
 const ART = html`<svg viewBox="0 0 480 340" aria-hidden="true" focusable="false">
@@ -24,58 +25,67 @@ const ART = html`<svg viewBox="0 0 480 340" aria-hidden="true" focusable="false"
   <circle cx="290" cy="174" r="24" class="ov-art-ring"/><circle cx="290" cy="174" r="8" class="ov-art-dot"/>
 </svg>`;
 
-export async function render(root) {
-  const [user, profile, credits, types] = await Promise.all([
-    loadUser(),
-    get('/api/profile'),
-    loadCredits(true),
-    getCached('/api/catalog/business-types'),
-  ]);
-  const p = profile.profile || {};
-  const typeName = Object.fromEntries(types.map((t) => [t.key, t.name]));
-  const last = lastCity(credits);
-  const active = activeCities(credits);
-  const r = credits.rules;
-  const hq = p.has_hq && p.hq_city_name ? `${p.hq_city_name} – ${p.hq_uf}` : null;
-  const items = [
-    ...credits.cities.map((c) => ({ ...c, kind: 'city', label: `${c.name} – ${c.uf}` })),
-    ...credits.searches.map((s) => ({ ...s, kind: 'search', label: `Ranking de cidades: ${s.label}` })),
-  ].sort((a, b) => b.active - a.active || b.unlocked_at.localeCompare(a.unlocked_at));
-  const lastOpen = last ? html`data-open-city="${last.ibge}"` : html`data-go="/explorer"`;
+const metricSkeleton = () => html`<div class="ov-metric"><div class="ov-metric-top">${skeleton('12px', '40%')}</div>${skeleton('27px', '50%')}${skeleton('12px', '80%')}</div>`;
 
-  mount(
-    root,
-    html`<div class="app-shell" data-dashboard>
-      ${topbar({ active: 'home', user, profile: p })}
-      <main class="overview" id="main">
-        <div class="ov-head ov-animate">
+export async function render(root) {
+  const user = await loadUser();
+  const cleanup = appPage(root, {
+    active: 'home',
+    user,
+    entered,
+    skeleton: () => html`
+      <div class="ov-head"><div><div class="ov-eyebrow">Visão geral</div><h1>Olá, ${firstName(user.name)}.<br /><span>Explore territórios com mais clareza.</span></h1>${skeleton('14px', '60%')}</div></div>
+      <div class="ov-topgrid"><section class="ov-hero"></section><div class="ov-sidestack"><div class="ov-sidelarge"></div><div class="ov-quick"></div></div></div>
+      <div class="ov-section-head"><h2>Seu espaço de trabalho</h2></div>
+      <div class="ov-metrics">${metricSkeleton()}${metricSkeleton()}${metricSkeleton()}${metricSkeleton()}</div>
+      <div class="ov-section-head"><h2>Continue de onde parou</h2></div>
+      <div class="ov-widegrid"><section class="ov-block" style="min-height:260px">${skeleton('16px', '40%')}</section><section class="ov-block" style="min-height:260px">${skeleton('16px', '40%')}</section></div>`,
+    load: () => Promise.all([get('/api/profile'), loadCredits(true), getCached('/api/catalog/business-types')]),
+    body: ([profile, credits, types]) => {
+      const p = profile.profile || {};
+      const typeName = Object.fromEntries(types.map((t) => [t.key, t.name]));
+      const last = lastCity(credits);
+      const active = activeCities(credits);
+      const r = credits.rules;
+      const hq = p.has_hq && p.hq_city_name ? `${p.hq_city_name} – ${p.hq_uf}` : null;
+      const items = [
+        ...credits.cities.map((c) => ({ ...c, kind: 'city', label: `${c.name} – ${c.uf}` })),
+        ...credits.searches.map((s) => ({ ...s, kind: 'search', label: `Ranking de cidades: ${s.label}` })),
+      ].sort((a, b) => b.active - a.active || b.unlocked_at.localeCompare(a.unlocked_at));
+      const lastOpen = last ? html`data-open-city="${last.ibge}"` : html`data-go="/explorer"`;
+      return html`
+        <div class="ov-head" data-cx>
           <div>
             <div class="ov-eyebrow">Visão geral</div>
-            <h1>Olá, ${firstName(user.name)}.<br /><span>O seu próximo território, com mais clareza.</span></h1>
-            <p>Explore cidades, ajuste os critérios do seu negócio e compare bairros. A decisão continua nas suas mãos.</p>
+            <h1>Olá, ${firstName(user.name)}.<br /><span>Explore territórios com mais clareza.</span></h1>
+            <p>Cidades e bairros ordenados pelos critérios que você definiu, com fonte, data e cobertura. A decisão continua nas suas mãos.</p>
+            <button type="button" class="btn btn-primary ov-cta" data-go="/explorer">${icon('map', 16)} Analisar uma cidade</button>
           </div>
           ${companyCard(p, user, { compact: true })}
         </div>
 
         <div class="ov-topgrid">
-          <section class="ov-hero ov-animate" aria-labelledby="ovHeroTitle">
+          <section class="ov-hero" aria-labelledby="ovHeroTitle" data-cx>
             <div class="ov-hero-copy">
               <div class="ov-hero-tag">Comece pelo território</div>
-              <h2 id="ovHeroTitle">Do Brasil ao bairro.<br />Sem perder o contexto.</h2>
+              <h2 id="ovHeroTitle">Do Brasil ao bairro.<br />No seu ritmo.</h2>
               <p>Navegue da região à cidade em uma câmera contínua e compare bairros com os critérios que você definiu.</p>
-              <button type="button" class="ov-btn" data-go="/explorer">${icon('map', 16)} Analisar uma cidade</button>
+              <div class="ov-hero-actions">
+                <button type="button" class="ov-btn" data-go="/explorer">${icon('map', 16)} Abrir explorador</button>
+                <a class="ov-btn ov-btn-ghost" href="/#como-funciona">Como funciona</a>
+              </div>
             </div>
             <div class="ov-hero-art">${ART}</div>
-            <span class="ov-art-label">Aproximação ilustrativa</span>
+            <span class="ov-art-label">Ilustração</span>
           </section>
           <div class="ov-sidestack">
-            <div class="ov-sidelarge ov-animate">
+            <div class="ov-sidelarge" data-cx>
               <div class="ov-kicker">01 / Seu negócio</div>
               <h3>Você escolhe<br />os critérios.</h3>
               <p>A plataforma ordena áreas conforme as preferências do seu negócio, sem promessas de resultado.</p>
               <div class="ov-orbit" aria-hidden="true"></div>
             </div>
-            <div class="ov-quick ov-animate">
+            <div class="ov-quick" data-cx>
               <div>
                 <strong>${last ? `Continuar em ${last.name}` : 'Analisar uma cidade'}</strong>
                 <small>${last
@@ -89,65 +99,39 @@ export async function render(root) {
           </div>
         </div>
 
-        <div class="ov-section-head ov-animate"><h2>Seu espaço de trabalho</h2><span>Dados da sua conta</span></div>
+        <div class="ov-section-head" data-cx><h2>Seu espaço de trabalho</h2><span>Dados da sua conta</span></div>
         <div class="ov-metrics ${hq ? '' : 'is-three'}">
-          <div class="ov-metric ov-animate">
+          <div class="ov-metric" data-cx>
             <div class="ov-metric-top">Plano atual<span class="ov-miniicon">${icon('layers', 16)}</span></div>
             <strong class="is-text">${credits.plan}</strong><small>Plano da sua conta</small>
           </div>
-          <div class="ov-metric ov-animate">
-            <div class="ov-metric-top">Créditos<span class="ov-miniicon">${icon('coin', 16)}</span></div>
-            <strong class="tabular">${fmt.int(credits.balance)}</strong>
+          <div class="ov-metric" data-cx>
+            <div class="ov-metric-top">Créditos disponíveis<span class="ov-miniicon">${icon('coin', 16)}</span></div>
+            <strong>${countNumber(credits.balance)}</strong>
             <small>1 crédito = 1 cidade por ${r.city_unlock_days} dias. O ranking de cidades usa ${r.city_search_cost} por busca.</small>
             <a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a>
           </div>
-          <div class="ov-metric ov-animate">
+          <div class="ov-metric" data-cx>
             <div class="ov-metric-top">Análises ativas<span class="ov-miniicon">${icon('map', 16)}</span></div>
-            <strong class="tabular">${fmt.int(active.length)}</strong>
+            <strong>${countNumber(active.length)}</strong>
             <small>${active.length === 1 ? 'cidade aberta e no prazo' : 'cidades abertas e no prazo'}</small>
           </div>
           ${hq
-            ? html`<div class="ov-metric ov-animate">
-                <div class="ov-metric-top">Sede<span class="ov-miniicon">${icon('pin', 16)}</span></div>
+            ? html`<div class="ov-metric" data-cx>
+                <div class="ov-metric-top">Cidade de referência<span class="ov-miniicon">${icon('pin', 16)}</span></div>
                 <strong class="is-text">${hq}</strong>
                 <small>${p.hq_neighborhood_text ? `${p.hq_neighborhood_text}. ` : ''}A sede não entra no cálculo.</small>
               </div>`
             : ''}
         </div>
 
-        <div class="ov-section-head ov-animate"><h2>Uma análise que parte das suas preferências</h2><span>Você tem o controle</span></div>
-        <div class="ov-bottomgrid">
-          <section class="ov-block ov-animate" aria-labelledby="ovCrit">
-            <div class="ov-block-header"><h3 id="ovCrit">Critérios da sua empresa</h3>
-              <button type="button" class="ov-textlink" ${last?.active ? html`data-open-city="${last.ibge}"` : html`data-go="/explorer"`}>Editar no mapa ${icon('chevron', 14)}</button></div>
-            ${profile.criteria.length
-              ? html`<ol class="ov-criteria">${profile.criteria.map(
-                  (c, i) => html`<li class="ov-criterion">
-                    <span class="ov-criterion-num tabular">${String(i + 1).padStart(2, '0')}</span>
-                    <div><strong>${typeName[c.business_type_key] || c.business_type_key}</strong><small>${DIRECTION[c.direction]}</small></div>
-                    <span class="ov-weight tabular">Peso ${c.weight}</span>
-                  </li>`,
-                )}</ol>`
-              : html`<p class="ov-empty">Nenhum critério ainda. No explorador, adicione o que você quer perto e o que não quer perto do seu negócio.</p>`}
-          </section>
-          <section class="ov-block ov-animate" aria-labelledby="ovHow">
-            <div class="ov-block-header"><h3 id="ovHow">Como funciona sua pesquisa</h3>
-              <a class="ov-textlink" href="#/como-calculamos">Como calculamos ${icon('chevron', 14)}</a></div>
-            <ol class="ov-process">
-              <li><span class="ov-step">01</span><div><strong>Escolha o território</strong><p>Por região, estado e cidade, ou peça as cidades que mais combinam com seus critérios.</p></div></li>
-              <li><span class="ov-step">02</span><div><strong>Personalize os pesos</strong><p>Defina o que quer perto e o que prefere longe, com peso de 1 a 5.</p></div></li>
-              <li><span class="ov-step">03</span><div><strong>Compare com transparência</strong><p>Veja a posição de cada bairro e confira fontes, datas e cobertura dos dados.</p></div></li>
-            </ol>
-          </section>
-        </div>
-
-        <div class="ov-section-head ov-animate"><h2>Continuidade e transparência</h2></div>
+        <div class="ov-section-head" data-cx><h2>Continue de onde parou</h2><span>Você tem o controle</span></div>
         <div class="ov-widegrid">
-          <section class="ov-block ov-animate" id="analises" aria-labelledby="ovAn">
+          <section class="ov-block" id="analises" aria-labelledby="ovAn" data-cx>
             <div class="ov-block-header"><h3 id="ovAn">Minhas análises</h3>
-              <button type="button" class="ov-textlink" data-go="/explorer">Nova análise ${icon('chevron', 14)}</button></div>
+              <a class="ov-textlink" href="#/analises">Ver todas ${icon('chevron', 14)}</a></div>
             ${items.length
-              ? html`<ul class="ov-analyses">${items.map(
+              ? html`<ul class="ov-analyses">${items.slice(0, 3).map(
                   (x) => html`<li><button type="button" class="ov-analysis ${x.active ? '' : 'is-expired'}"
                       ${x.kind === 'city' ? html`data-open-city="${x.ibge}"` : html`data-open-search="${x.scope_key}"`}>
                     <span class="ov-miniicon">${icon(x.kind === 'city' ? 'map' : 'list', 15)}</span>
@@ -157,78 +141,23 @@ export async function render(root) {
                 )}</ul>`
               : html`<p class="ov-empty">Nenhuma análise ainda. Abra uma cidade para começar: cada análise fica aqui com os dias de validade.</p>`}
           </section>
-          <section class="ov-block ov-animate" id="fontes" aria-labelledby="ovSrc">
-            <div class="ov-block-header"><h3 id="ovSrc">Dados e fontes</h3><a class="ov-textlink" href="#/termos">Avisos legais ${icon('chevron', 14)}</a></div>
-            <div class="ov-sources" data-sources aria-busy="true">
-              <span class="skeleton" style="height:14px;width:70%"></span><span class="skeleton" style="height:14px;width:85%"></span>
-              <span class="skeleton" style="height:14px;width:60%"></span><span class="skeleton" style="height:14px;width:75%"></span>
-            </div>
+          <section class="ov-block" aria-labelledby="ovCrit" data-cx>
+            <div class="ov-block-header"><h3 id="ovCrit">O que você escolhe</h3>
+              <a class="ov-textlink" href="#/criterios">Editar ${icon('chevron', 14)}</a></div>
+            ${profile.criteria.length
+              ? html`<ol class="ov-criteria">${profile.criteria.map(
+                  (c, i) => html`<li class="ov-criterion">
+                    <span class="ov-criterion-num tabular">${String(i + 1).padStart(2, '0')}</span>
+                    <div><strong>${typeName[c.business_type_key] || c.business_type_key}</strong><small>${DIRECTION[c.direction]}</small>${growBar(c.weight / 5, `Peso ${c.weight} de 5`)}</div>
+                    <span class="ov-weight tabular">Peso ${c.weight}</span>
+                  </li>`,
+                )}</ol>`
+              : html`<p class="ov-empty">Nenhum critério ainda. Defina o que você quer perto e o que não quer perto do seu negócio.</p>`}
           </section>
         </div>
-        <nav class="ov-footer ov-animate" aria-label="Avisos legais"><a href="#/termos">Avisos legais e termos de uso</a><a href="#/privacidade">Política de privacidade</a><a href="#/como-calculamos">Como calculamos</a></nav>
-      </main>
-    </div>`,
-  );
-
-  // Entrada escalonada (opacity + transform) só na primeira vez nesta sessão; ao voltar, a tela já está pronta.
-  const shell = root.querySelector('[data-dashboard]');
-  if (!entered) {
-    root.querySelectorAll('.ov-animate').forEach((el, i) => el.style.setProperty('--i', Math.min(i, 12)));
-    shell.classList.add('is-entering');
-    entered = true;
-  }
-  // Menu: as três seções desta página rolam suavemente (sem recarregar); o item ativo segue a seção visível.
-  const ac = new AbortController();
-  const smooth = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
-  const SECTIONS = { home: null, analises: 'analises', fontes: 'fontes' };
-  function goSection(key, behavior = smooth()) {
-    if (!(key in SECTIONS)) return false;
-    const id = SECTIONS[key];
-    if (id) root.querySelector(`#${id}`)?.scrollIntoView({ behavior, block: 'start' });
-    else window.scrollTo({ top: 0, behavior });
-    history.replaceState(null, '', id ? `#/home?s=${id}` : '#/home'); // recarregar volta à mesma seção
-    setActiveNav(root, key);
-    return true;
-  }
-  wireTopbar(root, { onSection: (key) => goSection(key), signal: ac.signal });
-  const watched = [root.querySelector('.ov-head'), root.querySelector('#analises'), root.querySelector('#fontes')];
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) if (e.isIntersecting) setActiveNav(root, e.target.id || 'home');
+        ${legalFooter()}`;
     },
-    { rootMargin: '-40% 0px -55% 0px' }, // uma faixa no meio da tela: sem ler layout na rolagem
-  );
-  watched.forEach((el) => el && io.observe(el));
-  ac.signal.addEventListener('abort', () => io.disconnect());
-  let section = new URLSearchParams(location.hash.split('?')[1] || '').get('s');
-  if (section) requestAnimationFrame(() => goSection(section)); // vindo de outra tela: rola com suavidade
-  // Se a pessoa rolar por conta própria, não puxamos a tela de volta quando as fontes chegarem.
-  addEventListener('wheel', () => (section = null), { once: true, passive: true, signal: ac.signal });
-  addEventListener('touchstart', () => (section = null), { once: true, passive: true, signal: ac.signal });
-
-  // Fontes e cobertura: depois do primeiro desenho, num bloco de altura fixa (sem salto de layout).
-  Promise.all([getCached('/api/catalog/sources'), last ? get(`/api/cities/${last.ibge}/status`).catch(() => null) : null])
-    .then(([src, status]) => {
-      const box = root.querySelector('[data-sources]');
-      if (!box || ac.signal.aborted) return;
-      box.removeAttribute('aria-busy');
-      requestAnimationFrame(() => section && goSection(section)); // a página cresceu: completa a rolagem pedida
-      mount(
-        box,
-        html`<p class="ov-coverage">${status
-            ? status.has_data
-              ? html`<strong class="tabular">${fmt.pct(status.coverage.share)}</strong> dos ${fmt.int(status.coverage.total_active)} cadastros ativos de CNPJ de ${status.name} foram localizados em ${status.division_kind === 'area' ? 'áreas' : 'bairros'} (ref. ${status.reference_month}).`
-              : NO_DATA('estabelecimentos')
-            : html`Dados carregados em <strong class="tabular">${fmt.int(src.cities_with_data)}</strong> cidades. Cada análise mostra a cobertura da cidade.`}</p>
-          <ul class="ov-source-list">${src.sources.map(
-            (s) => html`<li><a href="${s.url}" target="_blank" rel="noopener">${s.name}</a><span class="tabular">ref. ${s.reference_date}</span></li>`,
-          )}<li><span>Mapa-base: © OpenStreetMap contributors</span></li></ul>`,
-      );
-    })
-    .catch(() => {
-      const box = root.querySelector('[data-sources]');
-      if (box) mount(box, html`<p class="ov-empty">${NO_DATA('fontes')}</p>`);
-    });
+  });
 
   root.addEventListener('click', (e) => {
     const b = e.target.closest('[data-open-city], [data-open-search], [data-go]');
@@ -236,6 +165,6 @@ export async function render(root) {
     if (b.dataset.openCity) go(`/explorer?city=${b.dataset.openCity}`);
     else if (b.dataset.openSearch) go(`/explorer?search=${b.dataset.openSearch}`);
     else go(b.dataset.go);
-  }, { signal: ac.signal });
-  return () => ac.abort();
+  });
+  return cleanup;
 }
