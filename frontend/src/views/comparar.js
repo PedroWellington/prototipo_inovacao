@@ -3,7 +3,7 @@
 // Outra cidade abre no explorador, que pede a confirmação do crédito.
 import { get } from '../api.js';
 import { miniMap } from '../components/miniMap.js';
-import { appPage, legalFooter } from '../components/page.js';
+import { appPage, legalFooter, pageHead } from '../components/page.js';
 import { loadCredits } from '../credits.js';
 import { fmt, html, mount } from '../html.js';
 import { icon } from '../icons.js';
@@ -51,7 +51,7 @@ export async function render(root) {
     active: 'compare',
     user,
     entered,
-    skeleton: () => html`<div class="ov-head"><div><div class="ov-eyebrow">Comparar</div><h1>Comparar cidades</h1>${skeleton('14px', '55%')}</div></div>
+    skeleton: () => html`${pageHead({ eyebrow: 'Comparar', title: 'Comparar cidades', meta: 'Carregando…' })}
       <div class="cmp-grid"><section class="ov-block" style="min-height:420px"></section><section class="ov-block" style="min-height:420px"></section></div>`,
     load: async () => {
       open = activeCities(await loadCredits(true));
@@ -60,11 +60,13 @@ export async function render(root) {
       return Promise.all(picked.map(cityData));
     },
     body: (cols) => html`
-      <div class="ov-head" data-cx><div>
-        <div class="ov-eyebrow">Comparar</div>
-        <h1>Comparar cidades</h1>
-        <p>As cidades que você já abriu, lado a lado, com os números de cada uma e a fonte. Não há nota entre cidades aqui: para ordenar cidades pelos seus critérios, use o ranking de cidades.</p>
-      </div><button type="button" class="btn btn-secondary ov-cta" data-go="/explorer?compare=1">${icon('list', 16)} Ranking de cidades</button></div>
+      ${pageHead({
+        eyebrow: 'Comparar',
+        title: 'Comparar cidades',
+        meta: `${open.length} ${open.length === 1 ? 'cidade aberta' : 'cidades abertas'} · IBGE, Censo 2022 · Receita Federal (CNPJ) · sem nota entre cidades`,
+        action: html`<p>As cidades que você já abriu, lado a lado, com os números de cada uma e a fonte. Para ordenar cidades pelos seus critérios, use o ranking de cidades.</p>`,
+        aside: html`<button type="button" class="btn btn-secondary ov-cta" data-go="/explorer?compare=1">${icon('list', 16)} Ranking de cidades</button>`,
+      })}
       ${open.length < 2
         ? html`<div class="ov-empty-big" data-cx><span class="ov-miniicon">${icon('map', 20)}</span><strong>${open.length ? 'Abra mais uma cidade para comparar' : 'Nenhuma cidade aberta'}</strong>
             <p>A comparação usa só cidades já abertas, sem custo. Abrir uma cidade nova no explorador usa 1 crédito, com confirmação antes.</p>

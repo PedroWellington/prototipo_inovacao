@@ -56,7 +56,7 @@ await scene('Visão geral: rolagem', async () => {
 });
 await scene('tema em círculo (Visão geral)', async () => { await page.click('.topbar [data-theme-toggle]'); await page.waitForTimeout(900); });
 await scene('Detalhe do bairro: entrada (anel, números, barras)', async () => {
-  await page.goto(`${BASE}/app/#/bairro/${hood}?city=${RECIFE}`); await page.waitForSelector('.ring'); await page.waitForTimeout(1200);
+  await page.goto(`${BASE}/app/#/bairro/${hood}?city=${RECIFE}`); await page.waitForSelector('.metric.is-primary'); await page.waitForTimeout(1200);
 });
 await page.click('.topnav [data-nav="explorer"]');
 await page.waitForSelector('[data-rank-list] li button'); await page.waitForTimeout(1500);

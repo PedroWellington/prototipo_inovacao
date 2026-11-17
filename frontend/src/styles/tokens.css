@@ -85,9 +85,8 @@
   --radius: 12px;
   --radius-lg: 18px;
   --radius-full: 999px;
-  --shadow-sm: 0 1px 2px rgb(20 24 28 / 0.06);
-  --shadow: 0 1px 2px rgb(20 24 28 / 0.06), 0 4px 14px rgb(20 24 28 / 0.07);
-  --shadow-lg: 0 2px 6px rgb(20 24 28 / 0.08), 0 16px 40px rgb(20 24 28 / 0.12);
+  /* Sombra só no que flutua acima da página: modal, menu suspenso, tooltip, gaveta e barra superior rolada. */
+  --shadow-float: 0 2px 6px rgb(20 24 28 / 0.08), 0 16px 40px rgb(20 24 28 / 0.12);
 
   /* Movimento */
   --ease-out: var(--ease-spring);
@@ -155,7 +154,5 @@
   --score-1: #3b302a;
   --score-none: #2b2522;
   --map-line: var(--bg);
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 14px rgb(0 0 0 / 0.35);
-  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.5);
+  --shadow-float: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.5);
 }

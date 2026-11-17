@@ -206,6 +206,8 @@ Clicar num bairro agora **aproxima a câmera** (o bairro fica com cerca de metad
 - Ajustes propostos (decisão pendente, ver `docs/PROGRESSO.md`): (1) tema: trocar sem círculo quando o aparelho for lento (`navigator.hardwareConcurrency <= 4` ou um quadro lento medido na primeira troca) ou limitar a transição à área visível; (2) troca de página: montar o conteúdo final no quadro seguinte ao esqueleto (`requestAnimationFrame`) e usar `content-visibility: auto` nos blocos abaixo da dobra; (3) aceitar como meta 16,7 ms (60 Hz, a mesma do explorador acima), que todas as cenas, menos os dois picos, já cumprem.
 - `perf/explorer-fps.mjs` está desatualizado (procura o controle "Relevo", que saiu); a medição do explorador desta fase está em `fluidez.mjs`.
 
+**Sem cara de IA (2026-11-16).** Mesmo `perf/fluidez.mjs`, CPU 4×, depois de tirar sombras e gradientes: troca de página 97,5 fps · p95 20,8 ms · máx. 104 ms (❌, como antes); Visão geral rolando 138 fps · p95 7,1 ms (✅, antes 13,9); tema em círculo 104 fps · p95 13,9 ms · máx. 181 ms (❌); detalhe do bairro 136 fps · p95 7,1 ms (✅, antes 14,0); FLIP 139 fps · p95 7,1 ms (✅); tema sobre o mapa 115 fps · p95 13,9 ms (❌). Os três que falham são os picos já registrados acima, à espera da decisão.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**

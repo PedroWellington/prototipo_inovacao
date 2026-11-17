@@ -52,7 +52,7 @@ for (const [device, viewport, theme] of [['desktop', { width: 1440, height: 900 
   await check(page, d('explorador (ranking do Recife)'));
   await page.click('[data-rank-list] li >> nth=0 >> button'); await check(page, d('explorador (detalhes do bairro)'));
   const hood = await page.evaluate(() => document.querySelector('[data-holo]').holoState().top[0]);
-  await page.goto(`${BASE}/app/#/bairro/${hood}?city=2611606`); await page.waitForSelector('.ring', { timeout: 30000 }); await check(page, d('detalhe do bairro'));
+  await page.goto(`${BASE}/app/#/bairro/${hood}?city=2611606`); await page.waitForSelector('.metric.is-primary', { timeout: 30000 }); await check(page, d('detalhe do bairro'));
   await page.goto(`${BASE}/app/#/criterios`); await page.waitForSelector('[data-body] h2'); await check(page, d('editor de critérios'));
   await page.click('[data-step="3"]'); await check(page, d('editor de critérios (pesos)'));
   await page.goto(`${BASE}/app/#/comparar`); await page.waitForSelector('.cmp-grid'); await check(page, d('comparar'));

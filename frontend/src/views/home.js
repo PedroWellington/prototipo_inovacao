@@ -2,12 +2,13 @@
 // números que contam. O que é ilustração diz que é.
 import { get, getCached } from '../api.js';
 import { companyCard, daysText } from '../components/account.js';
-import { appPage, legalFooter } from '../components/page.js';
+import { metric, metricGroup, metricGroupSkeleton, shapeBar } from '../components/metric.js';
+import { appPage, legalFooter, pageHead } from '../components/page.js';
 import { loadCredits } from '../credits.js';
 import { html } from '../html.js';
 import { icon } from '../icons.js';
 import { activeCities, firstName, lastCity } from '../lib.js';
-import { countNumber, growBar, skeleton } from '../motion.js';
+import { growBar, skeleton } from '../motion.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css';
@@ -25,7 +26,7 @@ const ART = html`<svg viewBox="0 0 480 340" aria-hidden="true" focusable="false"
   <circle cx="290" cy="174" r="24" class="ov-art-ring"/><circle cx="290" cy="174" r="8" class="ov-art-dot"/>
 </svg>`;
 
-const metricSkeleton = () => html`<div class="ov-metric"><div class="ov-metric-top">${skeleton('12px', '40%')}</div>${skeleton('27px', '50%')}${skeleton('12px', '80%')}</div>`;
+const updated = () => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
 
 export async function render(root) {
   const user = await loadUser();
@@ -34,12 +35,11 @@ export async function render(root) {
     user,
     entered,
     skeleton: () => html`
-      <div class="ov-head"><div><div class="ov-eyebrow">Visão geral</div><h1>Olá, ${firstName(user.name)}.<br /><span>Explore territórios com mais clareza.</span></h1>${skeleton('14px', '60%')}</div></div>
-      <div class="ov-topgrid"><section class="ov-hero"></section><div class="ov-sidestack"><div class="ov-sidelarge"></div><div class="ov-quick"></div></div></div>
-      <div class="ov-section-head"><h2>Seu espaço de trabalho</h2></div>
-      <div class="ov-metrics">${metricSkeleton()}${metricSkeleton()}${metricSkeleton()}${metricSkeleton()}</div>
+      ${pageHead({ eyebrow: 'Visão geral', greeting: `Olá, ${firstName(user.name)}.`, title: 'Seus créditos e análises', meta: 'Carregando os dados da sua conta…' })}
+      ${metricGroupSkeleton(3)}
       <div class="ov-section-head"><h2>Continue de onde parou</h2></div>
-      <div class="ov-widegrid"><section class="ov-block" style="min-height:260px">${skeleton('16px', '40%')}</section><section class="ov-block" style="min-height:260px">${skeleton('16px', '40%')}</section></div>`,
+      <div class="ov-widegrid"><section class="ov-block" style="min-height:260px">${skeleton('16px', '40%')}</section><section class="ov-block" style="min-height:260px">${skeleton('16px', '40%')}</section></div>
+      <div class="ov-topgrid ov-topgrid-low"><section class="ov-hero"></section><div class="ov-sidestack"><div class="ov-sidelarge"></div><div class="ov-quick"></div></div></div>`,
     load: () => Promise.all([get('/api/profile'), loadCredits(true), getCached('/api/catalog/business-types')]),
     body: ([profile, credits, types]) => {
       const p = profile.profile || {};
@@ -54,17 +54,61 @@ export async function render(root) {
       ].sort((a, b) => b.active - a.active || b.unlocked_at.localeCompare(a.unlocked_at));
       const lastOpen = last ? html`data-open-city="${last.ibge}"` : html`data-go="/explorer"`;
       return html`
-        <div class="ov-head" data-cx>
-          <div>
-            <div class="ov-eyebrow">Visão geral</div>
-            <h1>Olá, ${firstName(user.name)}.<br /><span>Explore territórios com mais clareza.</span></h1>
-            <p>Cidades e bairros ordenados pelos critérios que você definiu, com fonte, data e cobertura. A decisão continua nas suas mãos.</p>
-            <button type="button" class="btn btn-primary ov-cta" data-go="/explorer">${icon('map', 16)} Analisar uma cidade</button>
-          </div>
-          ${companyCard(p, user, { compact: true })}
-        </div>
+        ${pageHead({
+          eyebrow: 'Visão geral',
+          greeting: `Olá, ${firstName(user.name)}.`,
+          title: 'Seus créditos e análises',
+          meta: `Atualizado em ${updated()} · dados da sua conta`,
+          action: html`<button type="button" class="btn btn-primary ov-cta" data-go="/explorer">${icon('map', 16)} Analisar uma cidade</button>`,
+          aside: companyCard(p, user, { compact: true }),
+        })}
+        ${metricGroup(
+          metric({
+            primary: true,
+            label: 'Créditos disponíveis',
+            value: credits.balance,
+            shape: credits.used + credits.balance > 0 ? shapeBar(credits.balance / (credits.used + credits.balance), `${credits.balance} restantes de ${credits.used + credits.balance}`) : '',
+            extra: credits.used + credits.balance > 0 ? html`<span class="metric-split"><span>${credits.used} ${credits.used === 1 ? 'usado' : 'usados'}</span><span>${credits.balance} ${credits.balance === 1 ? 'restante' : 'restantes'}</span></span>` : '',
+            note: html`1 crédito = 1 cidade por ${r.city_unlock_days} dias. O ranking de cidades usa ${r.city_search_cost} por busca. <a href="#/creditos">Comprar mais créditos</a>`,
+          }),
+          [
+            metric({ label: 'Plano', text: credits.plan }),
+            metric({ label: 'Análises ativas', value: active.length, note: active.length === 1 ? 'cidade aberta e no prazo' : 'cidades abertas e no prazo' }),
+            ...(hq ? [metric({ label: 'Cidade de referência', text: hq, note: 'A sede não entra no cálculo.' })] : []),
+          ],
+        )}
 
-        <div class="ov-topgrid">
+        <div class="ov-section-head" data-cx><h2>Continue de onde parou</h2><span>Você tem o controle</span></div>
+        <div class="ov-widegrid">
+          <section class="ov-block" id="analises" aria-labelledby="ovAn" data-cx>
+            <div class="ov-block-header"><h3 id="ovAn">Minhas análises</h3>
+              <a class="ov-textlink" href="#/analises">Ver todas ${icon('chevron', 14)}</a></div>
+            ${items.length
+              ? html`<ul class="ov-analyses">${items.slice(0, 3).map(
+                  (x) => html`<li><button type="button" class="ov-analysis ${x.active ? '' : 'is-expired'}"
+                      ${x.kind === 'city' ? html`data-open-city="${x.ibge}"` : html`data-open-search="${x.scope_key}"`}>
+                    <span class="ov-miniicon">${icon(x.kind === 'city' ? 'map' : 'list', 15)}</span>
+                    <span class="ov-analysis-name">${x.label}</span>
+                    <span class="ov-analysis-days small tabular">${icon('clock', 13)} ${daysText(x)}</span>
+                  </button></li>`,
+                )}</ul>`
+              : html`<p class="ov-empty">Nenhuma análise ainda. Abra uma cidade para começar: cada análise fica aqui com os dias de validade.</p>`}
+          </section>
+          <section class="ov-block" aria-labelledby="ovCrit" data-cx>
+            <div class="ov-block-header"><h3 id="ovCrit">O que você escolhe</h3>
+              <a class="ov-textlink" href="#/criterios">Editar ${icon('chevron', 14)}</a></div>
+            ${profile.criteria.length
+              ? html`<ol class="ov-criteria">${profile.criteria.map(
+                  (c, i) => html`<li class="ov-criterion">
+                    <span class="ov-criterion-num tabular">${String(i + 1).padStart(2, '0')}</span>
+                    <div><strong>${typeName[c.business_type_key] || c.business_type_key}</strong><small>${DIRECTION[c.direction]}</small>${growBar(c.weight / 5, `Peso ${c.weight} de 5`)}</div>
+                    <span class="ov-weight tabular">Peso ${c.weight}</span>
+                  </li>`,
+                )}</ol>`
+              : html`<p class="ov-empty">Nenhum critério ainda. Defina o que você quer perto e o que não quer perto do seu negócio.</p>`}
+          </section>
+        </div>
+        <div class="ov-topgrid ov-topgrid-low">
           <section class="ov-hero" aria-labelledby="ovHeroTitle" data-cx>
             <div class="ov-hero-copy">
               <div class="ov-hero-tag">Comece pelo território</div>
@@ -99,62 +143,6 @@ export async function render(root) {
           </div>
         </div>
 
-        <div class="ov-section-head" data-cx><h2>Seu espaço de trabalho</h2><span>Dados da sua conta</span></div>
-        <div class="ov-metrics ${hq ? '' : 'is-three'}">
-          <div class="ov-metric" data-cx>
-            <div class="ov-metric-top">Plano atual<span class="ov-miniicon">${icon('layers', 16)}</span></div>
-            <strong class="is-text">${credits.plan}</strong><small>Plano da sua conta</small>
-          </div>
-          <div class="ov-metric" data-cx>
-            <div class="ov-metric-top">Créditos disponíveis<span class="ov-miniicon">${icon('coin', 16)}</span></div>
-            <strong>${countNumber(credits.balance)}</strong>
-            <small>1 crédito = 1 cidade por ${r.city_unlock_days} dias. O ranking de cidades usa ${r.city_search_cost} por busca.</small>
-            <a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a>
-          </div>
-          <div class="ov-metric" data-cx>
-            <div class="ov-metric-top">Análises ativas<span class="ov-miniicon">${icon('map', 16)}</span></div>
-            <strong>${countNumber(active.length)}</strong>
-            <small>${active.length === 1 ? 'cidade aberta e no prazo' : 'cidades abertas e no prazo'}</small>
-          </div>
-          ${hq
-            ? html`<div class="ov-metric" data-cx>
-                <div class="ov-metric-top">Cidade de referência<span class="ov-miniicon">${icon('pin', 16)}</span></div>
-                <strong class="is-text">${hq}</strong>
-                <small>${p.hq_neighborhood_text ? `${p.hq_neighborhood_text}. ` : ''}A sede não entra no cálculo.</small>
-              </div>`
-            : ''}
-        </div>
-
-        <div class="ov-section-head" data-cx><h2>Continue de onde parou</h2><span>Você tem o controle</span></div>
-        <div class="ov-widegrid">
-          <section class="ov-block" id="analises" aria-labelledby="ovAn" data-cx>
-            <div class="ov-block-header"><h3 id="ovAn">Minhas análises</h3>
-              <a class="ov-textlink" href="#/analises">Ver todas ${icon('chevron', 14)}</a></div>
-            ${items.length
-              ? html`<ul class="ov-analyses">${items.slice(0, 3).map(
-                  (x) => html`<li><button type="button" class="ov-analysis ${x.active ? '' : 'is-expired'}"
-                      ${x.kind === 'city' ? html`data-open-city="${x.ibge}"` : html`data-open-search="${x.scope_key}"`}>
-                    <span class="ov-miniicon">${icon(x.kind === 'city' ? 'map' : 'list', 15)}</span>
-                    <span class="ov-analysis-name">${x.label}</span>
-                    <span class="ov-analysis-days small tabular">${icon('clock', 13)} ${daysText(x)}</span>
-                  </button></li>`,
-                )}</ul>`
-              : html`<p class="ov-empty">Nenhuma análise ainda. Abra uma cidade para começar: cada análise fica aqui com os dias de validade.</p>`}
-          </section>
-          <section class="ov-block" aria-labelledby="ovCrit" data-cx>
-            <div class="ov-block-header"><h3 id="ovCrit">O que você escolhe</h3>
-              <a class="ov-textlink" href="#/criterios">Editar ${icon('chevron', 14)}</a></div>
-            ${profile.criteria.length
-              ? html`<ol class="ov-criteria">${profile.criteria.map(
-                  (c, i) => html`<li class="ov-criterion">
-                    <span class="ov-criterion-num tabular">${String(i + 1).padStart(2, '0')}</span>
-                    <div><strong>${typeName[c.business_type_key] || c.business_type_key}</strong><small>${DIRECTION[c.direction]}</small>${growBar(c.weight / 5, `Peso ${c.weight} de 5`)}</div>
-                    <span class="ov-weight tabular">Peso ${c.weight}</span>
-                  </li>`,
-                )}</ol>`
-              : html`<p class="ov-empty">Nenhum critério ainda. Defina o que você quer perto e o que não quer perto do seu negócio.</p>`}
-          </section>
-        </div>
         ${legalFooter()}`;
     },
   });

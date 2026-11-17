@@ -3,7 +3,7 @@
 // com o rascunho (o frontend não calcula nota: só pinta a miniatura com a nota que voltou).
 import { get, getCached, post, put } from '../api.js';
 import { miniMap } from '../components/miniMap.js';
-import { appPage, legalFooter } from '../components/page.js';
+import { appPage, legalFooter, pageHead } from '../components/page.js';
 import { cityActive, loadCredits } from '../credits.js';
 import { fmt, html, mount } from '../html.js';
 import { icon } from '../icons.js';
@@ -26,7 +26,7 @@ export async function render(root) {
     active: null,
     user,
     entered,
-    skeleton: () => html`<div class="ov-head"><div><div class="ov-eyebrow">Critérios</div><h1>O que você quer perto</h1>${skeleton('14px', '50%')}</div></div>
+    skeleton: () => html`${pageHead({ eyebrow: 'Critérios', title: 'O que você quer perto', meta: 'Carregando…' })}
       <div class="cr-grid"><section class="ov-block" style="min-height:380px">${skeleton('16px', '40%')}</section><aside class="ov-block" style="min-height:380px"></aside></div>`,
     load: async () => {
       [types, segments, profile] = await Promise.all([getCached('/api/catalog/business-types'), getCached('/api/catalog/segments'), get('/api/profile')]);
@@ -42,11 +42,11 @@ export async function render(root) {
       }
     },
     body: () => html`
-      <div class="ov-head" data-cx><div>
-        <div class="ov-eyebrow">Critérios</div>
-        <h1>O que você quer perto</h1>
-        <p>Até ${MAX} tipos que você quer perto e ${MAX} que não quer perto, com peso de 1 a 5. Os bairros são ordenados por eles.</p>
-      </div></div>
+      ${pageHead({
+        eyebrow: 'Critérios',
+        title: 'O que você quer perto',
+        meta: `${s.list.length} ${s.list.length === 1 ? 'critério salvo' : 'critérios salvos'} · até ${MAX} perto e ${MAX} longe · peso de 1 a 5${s.city ? ` · prévia em ${s.city.name}, CNPJ ref. ${s.city.reference_month}` : ''}`,
+      })}
       <ol class="cr-steps" data-cx>${STEPS.map((t, i) => html`<li><button type="button" data-step="${i}">${String(i + 1).padStart(2, '0')} <span>${t}</span></button></li>`)}</ol>
       <div class="cr-grid">
         <section class="ov-block cr-body" data-cx data-body></section>

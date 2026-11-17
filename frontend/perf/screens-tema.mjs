@@ -51,7 +51,7 @@ for (const theme of ['claro', 'escuro']) {
     await settle(1800); await shot('app-bairro-holograma');
     await page.keyboard.press('Escape'); await settle(1200); await shot('app-bairro-volta');
     const hood = await page.evaluate(() => document.querySelector('[data-holo]').holoState().top[0]);
-    await page.goto(`${BASE}/app/#/bairro/${hood}?city=${RECIFE}`); await page.waitForSelector('.ring', { timeout: 30000 }); await settle(1500); await shot('app-detalhe-bairro', { fullPage: true });
+    await page.goto(`${BASE}/app/#/bairro/${hood}?city=${RECIFE}`); await page.waitForSelector('.metric.is-primary', { timeout: 30000 }); await settle(1500); await shot('app-detalhe-bairro', { fullPage: true });
     await page.goto(`${BASE}/app/#/criterios`); await page.waitForSelector('[data-body] h2'); await settle(1800); await shot('app-criterios');
     await page.goto(`${BASE}/app/#/conta`); await page.waitForSelector('.page'); await settle(); await shot('app-conta');
     await page.goto(`${BASE}/app/#/termos`); await page.waitForSelector('.page'); await settle(); await shot('app-termos');

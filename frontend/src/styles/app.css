@@ -549,7 +549,6 @@ textarea {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 .card + .card {
   margin-top: var(--space-4);
@@ -712,7 +711,6 @@ textarea {
 }
 .tile:hover {
   border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-sm);
 }
 .tile-dot {
   width: 18px;

@@ -1,17 +1,17 @@
 // Minhas análises (ref. 07): cidades e buscas abertas, validade, créditos e plano. Tudo da conta real.
 import { daysText } from '../components/account.js';
-import { appPage, legalFooter } from '../components/page.js';
+import { metric, metricGroup, metricGroupSkeleton, shapeBar } from '../components/metric.js';
+import { appPage, legalFooter, pageHead } from '../components/page.js';
 import { loadCredits } from '../credits.js';
 import { html } from '../html.js';
 import { icon } from '../icons.js';
 import { activeCities } from '../lib.js';
-import { countNumber, growBar, skeleton } from '../motion.js';
+import { growBar, skeleton } from '../motion.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css';
 
 const entered = { done: false };
-const metricSkeleton = () => html`<div class="ov-metric"><div class="ov-metric-top">${skeleton('12px', '40%')}</div>${skeleton('27px', '50%')}${skeleton('12px', '80%')}</div>`;
 
 export async function render(root) {
   const user = await loadUser();
@@ -19,8 +19,8 @@ export async function render(root) {
     active: 'analises',
     user,
     entered,
-    skeleton: () => html`<div class="ov-head"><div><div class="ov-eyebrow">Análises</div><h1>Minhas análises</h1>${skeleton('14px', '55%')}</div></div>
-      <div class="ov-metrics">${metricSkeleton()}${metricSkeleton()}${metricSkeleton()}${metricSkeleton()}</div>
+    skeleton: () => html`${pageHead({ eyebrow: 'Análises', title: 'Minhas análises', meta: 'Carregando…' })}
+      ${metricGroupSkeleton(3)}
       <div class="ov-section-head"><h2>Atividade recente</h2></div><section class="ov-block" style="min-height:220px">${skeleton('16px', '40%')}</section>`,
     load: () => loadCredits(true),
     body: (credits) => {
@@ -31,17 +31,26 @@ export async function render(root) {
       ].sort((a, b) => b.active - a.active || b.unlocked_at.localeCompare(a.unlocked_at));
       const active = activeCities(credits).length + credits.searches.filter((s) => s.active).length;
       return html`
-        <div class="ov-head" data-cx><div>
-          <div class="ov-eyebrow">Análises</div>
-          <h1>Minhas análises</h1>
-          <p>Cada cidade ou alcance aberto fica disponível por ${r.city_unlock_days} dias; reabrir dentro do prazo não gasta crédito.</p>
-        </div><button type="button" class="btn btn-primary ov-cta" data-go="/explorer">${icon('plus', 16)} Nova análise</button></div>
-        <div class="ov-metrics">
-          <div class="ov-metric" data-cx><div class="ov-metric-top">Total de análises<span class="ov-miniicon">${icon('list', 16)}</span></div><strong>${countNumber(items.length)}</strong><small>${items.length === 1 ? 'cidade ou alcance aberto até hoje' : 'cidades e alcances abertos até hoje'}</small></div>
-          <div class="ov-metric" data-cx><div class="ov-metric-top">No prazo<span class="ov-miniicon">${icon('clock', 16)}</span></div><strong>${countNumber(active)}</strong><small>validade de ${r.city_unlock_days} dias por análise</small></div>
-          <div class="ov-metric" data-cx><div class="ov-metric-top">Créditos<span class="ov-miniicon">${icon('coin', 16)}</span></div><strong>${countNumber(credits.balance)}</strong><small>1 crédito = 1 cidade por ${r.city_unlock_days} dias</small><a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a></div>
-          <div class="ov-metric" data-cx><div class="ov-metric-top">Plano<span class="ov-miniicon">${icon('layers', 16)}</span></div><strong class="is-text">${credits.plan}</strong><small>Plano da sua conta</small></div>
-        </div>
+        ${pageHead({
+          eyebrow: 'Análises',
+          title: 'Minhas análises',
+          meta: `${items.length} ${items.length === 1 ? 'análise' : 'análises'} desde o cadastro · validade de ${r.city_unlock_days} dias cada · reabrir no prazo não gasta crédito`,
+          action: html`<button type="button" class="btn btn-primary ov-cta" data-go="/explorer">${icon('plus', 16)} Nova análise</button>`,
+        })}
+        ${metricGroup(
+          metric({
+            primary: true,
+            label: 'Análises no prazo',
+            value: active,
+            shape: items.length ? shapeBar(active / items.length, `${active} de ${items.length} no prazo`) : '',
+            note: items.length ? `${active} de ${items.length} ${items.length === 1 ? 'análise' : 'análises'} ainda no prazo de ${r.city_unlock_days} dias.` : 'Nenhuma análise aberta ainda.',
+          }),
+          [
+            metric({ label: 'Total de análises', value: items.length, note: 'cidades e alcances abertos até hoje' }),
+            metric({ label: 'Créditos', value: credits.balance, extra: html`<a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a>` }),
+            metric({ label: 'Plano', text: credits.plan }),
+          ],
+        )}
         <div class="ov-section-head" data-cx><h2>Atividade recente</h2><span>${items.length ? `${items.length} no total` : ''}</span></div>
         <section class="ov-block" data-cx>
           ${items.length

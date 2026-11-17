@@ -6,6 +6,13 @@ import { topbar, wireTopbar } from './topbar.js';
 export const legalFooter = () =>
   html`<nav class="ov-footer" aria-label="Avisos legais" data-cx><a href="#/termos">Avisos legais e termos de uso</a><a href="#/privacidade">Política de privacidade</a><a href="#/como-calculamos">Como calculamos</a></nav>`;
 
+// Cabeçalho que informa: o título diz o que se vê; meta traz período, data e cobertura. A saudação, se houver,
+// fica pequena acima do título. action: o botão principal da tela (o único em cobre).
+export const pageHead = ({ eyebrow, greeting = '', title, meta = '', action = '', aside = '' }) =>
+  html`<div class="ov-head" data-cx><div>
+    ${greeting ? html`<p class="ov-greeting">${greeting}</p>` : ''}<div class="ov-eyebrow">${eyebrow}</div>
+    <h1>${title}</h1>${meta ? html`<p class="ov-meta">${meta}</p>` : ''}${action}</div>${aside}</div>`;
+
 // Monta a página: skeleton() desenha o esqueleto com o tamanho do conteúdo final; load() busca os dados;
 // body(data) devolve o HTML final. Devolve a função de limpeza da tela. Sem cascata ao voltar (entered por tela).
 export function appPage(root, { active, user, cls = 'overview', skeleton, load, body, entered }) {

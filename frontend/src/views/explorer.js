@@ -3,6 +3,8 @@ import { fmt, html, mount } from '../html.js';
 import { icon } from '../icons.js';
 import { bbox, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
 import { incomeBlock } from '../components/income.js';
+import { shapeBar, shapeMark } from '../components/metric.js';
+import { animateOnView } from '../motion.js';
 import { createHologram, HOLO_ZOOM } from '../map/hologram.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
@@ -592,6 +594,12 @@ export async function render(root) {
 
   // ---------- Painel direito: Ranking | Detalhes ----------
   const hasResults = () => s.level === 'result' || s.level === 'cities';
+  // Barras e marcas do painel direito crescem quando entram na tela (uma vez por desenho).
+  let shapesOff = () => {};
+  function shapesIn() {
+    shapesOff();
+    shapesOff = animateOnView(right);
+  }
   function renderRight() {
     const title = s.level === 'result' ? s.city.name : s.level === 'cities' ? `Cidades: ${s.scope.label}` : 'Explore com clareza';
     mount(
@@ -599,8 +607,7 @@ export async function render(root) {
       html`<div class="right-head">
           <button type="button" class="sheet-handle" data-sheet aria-expanded="${String(s.sheetOpen)}" aria-controls="ex-right"
             aria-label="Expandir ou recolher o painel de ranking"><span></span></button>
-          <span class="right-icon">${icon(hasResults() ? 'list' : 'layers', 18)}</span>
-          <div><span class="overline">${hasResults() ? 'Painel de leitura' : 'Como ler o mapa'}</span><h2>${title}</h2></div>
+          <div><h2>${title}</h2><span class="overline">${rightMeta()}</span></div>
         </div>
         ${hasResults()
           ? html`<div class="tabs" role="tablist" aria-label="Painel">
@@ -611,8 +618,18 @@ export async function render(root) {
         <div class="right-body" id="right-body" ${hasResults() ? html`role="tabpanel" aria-labelledby="tab-${s.tab}"` : ''} data-right-body>${rightBody()}</div>`,
     );
     right.querySelector('[data-right-body]').classList.toggle('is-stale', s.loadingRank);
+    shapesIn();
     if (s.tab === 'ranking') fillRankList(new Map());
     if (!wide.matches) syncInsets(false); // a gaveta de baixo mudou de altura (abas)
+  }
+
+  // O que está sendo visto, com período e cobertura (cabeçalho que informa).
+  function rightMeta() {
+    const st = s.cityStatus;
+    if (s.level === 'result' && st?.has_data)
+      return `${st.neighborhoods} ${unit().many} · CNPJ ref. ${st.reference_month} · Censo 2022 · cobertura ${fmt.pct(st.coverage.share)}`;
+    if (s.level === 'cities' && s.cityRank?.status === 'ok') return `${fmt.int(s.cityRank.counts.analyzed)} cidades · IBGE, Censo 2022 · CNPJ`;
+    return 'Como ler o mapa';
   }
 
   function rightBody() {
@@ -905,14 +922,17 @@ export async function render(root) {
     const r = s.rank;
     const cov = n.coverage;
     return html`<div class="hd">
-      <div class="hd-title"><strong>${n.name}</strong><span class="hd-score tabular">${fmt.dec(n.score)}<small>/100</small></span></div>
-      <p class="small muted">Posição ${n.rank} de ${r.count}</p>
+      <div class="hd-title"><strong>${n.name}</strong></div>
+      <div class="hd-score"><span class="metric-label">Nota · posição ${n.rank} de ${r.count}</span>
+        <strong class="hd-num tabular">${fmt.dec(n.score)}<small>/100</small></strong>
+        ${r.count > 1 ? shapeMark((r.count - n.rank) / (r.count - 1), `Posição ${n.rank} de ${r.count}; à direita, a primeira posição da cidade`) : ''}</div>
       <ul class="hd-crit">${n.criteria.map((c) => {
         const t = r.criteria.find((x) => x.business_type_key === c.type);
         return html`<li><span class="crit-dir crit-${c.direction}">${icon(c.direction, 14)}</span><div>
           <strong>${t.name_plural}</strong> <span class="muted">(${DIRECTION_LABEL[c.direction]}, peso ${c.weight})</span><br />
           ${countText(c.n, c.n_cnpj, t)}, ${fmt.dec(c.density_per_km2)} por km², ${c.comparison_text}
-          ${t.precision === 'approx' ? html`<br /><span class="muted">${t.note}</span>` : ''}</div></li>`;
+          ${shapeBar(c.lower_share, `Densidade maior que a de ${fmt.pct(c.lower_share)} ${unit().among}`)}
+          ${t.precision === 'approx' ? html`<span class="muted">${t.note}</span>` : ''}</div></li>`;
       })}</ul>
       <p class="small hd-cov hd-cov-${cov.level}">Cobertura de dados ${unit().of}: <strong>${COVERAGE_LABEL[cov.level]}</strong>
         (${establishmentsText(cov.located_count)} localizados${cov.located_count === 0 ? '; poucos dados localizados nesta área' : ''})</p>
@@ -936,6 +956,7 @@ export async function render(root) {
     }
     if (s.tab === 'ranking') fillRankList(before);
     body.classList.toggle('is-stale', s.loadingRank);
+    shapesIn();
   }
 
   function renderCriteria() {

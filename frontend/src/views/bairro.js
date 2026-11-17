@@ -3,19 +3,20 @@
 import { get, post } from '../api.js';
 import { incomeBlock } from '../components/income.js';
 import { miniMap } from '../components/miniMap.js';
-import { appPage, legalFooter } from '../components/page.js';
+import { metric, shapeBar, shapeMark } from '../components/metric.js';
+import { appPage, legalFooter, pageHead } from '../components/page.js';
 import { cityActive, loadCredits } from '../credits.js';
 import { fmt, html } from '../html.js';
 import { icon } from '../icons.js';
 import { COVERAGE_LABEL, countText, DIRECTION_LABEL, establishmentsText } from '../lib.js';
-import { countNumber, growBar, ring, skeleton } from '../motion.js';
+import { growBar, skeleton } from '../motion.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
 import '../styles/components.css';
 
 const entered = { done: false };
 const NO_DATA = (item) => `Não foi possível encontrar dados de ${item} desta área.`;
-const sk = () => html`<div class="ov-metric">${skeleton('12px', '40%')}${skeleton('27px', '50%')}${skeleton('12px', '80%')}</div>`;
+const sk = () => html`<div class="metric">${skeleton('11px', '40%')}${skeleton('24px', '50%')}${skeleton('12px', '80%')}</div>`;
 
 export async function render(root) {
   const user = await loadUser();
@@ -26,9 +27,9 @@ export async function render(root) {
     user,
     entered,
     cls: 'overview bairro',
-    skeleton: () => html`<div class="ov-head"><div><div class="ov-eyebrow">Análise territorial · Detalhe de um bairro</div>${skeleton('34px', '45%')}${skeleton('14px', '30%')}</div></div>
+    skeleton: () => html`${pageHead({ eyebrow: 'Detalhe do bairro', title: '', meta: 'Carregando…' })}
       <div class="bd-top"><section class="ov-block" style="min-height:240px"></section><section class="ov-block" style="min-height:240px"></section></div>
-      <div class="ov-metrics">${sk()}${sk()}${sk()}${sk()}</div>`,
+      <div class="bd-metrics">${sk()}${sk()}${sk()}</div>`,
     load: async () => {
       await loadCredits();
       if (!ibge || !id) throw new Error('Bairro não encontrado. Abra uma cidade no explorador e escolha um bairro.');
@@ -54,20 +55,25 @@ export async function render(root) {
       const unit = area ? 'área' : 'bairro';
       const typeOf = (k) => r.criteria.find((x) => x.business_type_key === k);
       return html`
-        <div class="ov-head" data-cx><div>
-          <div class="ov-eyebrow">Análise territorial · Detalhe de ${area ? 'uma área' : 'um bairro'}</div>
-          <h1>${n.name}</h1>
-          <p>${status.name} – ${status.uf}. Posição pelos critérios que você definiu; a decisão continua nas suas mãos.</p>
-        </div><button type="button" class="btn btn-primary ov-cta" data-go="/explorer?city=${ibge}">${icon('back', 16)} Voltar ao mapa</button></div>
+        ${pageHead({
+          eyebrow: `Detalhe ${area ? 'da área' : 'do bairro'}`,
+          title: n.name,
+          meta: `${status.name} – ${status.uf} · ${r.count} ${area ? 'áreas' : 'bairros'} · CNPJ ref. ${r.reference_dates.establishments} · limites IBGE ${r.reference_dates.boundaries} · cobertura ${COVERAGE_LABEL[n.coverage.level]}`,
+          action: html`<button type="button" class="btn btn-primary ov-cta" data-go="/explorer?city=${ibge}">${icon('back', 16)} Voltar ao mapa</button>`,
+        })}
 
         <div class="bd-top">
-          <section class="ov-block bd-score" data-cx>
-            ${ring(n.score)}
-            <div><strong class="bd-pos tabular">Posição ${n.rank} de ${r.count}</strong>
-              <p class="small muted">Nota de 0 a 100: média ponderada, pelos seus pesos, da posição relativa da densidade de cada tipo entre ${area ? 'as áreas' : 'os bairros'} da cidade.
-              <a href="#/como-calculamos">Como calculamos</a>.</p>
-              <p class="small hd-cov hd-cov-${n.coverage.level}">Cobertura de dados ${area ? 'da área' : 'do bairro'}: <strong>${COVERAGE_LABEL[n.coverage.level]}</strong> (${establishmentsText(n.coverage.located_count)} localizados)</p></div>
-          </section>
+          ${metric({
+            primary: true,
+            label: `Nota pelos seus critérios · posição ${n.rank} de ${r.count}`,
+            value: n.score,
+            decimals: 1,
+            unit: '/100',
+            shape: r.count > 1 ? shapeMark((r.count - n.rank) / (r.count - 1), `Posição ${n.rank} de ${r.count}: à direita fica a primeira posição da cidade`) : '',
+            extra: html`${r.count > 1 ? html`<span class="metric-split"><span>${r.count}ª posição</span><span>1ª posição</span></span>` : ''}
+              <p class="metric-note">Média ponderada, pelos seus pesos, da posição relativa da densidade de cada tipo entre ${area ? 'as áreas' : 'os bairros'} da cidade. <a href="#/como-calculamos">Como calculamos</a>.</p>
+              <p class="small hd-cov hd-cov-${n.coverage.level}">Cobertura de dados ${area ? 'da área' : 'do bairro'}: <strong>${COVERAGE_LABEL[n.coverage.level]}</strong> (${establishmentsText(n.coverage.located_count)} localizados)</p>`,
+          })}
           <section class="ov-block bd-mini" data-cx>
             ${geo ? miniMap(geo, { highlight: id, label: `Limites de ${status.name}, com ${n.name} em destaque` }) : html`<p class="ov-empty">${NO_DATA('limites')}</p>`}
             <p class="small muted">Limites: IBGE, ${r.reference_dates.boundaries}${area ? ' (setores censitários)' : ''}.</p>
@@ -75,15 +81,15 @@ export async function render(root) {
         </div>
 
         <div class="ov-section-head" data-cx><h2>Indicadores</h2><span>Receita Federal (CNPJ), ref. ${r.reference_dates.establishments}</span></div>
-        <div class="ov-metrics ${n.criteria.length === 3 ? 'is-three' : ''}">
+        <div class="bd-metrics">
           ${n.criteria.map((c) => {
             const t = typeOf(c.type);
-            return html`<div class="ov-metric" data-cx>
-              <div class="ov-metric-top">${t.name_plural}<span class="crit-dir crit-${c.direction}">${icon(c.direction, 14)}</span></div>
-              <strong>${countNumber(c.n)}</strong>
-              <small>${countText(c.n, c.n_cnpj, t)} · ${fmt.dec(c.density_per_km2)} por km² · ${DIRECTION_LABEL[c.direction]}, peso ${c.weight}</small>
-              ${t.precision === 'approx' ? html`<small class="muted">${t.note}</small>` : ''}
-            </div>`;
+            return metric({
+              label: `${t.name_plural} · ${DIRECTION_LABEL[c.direction]}, peso ${c.weight}`,
+              value: c.n,
+              shape: shapeBar(c.lower_share, `Densidade maior que a de ${fmt.pct(c.lower_share)} ${area ? 'das áreas' : 'dos bairros'}`),
+              note: html`${countText(c.n, c.n_cnpj, t)} · ${fmt.dec(c.density_per_km2)} por km² · ${c.comparison_text}${t.precision === 'approx' ? html`<br />${t.note}` : ''}`,
+            });
           })}
         </div>
 

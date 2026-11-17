@@ -63,6 +63,6 @@ export function animateOnView(root) {
       el.classList.add('is-in');
     }
   }, { threshold: 0.15 });
-  root.querySelectorAll('[data-count], .grow, .ring').forEach((el) => io.observe(el));
+  root.querySelectorAll('[data-count], .grow, .ring, .mark').forEach((el) => io.observe(el));
   return () => io.disconnect();
 }

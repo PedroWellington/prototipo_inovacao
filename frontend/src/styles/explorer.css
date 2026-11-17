@@ -34,7 +34,6 @@
   width: var(--ex-left);
   padding: var(--space-5) var(--space-5) var(--space-8);
   border-right: 1px solid var(--color-border);
-  box-shadow: 4px 0 32px rgb(40 48 50 / 0.03);
   transition: transform var(--dur-ui) var(--ease-spring);
 }
 .ex-right {
@@ -97,7 +96,6 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-overlay);
-  box-shadow: 0 9px 40px rgb(40 58 53 / 0.07);
   color: var(--color-text);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
@@ -547,7 +545,6 @@ button.pick:hover {
 .seg button[aria-pressed='true'] {
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: var(--shadow-sm);
 }
 .seg button:disabled {
   opacity: 0.4;
@@ -610,7 +607,6 @@ button.pick:hover {
 button.rank-row:hover {
   transform: translateY(-2px);
   border-color: var(--color-brand-mark);
-  box-shadow: 0 10px 24px rgb(78 74 67 / 0.06);
 }
 .rank-row.is-selected {
   border-color: var(--color-focus);
@@ -670,7 +666,6 @@ button.rank-row:hover {
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 .detail-head {
   display: flex;
@@ -690,12 +685,26 @@ button.rank-row:hover {
   font-size: var(--text-md);
 }
 .hd-score {
-  font: var(--weight-semibold) var(--text-md) / 1 var(--font-display);
+  display: grid;
+  margin: var(--space-3) 0 var(--space-4);
+}
+/* A nota domina o detalhe; contagens e densidades ficam menores abaixo. */
+.hd-num {
+  margin-top: 4px;
+  font: var(--weight-bold) 44px / 1 var(--font-display);
+  letter-spacing: -0.05em;
   white-space: nowrap;
 }
-.hd-score small {
-  font-size: var(--text-xs);
+.hd-num small {
+  margin-left: 3px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0;
   color: var(--color-text-muted);
+}
+.hd-crit .grow {
+  height: 4px;
+  max-width: 220px;
 }
 .hd-crit {
   display: grid;
@@ -770,7 +779,6 @@ button.rank-row:hover {
   background: var(--color-overlay);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
   transition: transform var(--dur-ui) var(--ease-spring);
 }
 .legend-bar {
@@ -803,7 +811,7 @@ button.rank-row:hover {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-float);
   font-size: var(--text-sm);
   pointer-events: none;
   will-change: translate, opacity;
@@ -837,7 +845,7 @@ button.rank-row:hover {
   .ex-left {
     z-index: 6;
     width: min(342px, calc(100vw - 38px));
-    box-shadow: 20px 0 50px rgb(38 49 43 / 0.15);
+    box-shadow: var(--shadow-float);
     transform: translateX(-105%);
   }
   .drawer-open .ex-left {
@@ -854,7 +862,7 @@ button.rank-row:hover {
     padding: var(--space-2) var(--space-4) var(--space-4);
     border: 1px solid var(--color-border);
     border-radius: 19px;
-    box-shadow: 0 14px 50px rgb(43 53 53 / 0.2);
+    box-shadow: var(--shadow-float);
     overflow: hidden;
   }
   /* Recolhida: só o cabeçalho e as abas aparecem; o corpo entra ao expandir (transform, sem mudar a altura). */
