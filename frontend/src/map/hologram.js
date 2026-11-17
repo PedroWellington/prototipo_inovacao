@@ -8,6 +8,9 @@
 import '../styles/hologram.css';
 
 export const HOLO_TURN_SECONDS = 12; // padrão, se o manifesto não disser
+// Zoom da câmera ao clicar num bairro: o mesmo para todos, para o holograma ter sempre o mesmo tamanho na tela
+// e o contorno do bairro aparecer ao redor. Ajuste aqui (testado em Recife: Ilha do Leite, Boa Vista, Guabiraba).
+export const HOLO_ZOOM = 14.5;
 const DEFAULT_LABEL = 'Visualização conceitual da unidade';
 const BEHIND = 3; // quadros decodificados atrás do atual
 const AHEAD = 18; // e à frente (o giro só anda para a frente)
@@ -191,7 +194,6 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
   let last = 0;
   let seconds = 0;
   let size = null;
-  let scale = 1; // fator sobre o tamanho base (explorer.js: proporcional ao bairro na tela)
   let paints = 0; // quadros de giro efetivamente desenhados (medição)
   const current = () => {
     const n = frames.set.count;
@@ -204,7 +206,7 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
   function measure() {
     const m = frames.set;
     if (!m) return null;
-    const k = (frames.meta.scale || 1) * scale;
+    const k = frames.meta.scale || 1;
     const w = baseWidth() * k;
     const h = Math.round((w * m.height) / m.width);
     const ratio = Math.min(2, devicePixelRatio || 1);
@@ -306,15 +308,6 @@ export function createHologram(host, { project, area, base = `${import.meta.env.
       wake();
     },
     rise: (slot) => slots[slot].rise,
-    baseWidth,
-    // Fator de tamanho (1 = base). Muda só o que é medido no próximo quadro; os quadros são redecodificados nesse tamanho.
-    scale(k) {
-      if (k === scale) return;
-      scale = k;
-      size = null;
-      for (const s of slots) s.drawn = -1;
-      wake();
-    },
     // Onde o holograma está agora (px do mapa), para outros elementos não o cobrirem.
     bounds: () => slots.filter((s) => s.box && s.rise > 0.2).map((s) => s.box),
     anchor: (slot) => slots[slot].lngLat,

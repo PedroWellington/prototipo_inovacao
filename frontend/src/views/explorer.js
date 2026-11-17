@@ -3,7 +3,7 @@ import { fmt, html, mount } from '../html.js';
 import { icon } from '../icons.js';
 import { bbox, countText, cityComparisonText, cityRankRows, COVERAGE_LABEL, debounce, DIRECTION_LABEL, establishmentsText, normalize } from '../lib.js';
 import { incomeBlock } from '../components/income.js';
-import { createHologram } from '../map/hologram.js';
+import { createHologram, HOLO_ZOOM } from '../map/hologram.js';
 import { createMap } from '../map/mapView.js';
 import { analysesList, companyCard, creditsCard } from '../components/account.js';
 import { topbar, wireTopbar } from '../components/topbar.js';
@@ -30,8 +30,6 @@ const HOLO_VIEW_ANGLE_DEG = 50;
 const HOLO_PITCH = 90 - HOLO_VIEW_ANGLE_DEG;
 const HOLO_MS = 700; // inclinar e subir: a mesma animação
 const HOLO_SWAP_MS = 450; // trocar de bairro já inclinado
-const HOLO_MAX_ZOOM = 16; // bairros muito pequenos não vão além do nível de quarteirão
-const HOLO_FRAME = 0.25; // folga de cada lado ao enquadrar o bairro: ele ocupa cerca de metade da área útil
 const PANEL_KEY = 'explorer-panel'; // preferência só deste navegador (aberto/recolhido)
 const METHOD_LINK = () => html`<a href="#/como-calculamos" target="_blank" rel="noopener">Como calculamos</a>`;
 
@@ -457,7 +455,7 @@ export async function render(root) {
 
   // ---------- Holograma: máquina de estados PLANO <-> INCLINADO(bairro) ----------
   // Clique num bairro: a câmera aproxima até o bairro ocupar cerca de metade da área útil, inclina e sobe o
-  // holograma, numa só animação (curva --ease); o holograma ganha um tamanho proporcional ao bairro na tela.
+  // holograma, numa só animação (curva --ease); o holograma tem sempre o mesmo tamanho (zoom fixo).
   // Mesmo bairro de novo, "fechar", "Voltar ao plano" ou Esc: volta à câmera de antes do clique. Outro bairro
   // já inclinado: o antigo desce, o novo sobe, a câmera desliza (a câmera guardada continua a do primeiro clique).
   // Clicar no fundo ou arrastar não muda o estado. Qualquer clique no meio reverte do ponto atual.
@@ -468,19 +466,12 @@ export async function render(root) {
     const reserve = Math.round(Math.min(0.42 * $('.ex-map').clientHeight, wide.matches ? 280 : 200));
     return { top: reserve, right: ins.right, bottom: ins.bottom, left: ins.left };
   };
-  // Câmera que enquadra o bairro em ~metade da área útil (folga HOLO_FRAME de cada lado) e o fator de escala do
-  // holograma: metade do tamanho do bairro em pixels no zoom final, entre 0,8 e 2,4 do tamanho base.
-  function holoCamera(bounds) {
-    const box = $('.ex-map');
-    const p = holoPadding();
-    const w = Math.max(1, box.clientWidth - p.left - p.right), h = Math.max(1, box.clientHeight - p.top - p.bottom);
-    const padding = { top: p.top + h * HOLO_FRAME, bottom: p.bottom + h * HOLO_FRAME, left: p.left + w * HOLO_FRAME, right: p.right + w * HOLO_FRAME };
-    const cam = map.cameraFor(bounds, padding, HOLO_MAX_ZOOM);
-    const a = map.project(bounds[0]), b = map.project(bounds[1]);
-    const px = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) * 2 ** (cam.zoom - map.zoom());
-    const cap = (0.5 * Math.min(w, h)) / holo.baseWidth(); // nunca mais de metade da área útil
-    return { ...cam, scale: Math.max(0.6, Math.min(2.4, cap, Math.max(0.8, (0.5 * px) / holo.baseWidth()))) };
-  }
+  // Câmera do holograma: zoom fixo (HOLO_ZOOM, igual para todo bairro) centrado no ponto na superfície do bairro,
+  // dentro da área livre (painéis, gaveta e reserva do holograma). Bairro maior que a tela: só centraliza.
+  const holoCamera = (id) => {
+    const ll = labelOf(id);
+    return map.cameraFor([ll, ll], holoPadding(), HOLO_ZOOM);
+  };
   function holoClick(id) {
     if (!labelOf(id)) return;
     if (s.holo.state === 'INCLINADO' && s.holo.id === id) return toPlane();
@@ -497,9 +488,8 @@ export async function render(root) {
     const r0 = holo.rise(slot), ro = holo.rise(old);
     const swapping = from.state === 'INCLINADO' && map.pitch() > HOLO_PITCH - 1;
     const prev = from.state === 'PLANO' ? map.camera() : from.prev; // guarda só ao sair do plano
-    const cam = holoCamera(s.hoods.get(id).bounds);
+    const cam = holoCamera(id);
     s.holo = { state: 'INCLINADO', id, slot, prev };
-    holo.scale(cam.scale);
     const dur = swapping ? HOLO_SWAP_MS : Math.max(250, HOLO_MS * (1 - map.pitch() / HOLO_PITCH));
     map.tiltTo(
       { pitch: HOLO_PITCH, center: cam.center, zoom: cam.zoom, padding: { top: 0, right: 0, bottom: 0, left: 0 } },
@@ -526,7 +516,6 @@ export async function render(root) {
           holo.set(0, { rise: r[0] * (1 - e) });
           holo.set(1, { rise: r[1] * (1 - e) });
         },
-        onDone: () => holo.scale(1),
       },
     );
     $('[data-plane]').hidden = true;
