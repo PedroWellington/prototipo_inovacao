@@ -12,6 +12,11 @@ const ROUTES = {
   '/explorer': { load: () => import('./views/explorer.js').then((m) => m.render) },
   '/conta': { load: () => import('./views/account.js').then((m) => m.render) },
   '/creditos': { load: () => import('./views/billing.js').then((m) => m.render) },
+  '/analises': { load: () => import('./views/analises.js').then((m) => m.render) },
+  '/comparar': { load: () => import('./views/comparar.js').then((m) => m.render) },
+  '/dados': { load: () => import('./views/dados.js').then((m) => m.render) },
+  '/criterios': { load: () => import('./views/criterios.js').then((m) => m.render) },
+  '/bairro': { load: () => import('./views/bairro.js').then((m) => m.render) }, // #/bairro/<id>?city=<ibge>
 };
 
 let cleanup = null;
@@ -20,7 +25,7 @@ let firstView = true; // a 1ª tela aparece já visível (sem fade): conteúdo n
 // O explorador fica vivo ao ir para a visão geral ou a conta: voltar não recria o mapa nem perde cidade,
 // critérios e aba. Ele mora numa camada própria; as outras telas, em #view.
 const KEEP = '/explorer';
-const KEEP_FOR = new Set(['/home', '/conta', '/creditos']); // telas que não descartam o explorador
+const KEEP_FOR = new Set(['/home', '/conta', '/creditos', '/analises', '/comparar', '/dados', '/criterios', '/bairro']); // telas que não descartam o explorador
 let alive = null; // { el, cleanup }
 
 export function go(path) {
@@ -65,7 +70,8 @@ function dropKeep() {
 
 async function route() {
   const id = ++navId;
-  const path = location.hash.replace(/^#/, '').split('?')[0] || '/';
+  const full = location.hash.replace(/^#/, '').split('?')[0] || '/';
+  const path = '/' + (full.split('/')[1] || ''); // #/bairro/123 -> /bairro (a tela lê o resto do hash)
   const user = await loadUser();
   const target = resolve(path, user);
   if (target !== path) {

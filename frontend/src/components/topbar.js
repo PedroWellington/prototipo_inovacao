@@ -1,6 +1,6 @@
 // Barra superior grafite do app (visão geral, explorador e conta). Só estrutura: visual em styles/components.css.
-// Ordem combinada: Visão geral · Explorar · Análises · Comparar · Dados e fontes. "Explorar" abre o mapa de uma
-// cidade; "Comparar" abre o ranking de cidades (o mesmo explorador, no caminho "Onde procurar?").
+// Ordem combinada: Visão geral · Análises · Comparar · Dados e fontes · Explorar (por último). Cada item é uma
+// página com rota própria; o explorador fica vivo ao sair e voltar (router.js).
 import { PRODUCT_NAME } from '../brand.js';
 import { html, raw } from '../html.js';
 import { aboutLink, icon, logo } from '../icons.js';
@@ -8,12 +8,11 @@ import { initials } from '../lib.js';
 
 const NAV = [
   { key: 'home', label: 'Visão geral', href: '#/home' },
+  { key: 'analises', label: 'Análises', href: '#/analises' },
+  { key: 'compare', label: 'Comparar', href: '#/comparar' },
+  { key: 'fontes', label: 'Dados e fontes', href: '#/dados' },
   { key: 'explorer', label: 'Explorar', href: '#/explorer' },
-  { key: 'analises', label: 'Análises', href: '#/home?s=analises' },
-  { key: 'compare', label: 'Comparar', href: '#/explorer?compare=1' },
-  { key: 'fontes', label: 'Dados e fontes', href: '#/home?s=fontes' },
 ];
-const SCREEN = new Set(['explorer', 'compare']); // itens que trocam de tela (os outros rolam na Visão geral)
 
 // Botão claro/escuro (public/theme.js troca o tema ao clicar em [data-theme-toggle]).
 export const themeButton = () =>
@@ -32,7 +31,7 @@ export function topbar({ active, user, profile }) {
     <nav class="topnav" id="topnav" aria-label="Navegação principal">
       <span class="topnav-pill" aria-hidden="true"></span>
       ${NAV.map(
-        (n) => html`<a class="topnav-link ${n.key === active ? 'is-active' : ''}" href="${n.href}" data-nav="${n.key}" ${n.key === active ? 'aria-current="page"' : ''}>${n.label}</a>`,
+        (n) => html`<a class="topnav-link ${n.key === active ? 'is-active' : ''}" href="${n.href}" data-nav="${n.key}" ${n.key === active ? html`aria-current="page"` : ''}>${n.label}</a>`,
       )}
     </nav>
     <div class="topbar-right">
@@ -56,9 +55,8 @@ function movePill(bar) {
   pill.style.opacity = '1';
 }
 
-// Liga o menu do celular, a pílula e, na Visão geral, a rolagem suave até as seções (sem recarregar a tela).
-// onSection(key): se a tela atual tem as seções, rola e devolve true; senão o link segue normal.
-export function wireTopbar(root, { onSection, signal } = {}) {
+// Liga o menu do celular e a pílula.
+export function wireTopbar(root, { signal } = {}) {
   const bar = root.querySelector('.topbar');
   if (!bar) return;
   const btn = bar.querySelector('[data-topbar-menu]');
@@ -79,10 +77,7 @@ export function wireTopbar(root, { onSection, signal } = {}) {
     }
   }, { signal });
   bar.addEventListener('click', (e) => {
-    const a = e.target.closest('[data-nav]');
-    if (!a) return;
-    close();
-    if (onSection && !SCREEN.has(a.dataset.nav) && onSection(a.dataset.nav)) e.preventDefault();
+    if (e.target.closest('[data-nav]')) close();
   }, { signal });
   movePill(bar);
   document.fonts?.ready.then(() => movePill(bar)); // a fonte Inter muda a largura dos itens

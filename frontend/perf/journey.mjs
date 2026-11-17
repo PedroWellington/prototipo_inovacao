@@ -78,29 +78,25 @@ await step('tela inicial: logo volta para #/home e há "Conhecer a VICUS"', asyn
   expect(await page.getAttribute('.logo-link', 'href') === '#/home', 'logo não aponta para #/home');
   expect(await page.getAttribute('.about-link', 'href') === '/', 'link da landing ausente');
 });
-await step('menu: ordem Visão geral · Explorar · Análises · Comparar · Dados e fontes; rótulo visível no hover', async () => {
+await step('menu: ordem Visão geral · Análises · Comparar · Dados e fontes · Explorar; rótulo visível no hover', async () => {
   const items = await page.$$eval('.topbar .topnav [data-nav]', (els) => els.map((e) => e.textContent.trim()));
-  expect(JSON.stringify(items) === JSON.stringify(['Visão geral', 'Explorar', 'Análises', 'Comparar', 'Dados e fontes']), items.join(' · '));
+  expect(JSON.stringify(items) === JSON.stringify(['Visão geral', 'Análises', 'Comparar', 'Dados e fontes', 'Explorar']), items.join(' · '));
   await page.hover('.topnav [data-nav="explorer"]'); await page.waitForTimeout(250);
   const vis = await page.evaluate(() => { const a = document.querySelector('.topnav [data-nav="explorer"]'); const c = getComputedStyle(a); return c.opacity !== '0' && c.visibility === 'visible' && c.color !== c.backgroundColor; });
   expect(vis, 'rótulo some no hover');
   expect(!(await page.evaluate(() => document.querySelector('.topbar').innerText.includes('Inteligência territorial'))), '"Inteligência territorial" ainda na barra');
   expect(await page.getAttribute('.topbar .logo-link', 'href') === '#/home', 'logo não leva à Visão geral');
 });
-await step('menu na Visão geral: "Dados e fontes" rola até a seção sem recarregar a tela', async () => {
-  await page.evaluate(() => (document.querySelector('[data-dashboard]').__keep = true));
+await step('menu: "Dados e fontes" e "Análises" são páginas próprias (rota, item ativo, esqueleto e dados reais)', async () => {
   await page.click('.topnav [data-nav="fontes"]');
-  await page.waitForTimeout(900);
-  const r = await page.evaluate(() => ({
-    same: document.querySelector('[data-dashboard]').__keep === true,
-    top: Math.round(document.querySelector('#fontes').getBoundingClientRect().top),
-    end: Math.ceil(scrollY + innerHeight) >= document.scrollingElement.scrollHeight - 2, // seção na última linha
-    active: document.querySelector('.topnav [aria-current="page"]')?.dataset.nav,
-  }));
-  expect(r.same, 'a Visão geral foi recarregada');
-  expect((r.top < 200 || r.end) && r.active === 'fontes', JSON.stringify(r));
-  await page.click('.topbar .logo-link'); await page.waitForTimeout(800);
-  expect(await page.evaluate(() => scrollY) < 5, 'a logo não voltou ao topo');
+  await page.waitForSelector('.src-table');
+  const r = await page.evaluate(() => ({ hash: location.hash, active: document.querySelector('.topnav [aria-current="page"]')?.dataset.nav, rows: document.querySelectorAll('.src-table tbody tr').length }));
+  expect(r.hash === '#/dados' && r.active === 'fontes' && r.rows >= 4, JSON.stringify(r));
+  await page.click('.topnav [data-nav="analises"]');
+  await page.waitForSelector('.ov-analyses, .ov-empty-big');
+  expect((await page.evaluate(() => location.hash)) === '#/analises', 'rota de Análises');
+  await page.click('.topbar .logo-link'); await page.waitForSelector('[data-dashboard] .ov-hero'); 
+  expect((await page.evaluate(() => location.hash)) === '#/home', 'a logo não voltou à Visão geral');
 });
 await step('recarregar /app/#/home mantém a tela', async () => {
   await page.reload({ waitUntil: 'load' });
@@ -238,12 +234,10 @@ await step('explorador -> visão geral -> explorador: mesmo mapa, cidade e aba (
   expect(r.sameMap, 'o mapa foi recriado');
   expect(r.city === 'Recife' && r.tab === 'detail', `estado perdido: ${JSON.stringify(r)}`);
 });
-await step('menu no explorador: "Minhas análises" leva à seção da Visão geral e o explorador volta como estava', async () => {
+await step('menu no explorador: "Análises" abre a página e o explorador volta como estava', async () => {
   await page.click('.view-layer .topnav [data-nav="analises"]');
-  await page.waitForSelector('#view #analises');
-  await page.waitForTimeout(1600);
-  const r = await page.evaluate(() => ({ top: Math.round(document.querySelector('#analises').getBoundingClientRect().top), y: Math.round(scrollY), h: document.scrollingElement.scrollHeight, end: Math.ceil(scrollY + innerHeight) >= document.scrollingElement.scrollHeight - 2 }));
-  expect(r.top < 200 || r.end, `seção em ${JSON.stringify(r)}`);
+  await page.waitForSelector('#view .ov-analyses');
+  await page.waitForTimeout(600);
   await page.click('#view .topnav [data-nav="explorer"]');
   await page.waitForFunction(() => document.querySelector('.view-layer').classList.contains('is-shown'));
   expect((await page.evaluate(() => document.querySelector('.right-head h2')?.textContent)) === 'Recife', 'cidade perdida');
@@ -275,8 +269,8 @@ await step('celular: gaveta de navegação e gaveta do ranking', async () => {
 await step('prefers-reduced-motion: sem entrada escalonada e ranking sem FLIP', async () => {
   const m = await browser.newContext({ bypassCSP: true, viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', storageState: await ctx.storageState() });
   const p = await m.newPage(); watch(p);
-  await p.goto(`${BASE}/app/#/home`); await p.waitForSelector('[data-dashboard]');
-  const anim = await p.evaluate(() => getComputedStyle(document.querySelector('.ov-animate')).animationName);
+  await p.goto(`${BASE}/app/#/home`); await p.waitForSelector('[data-cx]');
+  const anim = await p.evaluate(() => getComputedStyle(document.querySelector('[data-cx]')).animationName);
   expect(anim === 'none', `cartões animam: ${anim}`);
   await p.goto(`${BASE}/app/#/explorer?city=2611606`);
   await p.waitForFunction(() => performance.getEntriesByName('app:recolor').length > 0, null, { timeout: 30000 });
