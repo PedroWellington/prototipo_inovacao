@@ -495,7 +495,7 @@ async function startHero() {
     const colors = { ne: C.ne, ufs: C.ufs, nordeste: C.nordeste, pe: C.pe, recife: C.recife, focus: C.focus, focusBorder: C.focusBorder, palette: PALETTE,
       border: { estados: C.ufBorder, nordeste: C.nordesteBorder, municipios: C.flatMesh, pe: C.peBorder, recife: C.recifeBorder, bairros: C.hoodBorder } };
     const viewAt = (p) => mapView(p);
-    hero.api = await Promise.race([createHeroMap(heroEl, { topos: { brasil, pe, recife }, focus: FOCUS, colors, mobile: size.mobile, viewAt }), timeout]);
+    hero.api = await Promise.race([createHeroMap(heroEl, { topos: { brasil, pe, recife }, focus: FOCUS, colors, mobile: size.mobile, viewAt, alphasAt: alphas }), timeout]);
     Object.assign(hero, { mode: 'map', since: performance.now() });
     heroEl.classList.add('is-live');
     dirty = true;

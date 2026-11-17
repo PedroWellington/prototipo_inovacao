@@ -43,18 +43,20 @@ export function topoToGeoJSON(topo, name, props = () => ({})) {
 
 const NE = new Set(['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE']);
 // Camadas do mergulho, de baixo para cima. A opacidade vem da landing (a mesma agenda do mapa em canvas).
+// maxzoom: até onde a fonte é recortada em tiles; acima disso o mapa amplia o tile que já tem (sem recortar de novo
+// a cada nível de zoom do mergulho). Ajustado à escala em que cada camada aparece na linha do tempo.
 const LAYERS = [
-  { key: 'estados', fill: 0.62, line: 0.5 },
-  { key: 'nordeste', fill: 0.5, line: 0.75 },
-  { key: 'municipios', fill: 0, line: 0.35 },
-  { key: 'pe', fill: 0.5, line: 0.85 },
-  { key: 'recife', fill: 0.42, line: 0.8 },
-  { key: 'bairros', fill: 0.55, line: 0.6 },
+  { key: 'estados', fill: 0.62, line: 0.5, maxzoom: 7 },
+  { key: 'nordeste', fill: 0.5, line: 0.75, maxzoom: 7 },
+  { key: 'municipios', fill: 0, line: 0.35, maxzoom: 10 },
+  { key: 'pe', fill: 0.5, line: 0.85, maxzoom: 10 },
+  { key: 'recife', fill: 0.42, line: 0.8, maxzoom: 13 },
+  { key: 'bairros', fill: 0.55, line: 0.6, maxzoom: 15 },
 ];
 
 // host: <div class="hero-map" data-theme="dark">. colors: tons da landing (os mesmos do canvas; não são nota).
-// viewAt(p): a vista da linha do tempo da landing; aqui só serve para pré-carregar os tiles do caminho.
-export async function createHeroMap(host, { topos, focus, colors, mobile = false, viewAt }) {
+// viewAt(p) e alphasAt(p): a vista e as opacidades da linha do tempo da landing; aqui só servem para pré-carregar o caminho.
+export async function createHeroMap(host, { topos, focus, colors, mobile = false, viewAt, alphasAt }) {
   const mapEl = host.querySelector('.hero-map-canvas');
   const holoEl = host.querySelector('.hero-holo');
   const data = {
@@ -86,6 +88,11 @@ export async function createHeroMap(host, { topos, focus, colors, mobile = false
     map.once('load', ok);
     map.once('error', (e) => fail(e.error || e));
   });
+  // A cena é decorativa (aria-hidden): nada dentro dela pode receber foco. A atribuição do OSM continua visível; o
+  // link dela e o canvas saem da ordem de tabulação, também quando o MapLibre os recria.
+  const unfocus = () => host.querySelectorAll('a, button, canvas, [tabindex]').forEach((el) => el.getAttribute('tabindex') !== '-1' && el.setAttribute('tabindex', '-1'));
+  new MutationObserver(unfocus).observe(host, { childList: true, subtree: true });
+  unfocus();
   const fills = {
     estados: ['case', ['get', 'ne'], colors.ne, colors.ufs],
     nordeste: colors.nordeste,
@@ -94,14 +101,14 @@ export async function createHeroMap(host, { topos, focus, colors, mobile = false
     recife: colors.recife,
     bairros: ['case', ['get', 'focus'], colors.focus, ['match', ['get', 'tint'], ...colors.palette.flatMap((c, i) => [i, c]), colors.palette[0]]],
   };
-  for (const { key } of LAYERS) {
-    map.addSource(key, { type: 'geojson', data: data[key] });
-    map.addLayer({ id: `${key}-fill`, type: 'fill', source: key, paint: { 'fill-color': fills[key], 'fill-opacity': 0 } });
+  for (const { key, maxzoom } of LAYERS) {
+    map.addSource(key, { type: 'geojson', data: data[key], maxzoom });
+    map.addLayer({ id: `${key}-fill`, type: 'fill', source: key, layout: { visibility: 'none' }, paint: { 'fill-color': fills[key], 'fill-opacity': 0 } });
     map.addLayer({ id: `${key}-line`, type: 'line', source: key, paint: {
       'line-color': key === 'bairros' ? ['case', ['get', 'focus'], colors.focusBorder, colors.border[key]] : colors.border[key],
       'line-width': key === 'bairros' ? ['case', ['get', 'focus'], 2.5, 0.8] : key === 'municipios' ? 0.5 : 1.1,
       'line-opacity': 0,
-    } });
+    }, layout: { visibility: 'none' } });
   }
 
   let area = { left: 0, top: 0, right: host.clientWidth, bottom: host.clientHeight }; // área do holograma (px), medida no resize
@@ -117,6 +124,12 @@ export async function createHeroMap(host, { topos, focus, colors, mobile = false
     for (const { key: k, fill, line } of LAYERS) {
       const a = Math.round((alphas[k] || 0) * 100) / 100;
       if (shown[k] === a) continue;
+      // Camada invisível fica 'none': o MapLibre não recorta nem desenha os tiles dela (só 2 ou 3 ativas por vez).
+      const vis = a > 0 ? 'visible' : 'none';
+      if ((shown[k] > 0 ? 'visible' : 'none') !== vis || shown[k] === undefined) {
+        map.setLayoutProperty(`${k}-fill`, 'visibility', vis);
+        map.setLayoutProperty(`${k}-line`, 'visibility', vis);
+      }
       shown[k] = a;
       map.setPaintProperty(`${k}-fill`, 'fill-opacity', a * fill);
       map.setPaintProperty(`${k}-line`, 'line-opacity', a * line);
@@ -127,8 +140,7 @@ export async function createHeroMap(host, { topos, focus, colors, mobile = false
   // Pré-carrega, invisível, os tiles de pontos ao longo do caminho (do bairro ao Brasil) e os quadros do holograma.
   const idleOrTimeout = () => new Promise((ok) => { map.once('idle', ok); setTimeout(ok, 5000); });
   for (const p of [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.64, 0.58, 0.5, 0.42, 0.3, 0.15, 0]) {
-    const v = viewAt(p);
-    map.jumpTo({ center: v.center, zoom: v.zoom, pitch: v.pitch, bearing: v.bearing, padding: v.padding });
+    render({ ...viewAt(p), alphas: alphasAt(p), rise: 0 }); // câmera e camadas daquele ponto: os tiles delas entram no cache
     await idleOrTimeout();
   }
   lastKey = '';
