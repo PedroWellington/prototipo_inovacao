@@ -190,6 +190,22 @@ Clicar num bairro agora **aproxima a câmera** (o bairro fica com cerca de metad
 
 **Tema escuro.** A troca entra em círculo pela View Transitions API (550 ms); com `prefers-reduced-motion` ou sem suporte, troca na hora. Nenhuma medição extra: é um único `document.startViewTransition`.
 
+**Redesign, Fase 9 (2026-11-16).** `frontend/perf/fluidez.mjs` (Edge headless, 1440×900, `requestAnimationFrame`; meta do prompt: ≥ 55 fps e p95 do intervalo entre quadros ≤ 12 ms com CPU 4× mais lenta). Neste navegador os quadros saem em degraus de ~7 ms (≈ 144 Hz, sem vsync de 60 Hz): 13,9 ms = um quadro de 144 Hz perdido; 20,8 ms = dois.
+
+| Cena | CPU 1×: fps · p95 · máx. | CPU 4× (duas rodadas): fps · p95 · máx. | Meta 4× |
+|---|---|---|---|
+| Troca de página (4 cliques no menu) | 142 · 7,0 · 28 ms | 92–94 · 20,9–27,7 · 111 ms | ❌ p95 |
+| Visão geral: rolagem | 144 · 7,0 · 7 ms | 130–133 · 13,8–13,9 · 35 ms | ❌ p95 (por um quadro de 144 Hz) |
+| Tema em círculo (Visão geral) | 129 · 7,1 · 97 ms | 84–96 · 20,8 · 167–188 ms | ❌ p95 e pico |
+| Detalhe do bairro: entrada (anel, números, barras) | 143 · 7,0 · 14 ms | 112–121 · 14,0 · 70–76 ms | ❌ p95 (por um quadro de 144 Hz) |
+| Explorador: ranking reordena (FLIP) | 144 · 7,0 · 7 ms | 136–137 · 7,1 · 42–56 ms | ✅ |
+| Explorador: tema em círculo sobre o mapa | 129 · 7,0 · 118 ms | 109–110 · 13,9 · 174 ms | ❌ p95 e pico |
+
+- Com CPU normal tudo passa (p95 7 ms). Com 4×, o fps médio fica sempre acima de 84, mas o p95 passa de 12 ms.
+- **Picos de um quadro só:** o tema em círculo (167 a 188 ms) é a captura da página inteira pela View Transition mais o recálculo de todos os estilos com os tokens novos; a troca de página (111 ms) é montar a tela nova (HTML do esqueleto, depois o conteúdo) no mesmo quadro.
+- Ajustes propostos (decisão pendente, ver `docs/PROGRESSO.md`): (1) tema: trocar sem círculo quando o aparelho for lento (`navigator.hardwareConcurrency <= 4` ou um quadro lento medido na primeira troca) ou limitar a transição à área visível; (2) troca de página: montar o conteúdo final no quadro seguinte ao esqueleto (`requestAnimationFrame`) e usar `content-visibility: auto` nos blocos abaixo da dobra; (3) aceitar como meta 16,7 ms (60 Hz, a mesma do explorador acima), que todas as cenas, menos os dois picos, já cumprem.
+- `perf/explorer-fps.mjs` está desatualizado (procura o controle "Relevo", que saiu); a medição do explorador desta fase está em `fluidez.mjs`.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**

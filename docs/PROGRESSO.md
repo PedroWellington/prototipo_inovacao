@@ -9,9 +9,14 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 |---|---|---|---|
 | Redesign premium (prompt de 2026-11-16) | 0. Exame da arquitetura + extras 13.1 (barra de progresso da landing) e 13.2 (domínio) | ✅ | `bfff907`; relatório na conversa |
 | Redesign premium | 1. Bugs (painel sem corte, tooltip compacto) e holograma trocável | ✅ já feito antes (`643c96f`, `654da32`); `perf/overflow.mjs` passa em 8 larguras × 3 zooms depois do ajuste da barra superior em telas estreitas | `docs/HOLOGRAMA.md`; `build-holograma.py --autoteste` |
-| Redesign premium | 2. Design system claro/escuro, logo, mapa no escuro, botão de tema | 🔄 tema claro/escuro, tokens escuros e botão feitos na PARTE A (`b2244de`); **falta o mapa-base no escuro** (depende do provedor de tiles) | `frontend/public/theme.js`, `tokens.css`, `docs/visual/parte-a/escuro-*` |
-| Redesign premium | 3. Navegação (Visão geral · Explorar · Análises · Comparar · Dados e fontes) | ✅ na PARTE A (`b2244de`): pílula que desliza por baixo do texto; "Comparar" abre o ranking de cidades (não há tela própria) | `topbar.js`; `journey.mjs` |
-| Redesign premium | 4 a 9. Visão geral, explorador, páginas, comparar, tema em círculo, verificação | ⬜ **o prompt do redesign (Fases 4 a 9) não está no repositório**; só a transição em círculo do tema (Fase 7) foi feita na PARTE A | pedir o texto do prompt ou colocá-lo em `design/prompts/` |
+| Redesign premium | 2. Tokens claro/escuro (paleta pedida), mapa no escuro por `setPaintProperty`, botão de tema no login e onboarding, MARCA (aviso INPI) | ✅ | `4c76a9b`; o raster do OSM fica escurecido por pintura (mesmos tiles) |
+| Redesign premium | 3. Menu Visão geral · Análises · Comparar · Dados e fontes · Explorar, rotas próprias, explorador vivo | ✅ | `0e32533`; `journey.mjs` (28 passos) |
+| Redesign premium | 4. Visão geral com esqueleto, cascata e números que contam (`src/motion.js`, `components/page.js`) | ✅ | `9b4310e` |
+| Redesign premium | 5. Explorador ligado às páginas novas (detalhe completo, Editar critérios, critérios salvos recalculam) | ✅ | `2c55000` |
+| Redesign premium | 6. Detalhe do bairro, Editor de critérios, Minhas análises, Dados e fontes | ✅ | `6505af8`; `docs/visual/redesign/` |
+| Redesign premium | 7. Comparar cidades (tela própria, só cidades abertas, sem nota entre cidades) | ✅ | `e2a65ef` |
+| Redesign premium | 8. Tema em círculo nas telas novas, sem recriar o mapa; 6 capturas de movimento | ✅ | `1826db6`; `perf/record.mjs`; `docs/visual/movimento-*.webm` |
+| Redesign premium | 9. Verificação: axe 0 violações em 68 telas (4 perfis), journey 28/28, vitest 34/34, capturas | 🔄 **fluidez com CPU 4× não cumpre p95 ≤ 12 ms** em 5 de 6 cenas (picos no tema em círculo e na troca de página); proposta em `docs/PERFORMANCE.md`, espera a decisão do Pedro | `perf/fluidez.mjs` |
 | Landing e rolagem (PARTE A, 2026-11-16) | A1 a A12: progresso da esquerda para a direita, sem barra de rolagem, sem "Protótipo", tema na landing, textos novos, painel de produto (Conheça, Como funciona, Dados e fontes, Planos pagos, FAQ, rodapé legal), aviso legal fora do mapa, Comprar mais créditos, zoom ao bairro com holograma proporcional, menu Explorar | ✅ | `7704d8d`, `b2244de`, `917bdaa` e o commit seguinte; `docs/visual/parte-a/`; `docs/PERFORMANCE.md` (2026-11-16) |
 | Landing e rolagem | PARTE B: relatório em PDF + Google Maps | ⬜ espera a confirmação do Pedro (conta de faturamento e chave da API) | |
 | Redesign completo | 1. Paleta única (`shared/design-tokens.css`) | ✅ | `87e7a50`; `docs/visual/fase1-*` |
@@ -48,6 +53,10 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 - **Mapa-base:** `tile.openstreetmap.org` direto no MapLibre (`frontend/src/map/mapView.js`); precisa trocar antes de produção.
 
 ## Agora
+
+Redesign premium (prompt recuperado da conversa de 2026-11-16, 16:36): Fases 2 a 8 commitadas; Fase 9 parada na meta de fluidez com CPU 4× (ver `docs/PERFORMANCE.md`, "Redesign, Fase 9"). Próximo: Pedro escolhe o ajuste (círculo só em aparelho rápido, montar a página em dois quadros, ou meta de 16,7 ms) e a Fase 9 fecha.
+
+Antes:
 
 PARTE A (landing e rolagem) concluída e commitada em 2026-11-16. Próximo: PARTE B (relatório em PDF + Google Maps), só depois da confirmação do Pedro. Do redesign premium faltam o mapa-base no escuro (Fase 2) e as Fases 4 a 9, cujo prompt não está no repositório.
 
