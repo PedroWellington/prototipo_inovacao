@@ -47,6 +47,9 @@ def state(db: Session, user_id: int) -> dict:
     iso = lambda r: {**r, "unlocked_at": r["unlocked_at"].isoformat(), "expires_at": r["expires_at"].isoformat()}  # noqa: E731
     return {
         "balance": credits.balance(db, user_id),
+        # Créditos já gastos (soma dos débitos do extrato): a barra "usados / restantes" da Visão geral.
+        "used": int(db.execute(text("SELECT coalesce(-sum(delta), 0) FROM credit_ledger WHERE user_id = :u AND delta < 0"),
+                               {"u": user_id}).scalar()),
         "plan": PLAN,
         "rules": {k: cfg[k] for k in ("city_unlock_cost", "city_unlock_days", "city_search_cost", "city_search_days")},
         "cities": [iso(dict(r)) for r in cities],

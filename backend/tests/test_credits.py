@@ -36,7 +36,7 @@ def post(client, csrf, url, json=None):
 def test_signup_grants_one_free_city(client):
     csrf = fresh(client, "a@example.com")
     st = client.get("/api/credits").json()
-    assert st["balance"] == 1 and st["plan"] == "Gratuito"
+    assert st["balance"] == 1 and st["plan"] == "Gratuito" and st["used"] == 0
     assert st["rules"] == {"city_unlock_cost": 1, "city_unlock_days": 30, "city_search_cost": 1, "city_search_days": 30}
     assert st["cities"] == [] and st["searches"] == []
 
@@ -59,7 +59,7 @@ def test_without_balance_nothing_is_spent(client):
     assert r.status_code == 402 and r.json()["error"]["code"] == "no_credits"
     assert "restam 0" in r.json()["error"]["message"]
     st = client.get("/api/credits").json()
-    assert st["balance"] == 0 and [c["ibge"] for c in st["cities"]] == [RECIFE]
+    assert st["balance"] == 0 and st["used"] == 1 and [c["ibge"] for c in st["cities"]] == [RECIFE]
 
 
 def test_validity_is_30_days_then_charges_again(client):
