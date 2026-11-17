@@ -42,6 +42,8 @@ for (const [device, viewport, theme] of [['desktop', { width: 1440, height: 900 
     else await submit.click();
     await page.waitForTimeout(400);
   }
+  await page.waitForSelector('.tour.is-open .tour-card', { timeout: 15000 }); await page.waitForTimeout(400); await check(page, d('tutorial (passo 1)'));
+  await page.keyboard.press('Escape');
   await page.waitForSelector('[data-dashboard] .ov-hero'); await check(page, d('visão geral'));
   await page.goto(`${BASE}/app/#/analises`); await page.waitForSelector('.ov-analyses, .ov-empty-big'); await check(page, d('análises'));
   await page.goto(`${BASE}/app/#/dados`); await page.waitForSelector('.src-table'); await check(page, d('dados e fontes'));

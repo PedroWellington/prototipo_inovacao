@@ -14,6 +14,7 @@ const { csrf_token } = await (await setup.request.get(`${BASE}/api/auth/me`)).js
 const headers = { 'X-CSRF-Token': csrf_token };
 await setup.request.put(`${BASE}/api/profile`, { headers, data: { segment_key: 'farmacia', revenue_band: 'nao_informar', has_hq: true, hq_uf: 'PE', hq_municipality_ibge: RECIFE,
   criteria: [{ business_type_key: 'hospital', direction: 'attract', weight: 4 }, { business_type_key: 'clinica', direction: 'attract', weight: 3 }, { business_type_key: 'farmacia', direction: 'repel', weight: 2 }] } });
+await setup.request.post(`${BASE}/api/auth/tutorial`, { headers: headers }); // o tutorial tem teste próprio (journey.mjs)
 await setup.request.post(`${BASE}/api/credits/cities/${RECIFE}`, { headers });
 const ctx = await browser.newContext({ bypassCSP: true, viewport: { width: 1440, height: 900 }, storageState: await setup.storageState() });
 await setup.close();

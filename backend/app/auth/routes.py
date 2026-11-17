@@ -108,10 +108,20 @@ def me(user: CurrentUser = Depends(current_user), db: Session = Depends(get_db))
     completed = db.execute(
         text("SELECT onboarding_completed_at IS NOT NULL FROM business_profiles WHERE user_id = :u"), {"u": user.id}
     ).scalar()
+    tutorial = db.execute(text("SELECT tutorial_concluido_em FROM users WHERE id = :u"), {"u": user.id}).scalar()
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
         "csrf_token": user.csrf_token,
         "onboarding_completed": bool(completed),
+        "tutorial_done": tutorial is not None,
     }
+
+
+@router.post("/tutorial")
+def tutorial_done(user: CurrentUser = Depends(current_user), db: Session = Depends(get_db)):
+    """Tutorial concluído ou pulado: grava a data uma vez só (chamar de novo não muda a primeira)."""
+    db.execute(text("UPDATE users SET tutorial_concluido_em = coalesce(tutorial_concluido_em, now()) WHERE id = :u"), {"u": user.id})
+    db.commit()
+    return {"tutorial_done": True}

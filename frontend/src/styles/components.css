@@ -1595,3 +1595,82 @@ html.is-scrolled .topbar {
   content-visibility: auto;
   contain-intrinsic-size: auto 320px;
 }
+
+/* ---------- Tutorial de primeira vez (components/tutorial.js) ---------- */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+.tour-scrim {
+  position: absolute;
+  inset: 0;
+}
+/* O recorte: um único elemento que escurece o resto pela sombra (estática) e só se move por transform. */
+.tour-hole {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 14px;
+  box-shadow: 0 0 0 200vmax rgb(16 13 11 / 0.62);
+  pointer-events: none;
+  opacity: 0;
+  transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+}
+.tour-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(340px, calc(100vw - 32px));
+  padding: 18px 18px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+}
+.tour.is-open .tour-hole,
+.tour.is-open .tour-card {
+  opacity: 1;
+}
+.tour-step {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.tour-text {
+  margin: 0 0 14px;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+.tour-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+@media (max-width: 640px) {
+  .tour-card {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+    transform: none !important;
+  }
+  .tour-actions .btn {
+    min-height: 44px;
+    min-width: 96px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-hole,
+  .tour-card {
+    transition: none;
+  }
+}

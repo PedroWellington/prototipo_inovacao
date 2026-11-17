@@ -147,6 +147,17 @@ export async function render(root) {
     },
   });
 
+  // Tutorial: na primeira entrada da conta (o servidor guarda) ou sob demanda (#/home?tutorial=1, Minha conta).
+  const replay = new URLSearchParams(location.hash.split('?')[1] || '').get('tutorial') === '1';
+  if (replay) history.replaceState(null, '', '#/home');
+  if (replay || !user.tutorial_done)
+    root.addEventListener('page:ready', (e) => {
+      const credits = e.detail[1];
+      import('../components/tutorial.js').then(({ startTutorial }) =>
+        startTutorial({ days: credits.rules.city_unlock_days, replay, onDone: () => (user.tutorial_done = true) }),
+      );
+    }, { once: true });
+
   root.addEventListener('click', (e) => {
     const b = e.target.closest('[data-open-city], [data-open-search], [data-go]');
     if (!b) return;

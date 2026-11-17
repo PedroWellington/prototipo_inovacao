@@ -87,3 +87,23 @@ def test_export_and_delete_account(client):
     with engine.connect() as c:
         assert c.execute(text("SELECT count(*) FROM users")).scalar() == 0
         assert c.execute(text("SELECT count(*) FROM sessions")).scalar() == 0
+
+
+def test_tutorial_once_per_account_in_the_database(client):
+    register(client)
+    csrf = client.get("/api/auth/me").json()["csrf_token"]
+    assert client.get("/api/auth/me").json()["tutorial_done"] is False
+    assert client.post("/api/auth/tutorial").status_code == 403  # sem CSRF, como os outros POST
+    assert client.post("/api/auth/tutorial", headers={"X-CSRF-Token": csrf}).json() == {"tutorial_done": True}
+
+    from app.db import engine
+
+    with engine.connect() as c:
+        first = c.execute(text("SELECT tutorial_concluido_em FROM users")).scalar_one()
+    client.post("/api/auth/tutorial", headers={"X-CSRF-Token": csrf})  # de novo: a primeira data fica
+    with engine.connect() as c:
+        assert c.execute(text("SELECT tutorial_concluido_em FROM users")).scalar_one() == first
+    # Outra sessão (outro aparelho) já recebe concluído.
+    client.post("/api/auth/logout", headers={"X-CSRF-Token": csrf})
+    client.post("/api/auth/login", json={"email": USER["email"], "password": USER["password"]})
+    assert client.get("/api/auth/me").json()["tutorial_done"] is True

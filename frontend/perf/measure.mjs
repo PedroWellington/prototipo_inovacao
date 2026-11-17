@@ -56,6 +56,7 @@ execSync(`docker compose run --rm -T backend python -m app.credits grant --email
 });
 await ctx.request.post(`${BASE}/api/credits/cities/${RECIFE}`, { headers });
 await ctx.request.post(`${BASE}/api/credits/searches`, { headers, data: {} });
+await ctx.request.post(`${BASE}/api/auth/tutorial`, { headers: headers }); // o tutorial tem teste próprio (journey.mjs)
 
 // 2b) Tela inicial pós-login: LCP e CLS (carregamento completo)
 await page.goto('about:blank');

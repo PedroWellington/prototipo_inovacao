@@ -74,6 +74,28 @@ await step('onboarding (6 passos) -> tela inicial', async () => {
   }
   await page.waitForURL(/#\/home/, { timeout: 15000 });
 });
+await step('tutorial: aparece na primeira vez, 5 passos, foco no cartão, Próximo e Concluir gravam no servidor', async () => {
+  await page.waitForSelector('.tour.is-open .tour-card', { timeout: 15000 });
+  const first = await page.evaluate(() => ({ step: document.querySelector('#tourStep').textContent, modal: document.querySelector('.tour-card').getAttribute('aria-modal'), focus: document.activeElement?.hasAttribute('data-tour-next') }));
+  expect(first.step === '1 de 5' && first.modal === 'true' && first.focus, JSON.stringify(first));
+  await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => Boolean(document.activeElement?.closest('.tour-card'))), 'foco saiu do cartão');
+  for (let i = 0; i < 5; i++) { await page.click('[data-tour-next]'); await page.waitForTimeout(450); }
+  expect(!(await page.$('.tour')), 'tutorial não fechou no Concluir');
+  await page.waitForTimeout(400);
+  expect((await page.evaluate(async () => (await (await fetch('/api/auth/me')).json()).tutorial_done)) === true, 'servidor não gravou');
+});
+await step('tutorial: não volta ao recarregar nem ao trocar de aba; "Ver tutorial novamente" roda sem gravar', async () => {
+  await page.reload(); await page.waitForSelector('[data-cx]'); await page.waitForTimeout(900);
+  expect(!(await page.$('.tour')), 'voltou ao recarregar');
+  await page.click('.topnav [data-nav="analises"]'); await page.waitForSelector('[data-cx]');
+  await page.click('.topnav [data-nav="home"]'); await page.waitForSelector('[data-cx]'); await page.waitForTimeout(900);
+  expect(!(await page.$('.tour')), 'voltou ao trocar de aba');
+  await page.goto(`${BASE}/app/#/conta`); await page.click('a[href="#/home?tutorial=1"]');
+  await page.waitForSelector('.tour.is-open .tour-card', { timeout: 15000 });
+  await page.keyboard.press('Escape');
+  expect(!(await page.$('.tour')), 'Esc não fechou');
+});
 await step('tela inicial: logo volta para #/home e há "Conhecer a VICUS"', async () => {
   expect(await page.getAttribute('.logo-link', 'href') === '#/home', 'logo não aponta para #/home');
   expect(await page.getAttribute('.about-link', 'href') === '/', 'link da landing ausente');

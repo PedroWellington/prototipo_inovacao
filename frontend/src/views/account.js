@@ -21,6 +21,7 @@ export async function render(root) {
         </dl>
         <div class="card-actions">
           <a class="btn btn-secondary btn-sm" href="#/onboarding">${icon('edit', 16)} Editar critérios e perfil</a>
+          <a class="btn btn-ghost btn-sm" href="#/home?tutorial=1">${icon('info', 16)} Ver tutorial novamente</a>
           <button class="btn btn-ghost btn-sm" data-logout>${icon('logout', 16)} Sair</button>
         </div>
       </section>
