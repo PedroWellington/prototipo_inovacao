@@ -72,7 +72,8 @@ export function layout(anchor, area, w, h, lift) {
 export const setFor = (manifest, theme) => manifest.sets[theme] || manifest.sets.claro || Object.values(manifest.sets)[0];
 
 // ---------- Quadros: download preguiçoso e janela de decodificação ----------
-function createFrames(base) {
+// stride: baixa 1 a cada N quadros (hero da landing no celular); o giro desenha o mais próximo que chegou.
+function createFrames(base, stride = 1) {
   let meta = null;
   let set = null;
   let theme = 'claro';
@@ -95,7 +96,7 @@ function createFrames(base) {
     pending.clear();
     set = setFor(meta, theme);
     blobs = new Array(set.count);
-    const order = loadOrder(set.count);
+    const order = loadOrder(set.count).filter((i) => i % stride === 0);
     let next = 0;
     const worker = async () => {
       while (next < order.length && g === gen) {
@@ -175,8 +176,8 @@ function createFrames(base) {
 
 // ---------- Camada sobre o mapa ----------
 // host: elemento posicionado sobre o mapa. project(lngLat) -> {x, y}; area() -> {left, right, top, bottom}.
-export function createHologram(host, { project, area, base = `${import.meta.env.BASE_URL}holograma/` }) {
-  const frames = createFrames(base);
+export function createHologram(host, { project, area, base = `${import.meta.env.BASE_URL}holograma/`, stride = 1 }) {
+  const frames = createFrames(base, stride);
   // Media queries consultadas uma vez (chamar matchMedia por quadro custava ~37 ms a cada 3 transições, CPU 4x).
   const mqReduced = matchMedia('(prefers-reduced-motion: reduce)');
   const mqSmall = matchMedia('(max-width: 860px)');

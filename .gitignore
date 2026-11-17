@@ -44,3 +44,8 @@ design/holograma-360/
 
 # Referências visuais (imagens de layout com conteúdo de exemplo): só locais
 design/referencia/
+
+# Hero 360: origem (quadros, vídeo, prévia) fora do Git; só os textos de referência. A saída otimizada fica em frontend/public/hero-360/
+design/hero-360/*
+!design/hero-360/LEIA-ME.txt
+!design/hero-360/PROMPT-PARA-IA-VSCODE.md

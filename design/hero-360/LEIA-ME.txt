@@ -1,0 +1,14 @@
+VICUS — mapa visto de cima até loja holográfica
+
+360 frames consecutivos: vicus-transicao-000.png até vicus-transicao-359.png
+Formato: 1280 x 720 (16:9), RGB PNG, 60 frames/segundo, duração de 6 s.
+
+A sequência usa a captura do mapa da VICUS e a maquete já escolhida.
+A animação é uma demonstração 2.5D, não um mapa 3D georreferenciado real.
+
+No pacote para VS Code: abra index.html com Chrome para ver o vídeo e scrub.
+O vídeo e os arquivos WebP devem estar na mesma pasta que index.html.
+Os PNGs estão em ZIP separado para facilitar o transporte.
+
+Importante: para o produto final, manter os créditos do mapa, fontes e indicadores
+originais; a sequência é demonstração visual, não dado cartográfico novo.

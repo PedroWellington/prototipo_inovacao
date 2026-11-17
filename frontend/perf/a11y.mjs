@@ -26,6 +26,13 @@ for (const [device, viewport, theme] of [['desktop', { width: 1440, height: 900 
   const page = await ctx.newPage();
   const d = (n) => `${device}: ${n}`;
   await page.goto(`${BASE}/`, { waitUntil: 'load' }); await check(page, d('landing (topo)'));
+  // Textos do hero por cima do mapa real (docs/HERO-360.md): no meio do mergulho e no fim, com o holograma.
+  for (const [q, nome] of [[0.5, 'hero no mapa (capítulo 4)'], [0.97, 'hero no fim (holograma)']]) {
+    await page.waitForFunction(() => window.__hero && window.__hero.mode !== 'loading', null, { timeout: 90000 }).catch(() => {});
+    await page.evaluate((x) => { const st = document.getElementById('inicio'); scrollTo(0, st.offsetTop + x * (st.offsetHeight - innerHeight)); }, q);
+    await page.waitForTimeout(1500);
+    await check(page, d(`landing (${nome})`));
+  }
   await page.evaluate(() => scrollTo(0, document.getElementById('planos').offsetTop)); await check(page, d('landing (planos)'));
   await page.goto(`${BASE}/app/#/login`); await page.waitForSelector('#email'); await check(page, d('login'));
   await page.goto(`${BASE}/app/#/register`); await page.waitForSelector('#name'); await check(page, d('cadastro'));

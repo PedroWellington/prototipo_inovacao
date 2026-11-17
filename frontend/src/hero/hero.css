@@ -1,0 +1,23 @@
+/* Hero da landing (src/hero/main.js). O palco é sempre escuro: os tokens que o estilo do mapa (map/mapView.js) e o
+   holograma (styles/hologram.css) leem ficam definidos aqui, só neste elemento, com a paleta única que a landing
+   já carrega (shared/design-tokens.css). Nada vaza para o resto da página. O layout da camada fica em
+   landing/css/landing.css (precisa valer também sem JavaScript, com a imagem estática). */
+.hero-map {
+  --color-bg: var(--coal);
+  --map-line: color-mix(in srgb, var(--sand) 34%, transparent);
+  --color-selected: var(--copper-soft);
+  --color-accent: var(--copper);
+  --color-holo: var(--copper-soft); /* anel e feixe em cobre */
+  --color-surface: var(--coal-2);
+  --color-top: var(--coal-2);
+  --color-on-top: var(--paper);
+  --radius-sm: 8px;
+}
+.hero-map .maplibregl-ctrl-attrib {
+  font-size: 10px;
+  background: color-mix(in srgb, var(--coal) 72%, transparent);
+  color: var(--copper-soft);
+}
+.hero-map .maplibregl-ctrl-attrib a {
+  color: inherit;
+}

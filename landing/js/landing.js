@@ -20,9 +20,7 @@ const pill2 = { el: $('geoPill2'), text: $('geoPillText2') };
 const stepName = $('sceneName');
 const stepNumber = $('sceneNumber');
 const progressLine = $('progressLine');
-const reveal = $('storeReveal');
-const picture = $('storePicture');
-const backdrop = $('storeBackdrop');
+const heroEl = $('heroMap');
 const vignette = document.querySelector('.store-vignette');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -45,17 +43,20 @@ const RECIFE_PIN = world(-34.9, -8.055);
 // Zoom: spline cúbica monotônica em log(z) => velocidade contínua entre estágios (sem "para e anda").
 // Centro: dentro de cada trecho, avança na proporção de 1/z, o ponto de interesse vai sendo centralizado
 // enquanto a escala muda, sem cortes.
+// Linha do tempo ÚNICA do hero (0 a 1): o mapa em canvas e o mapa real (MapLibre) usam esta mesma câmera, então não há
+// enquadramento por capítulo nem salto entre eles. z (pixels por grau × fit) é monotônico: só cresce ao descer.
+// pitch em graus (o canvas aproxima com tilt = cos(pitch)); bear = giro do fim (só o mapa real); cy = altura do ponto.
 const KF = [
-  { p: 0, lon: -54.0, lat: -14.4, z: 15, tilt: 0.9, roll: -0.009, cx: 0.63, cy: 0.52 },
-  { p: 0.15, lon: -42.0, lat: -8.8, z: 24, tilt: 0.92, roll: -0.01, cx: 0.57, cy: 0.52 },
-  { p: 0.29, lon: -40.4, lat: -8.65, z: 52, tilt: 0.94, roll: -0.007, cx: 0.53, cy: 0.52 },
-  { p: 0.43, lon: -37.65, lat: -8.2, z: 135, tilt: 0.96, roll: -0.005, cx: 0.52, cy: 0.51 },
-  { p: 0.51, lon: -35.15, lat: -8.09, z: 650, tilt: 0.97, roll: -0.002, cx: 0.4, cy: 0.52 },
-  { p: 0.58, lon: -34.93, lat: -8.065, z: 1800, tilt: 0.99, roll: 0, cx: 0.5, cy: 0.52 },
-  { p: 0.7, lon: -34.904, lat: -8.09, z: 4800, tilt: 1, roll: 0, cx: 0.5, cy: 0.52 },
-  { p: 0.79, lon: -34.9, lat: -8.124, z: 12000, tilt: 1, roll: 0, cx: 0.5, cy: 0.52 },
-  { p: 0.87, lon: -34.899, lat: -8.124, z: 22800, tilt: 1, roll: 0, cx: 0.5, cy: 0.52 },
-  { p: 1, lon: -34.899, lat: -8.124, z: 22800, tilt: 1, roll: 0, cx: 0.5, cy: 0.52 },
+  { p: 0, lon: -54.0, lat: -14.4, z: 15, pitch: 25.8, roll: -0.009, bear: 0, cx: 0.63, cy: 0.52 },
+  { p: 0.15, lon: -42.0, lat: -8.8, z: 24, pitch: 23.1, roll: -0.01, bear: 0, cx: 0.57, cy: 0.52 },
+  { p: 0.29, lon: -40.4, lat: -8.65, z: 52, pitch: 19.9, roll: -0.007, bear: 0, cx: 0.53, cy: 0.52 },
+  { p: 0.43, lon: -37.65, lat: -8.2, z: 135, pitch: 16.3, roll: -0.005, bear: 0, cx: 0.52, cy: 0.51 },
+  { p: 0.51, lon: -35.15, lat: -8.09, z: 650, pitch: 14.1, roll: -0.002, bear: 0, cx: 0.4, cy: 0.52 },
+  { p: 0.58, lon: -34.93, lat: -8.065, z: 1800, pitch: 8.1, roll: 0, bear: 0, cx: 0.5, cy: 0.52 },
+  { p: 0.7, lon: -34.904, lat: -8.09, z: 4800, pitch: 0, roll: 0, bear: 0, cx: 0.5, cy: 0.52 },
+  { p: 0.79, lon: -34.9, lat: -8.124, z: 11000, pitch: 22, roll: 0, bear: -4, cx: 0.5, cy: 0.56 },
+  { p: 0.87, lon: -34.899, lat: -8.124, z: 16500, pitch: 50, roll: 0, bear: -12, cx: 0.5, cy: 0.62 },
+  { p: 1, lon: -34.899, lat: -8.124, z: 17500, pitch: 58, roll: 0, bear: -18, cx: 0.5, cy: 0.64 },
 ].map((k) => ({ ...k, w: world(k.lon, k.lat) }));
 
 // Interpolação de Hermite monotônica (Fritsch–Carlson): sem ultrapassar os keyframes.
@@ -75,26 +76,31 @@ export function pchip(xs, ys) {
 }
 const ps = KF.map((k) => k.p);
 const logZ = pchip(ps, KF.map((k) => Math.log(k.z)));
-const tiltF = pchip(ps, KF.map((k) => k.tilt));
+const pitchF = pchip(ps, KF.map((k) => k.pitch));
+const bearF = pchip(ps, KF.map((k) => k.bear));
 const rollF = pchip(ps, KF.map((k) => k.roll));
 const cxF = pchip(ps, KF.map((k) => k.cx));
+// Centro: uma curva só, suave na linha do tempo inteira, em função de -1/z (o centro anda na proporção da escala, como
+// antes), sem quebra de velocidade nos keyframes (antes cada trecho tinha a sua proporção e o centro "freava" na
+// fronteira, ex.: p = 0,15). z é estritamente crescente, então -1/z também: a interpolação é monotônica por trecho.
+const invZ = KF.map((k) => -1 / k.z);
+const centerX = pchip(invZ, KF.map((k) => k.w[0]));
+const centerY = pchip(invZ, KF.map((k) => k.w[1]));
 const cyF = pchip(ps, KF.map((k) => k.cy));
 
 const size = { w: 1, h: 1, dpr: 1, maxDpr: 1, mobile: false, fit: 1 };
-const cam = { ux: 0, uy: 0, s: 1, tilt: 1, roll: 0, cx: 0, cy: 0, co: 1, si: 0 };
+const cam = { ux: 0, uy: 0, s: 1, tilt: 1, roll: 0, pitch: 0, bear: 0, cx: 0, cy: 0, co: 1, si: 0 };
 const M = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
 function setCamera(p) {
-  let i = 0; while (i < KF.length - 2 && p > KF[i + 1].p) i++;
-  const a = KF[i], b = KF[i + 1];
   const z = Math.exp(logZ(p));
-  const u = Math.abs(Math.log(b.z / a.z)) > 0.05 ? clamp((1 / a.z - 1 / z) / (1 / a.z - 1 / b.z)) : ease(a.p, b.p, p);
-  cam.ux = mix(a.w[0], b.w[0], u);
-  cam.uy = mix(a.w[1], b.w[1], u);
+  cam.ux = centerX(-1 / z);
+  cam.uy = centerY(-1 / z);
   cam.s = (z * size.fit) / M_PER_DEG; // pixels por metro
-  cam.tilt = tiltF(p); cam.roll = rollF(p);
+  cam.pitch = pitchF(p); cam.tilt = Math.cos((cam.pitch * Math.PI) / 180); cam.roll = rollF(p); cam.bear = bearF(p);
   cam.cx = (size.mobile ? 0.5 : cxF(p)) * size.w;
-  cam.cy = (size.mobile ? 0.665 : cyF(p)) * size.h;
+  // Celular: o texto ocupa o meio da tela; no fim o ponto desce para o holograma caber acima dele.
+  cam.cy = (size.mobile ? 0.665 + 0.085 * easeIn(p, 0.79, 0.95) : cyF(p)) * size.h;
   cam.co = Math.cos(cam.roll); cam.si = Math.sin(cam.roll);
   // x' = cx + s(co·dx − si·dy);  y' = cy + tilt·s(si·dx + co·dy), já em pixels físicos (dpr)
   const k = size.dpr, s = cam.s;
@@ -102,7 +108,23 @@ function setCamera(p) {
   M.e = k * cam.cx - M.a * cam.ux - M.c * cam.uy;
   M.f = k * cam.cy - M.b * cam.ux - M.d * cam.uy;
 }
+// A mesma câmera, em termos do MapLibre (os dois usam Web Mercator: a conversão é exata, sem novo enquadramento).
+const unworld = (wx, wy) => [((wx + ORIGIN[0]) / R) * (180 / Math.PI), (2 * Math.atan(Math.exp((ORIGIN[1] - wy) / R)) - Math.PI / 2) * (180 / Math.PI)];
+const WORLD_M = 2 * Math.PI * R; // 40.075.016,7 m: largura do mundo no Web Mercator
+function mapView(p, w = size.w, h = size.h) {
+  setCamera(p);
+  const cx = (cam.cx / size.w) * w, cy = (cam.cy / size.h) * h;
+  return {
+    center: unworld(cam.ux, cam.uy),
+    zoom: Math.log2((cam.s * WORLD_M) / 512), // mesmos pixels por metro do canvas
+    pitch: cam.pitch,
+    bearing: (-cam.roll * 180) / Math.PI + cam.bear,
+    // O centro da câmera fica em (cx, cy) da tela, como no canvas.
+    padding: { left: Math.max(0, 2 * cx - w), right: Math.max(0, w - 2 * cx), top: Math.max(0, 2 * cy - h), bottom: Math.max(0, h - 2 * cy) },
+  };
+}
 function project(wx, wy) {
+  if (hero.mode === 'map') { const q = hero.api.project(unworld(wx, wy)); return [q.x, q.y]; } // rótulos seguem o mapa real
   const dx = wx - cam.ux, dy = wy - cam.uy;
   return [cam.cx + cam.s * (cam.co * dx - cam.si * dy), cam.cy + cam.tilt * cam.s * (cam.si * dx + cam.co * dy)];
 }
@@ -365,34 +387,48 @@ function atmosphere(p) {
   }
 }
 
+// Agenda única de opacidade das camadas (canvas e mapa real). A troca de geometria é só opacidade, na escala em que a
+// câmera já está; e a camada mãe continua como contexto até a filha ocupar a tela (antes, o Nordeste sumia enquanto
+// Pernambuco ainda era pequeno, e parecia que a escala recomeçava).
+function alphas(p) {
+  return {
+    estados: easeOut(p, 0.27, 0.36),
+    nordeste: easeIn(p, 0.09, 0.19) * easeOut(p, 0.42, 0.5),
+    pe: easeIn(p, 0.275, 0.36) * easeOut(p, 0.55, 0.63),
+    municipios: easeIn(p, 0.33, 0.43) * easeOut(p, 0.66, 0.74),
+    recife: easeIn(p, 0.405, 0.485) * easeOut(p, 0.66, 0.76),
+    bairros: easeIn(p, 0.56, 0.665),
+  };
+}
 function drawTerritory(p) {
   if (p > 0.925) return;
   const op = easeOut(p, 0.83, 0.925);
+  const A = alphas(p);
   atmosphere(p);
   const br = pick('brasil'), pe = pick('pe'), rec = pick('recife');
-  if (p < 0.39 && br) {
-    const a = op * easeOut(p, 0.14, 0.28);
+  if (A.estados > 0.002 && br) {
+    const a = op * A.estados;
     if (br.estados) {
       drawSolid(br.estados, a, { depth: 15, of: (f) => (NE.has(f.props.uf)
         ? { alpha: 0.98, top: C.ne, side: C.ufSide, border: C.ufBorder, depth: 15 }
         : { alpha: 0.78, top: C.ufs, side: C.ufSide, border: C.ufBorder, depth: 15 }) });
     } else drawSolid(br.brasil, a, { top: C.br, side: C.brSide, border: C.brBorder, depth: 21 });
   }
-  if (p > 0.09 && p < 0.52 && br) {
-    drawSolid(br.nordesteUFs || br.nordeste, op * easeIn(p, 0.09, 0.19) * easeOut(p, 0.275, 0.342),
+  if (A.nordeste > 0.002 && br) {
+    drawSolid(br.nordesteUFs || br.nordeste, op * A.nordeste,
       { top: C.nordeste, side: C.nordesteSide, border: C.nordesteBorder, depth: 18, highlight: p > 0.16 && p < 0.35, outline: br.nordeste?.mesh });
   }
-  if (p > 0.33 && pe) drawFlat(pe.municipios, op * easeIn(p, 0.33, 0.43)); // vizinhos: a câmera nunca fica no vazio
-  if (p > 0.275 && p < 0.66 && pe) {
-    drawSolid(pe.pernambuco, op * easeIn(p, 0.275, 0.36) * easeOut(p, 0.407, 0.475),
+  if (A.municipios > 0.002 && pe) drawFlat(pe.municipios, op * A.municipios); // vizinhos: a câmera nunca fica no vazio
+  if (A.pe > 0.002 && pe) {
+    drawSolid(pe.pernambuco, op * A.pe,
       { top: C.pe, side: C.peSide, border: C.peBorder, depth: 19, highlight: p > 0.35 && p < 0.54 });
   }
-  if (p > 0.45 && p < 0.82 && rec) {
-    drawSolid(rec.cidade, op * easeIn(p, 0.405, 0.485) * easeOut(p, 0.61, 0.745),
+  if (A.recife > 0.002 && rec) {
+    drawSolid(rec.cidade, op * A.recife,
       { top: C.recife, side: C.recifeSide, border: C.recifeBorder, depth: 12 });
   }
   if (p > 0.55 && rec?.bairros) {
-    const a = op * easeIn(p, 0.56, 0.665), rise = easeIn(p, 0.66, 0.8);
+    const a = op * A.bairros, rise = easeIn(p, 0.66, 0.8);
     const name = focus?.props.name;
     drawSolid(rec.bairros, a, { depth: 3, of: (f) => {
       const isFocus = name ? f.props.name === name : f === focus;
@@ -425,24 +461,59 @@ function updatePill(pill, text, [wx, wy], opacity, [ox, oy]) {
 }
 const SCENE_BORDERS = [0.15, 0.29, 0.43, 0.57, 0.7, 0.81, 0.91];
 const SCENE_LABELS = ['BRASIL', 'NORDESTE', 'PERNAMBUCO', 'RECIFE', 'BAIRROS', 'AMPLIANDO O BAIRRO', 'A LOJA SURGE', 'SUA DECISÃO'];
-let mouseX = 0, mouseY = 0, sceneIdx = -1;
-const store = { D: 0, picW: 0, picH: 0 };
-
-function updateStore(p) {
-  // A loja nasce no ponto do bairro e cresce: círculo de máscara fixa, só transform e opacity (compositor).
-  const k = easeIn(p, 0.795, 0.965);
-  put(backdrop, 'opacity', (k * 0.95).toFixed(3));
-  put(vignette, 'opacity', (k * 0.8).toFixed(3));
-  put(reveal, 'visibility', k > 0.002 ? 'visible' : 'hidden');
-  if (k <= 0.002) return;
-  put(reveal, 'opacity', easeIn(p, 0.807, 0.878).toFixed(3));
-  const [mx, my] = project(DEST[0], DEST[1]);
-  const half = store.D / 2;
-  put(reveal, 'transform', `translate3d(${(mx - half).toFixed(1)}px,${(my - half).toFixed(1)}px,0) scale(${k.toFixed(4)})`);
-  const m = mix(1.48, 1.015, k), tx = mouseX * 0.13 * k, ty = mouseY * 0.09 * k;
-  // Composição: escala m em torno do marcador + paralaxe, compensando a escala k do círculo.
-  const bx = half + (tx - m * mx) / k, by = half + (ty - m * my) / k;
-  put(picture, 'transform', `translate3d(${bx.toFixed(1)}px,${by.toFixed(1)}px,0) scale(${(m / k).toFixed(4)})`);
+let sceneIdx = -1;
+// --- O mapa real da plataforma no hero inteiro (frontend/src/hero/main.js; docs/HERO-360.md) ----------------------
+// Assim que fica pronto, o mesmo motor do explorador (MapLibre + tiles do OSM + malhas do IBGE + holograma) assume o
+// palco com a MESMA câmera da linha do tempo (mapView): o mapa em canvas só desenha até lá e durante o fade de entrada.
+// Reserva estática (último enquadramento): só com movimento reduzido, conexão ruim ou falha ao carregar.
+const FOCUS = { name: 'Boa Viagem', lngLat: [-34.899, -8.124] }; // ponto ilustrativo (o mesmo DEST), sem recomendação
+const HANDOFF_MS = 450; // fade de entrada do mapa real (por tempo, só opacidade): o canvas continua desenhando por baixo
+const conn = navigator.connection;
+const forced = new URLSearchParams(location.search).get('hero'); // ?hero=estatico: conferir a reserva
+const hero = { mode: 'loading', api: null, why: '', stillReady: false, since: 0 };
+window.__hero = hero; // leitura para os testes (frontend/perf/hero-360*.mjs): caminho, progresso e a câmera da linha do tempo
+hero.viewAt = (p) => mapView(p);
+function useStill(why) {
+  if (hero.mode === 'still') return;
+  Object.assign(hero, { mode: 'still', why });
+  heroEl.classList.add('is-still');
+  const img = heroEl.querySelector('.hero-map-still');
+  img.hidden = false;
+  img.addEventListener('load', () => { hero.stillReady = true; dirty = true; requestFrame(); }, { once: true });
+  img.src = img.dataset.src;
+}
+function webgl() {
+  try { return Boolean(document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl')); } catch { return false; }
+}
+async function startHero() {
+  const slowNet = Boolean(conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || '')));
+  if (forced === 'estatico' || slowNet || !webgl()) return useStill(forced === 'estatico' ? 'forçado pela URL' : slowNet ? 'conexão lenta' : 'sem WebGL');
+  try {
+    const timeout = new Promise((_, no) => setTimeout(() => no(new Error('tempo esgotado')), 30000));
+    const [{ createHeroMap }, brasil, pe, recife] = await Promise.race([
+      Promise.all([import('/app/hero/hero.js'), fetchJSON('data/brasil-1.json'), fetchJSON('data/pe-2.json'), fetchJSON('data/recife-2.json')]), timeout]);
+    const colors = { ne: C.ne, ufs: C.ufs, nordeste: C.nordeste, pe: C.pe, recife: C.recife, focus: C.focus, focusBorder: C.focusBorder, palette: PALETTE,
+      border: { estados: C.ufBorder, nordeste: C.nordesteBorder, municipios: C.flatMesh, pe: C.peBorder, recife: C.recifeBorder, bairros: C.hoodBorder } };
+    const viewAt = (p) => mapView(p);
+    hero.api = await Promise.race([createHeroMap(heroEl, { topos: { brasil, pe, recife }, focus: FOCUS, colors, mobile: size.mobile, viewAt, alphasAt: alphas }), timeout]);
+    Object.assign(hero, { mode: 'map', since: performance.now() });
+    heroEl.classList.add('is-live');
+    dirty = true;
+    requestFrame();
+  } catch (e) {
+    console.warn('[VICUS hero] mapa indisponível; imagem estática.', e);
+    useStill('o mapa não carregou');
+  }
+}
+const handingOff = () => hero.mode === 'map' && performance.now() - hero.since < HANDOFF_MS;
+// Opacidade do palco do mapa real: inteiro quando pronto; na reserva estática, só no fim (o canvas faz o caminho).
+const heroAlpha = (p) => (hero.mode === 'map' ? 1 : hero.mode === 'still' && hero.stillReady ? easeIn(p, 0.8, 0.86) : 0);
+const holoRise = (p) => easeIn(p, 0.8, 0.93); // o holograma entra no fim, acompanhando a inclinação
+function updateHero(p, a) {
+  put(heroEl, 'opacity', a.toFixed(3));
+  put(heroEl, 'visibility', a > 0.002 ? 'visible' : 'hidden');
+  put(vignette, 'opacity', (0.8 * Math.max(easeIn(p, 0.72, 0.82) * (hero.mode === 'map' ? 1 : 0), hero.mode === 'still' ? a : 0)).toFixed(3));
+  if (hero.mode === 'map') hero.api.render({ ...mapView(p), alphas: alphas(p), rise: holoRise(p) });
 }
 function updateChapters(p) {
   chapters.forEach((el, i) => {
@@ -462,16 +533,25 @@ function updateChapters(p) {
 }
 
 function render(p) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hero.p = p;
+  const a = reduced ? 0 : heroAlpha(p);
   setCamera(p);
-  drawTerritory(p);
-  if (reduced) return; // versão estática: textos e loja ficam no fluxo normal (CSS)
+  if (a < 1 || handingOff()) { // com o mapa real cobrindo a tela, o canvas não precisa ser desenhado
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawTerritory(p);
+    if (handingOff()) requestFrame(); // continua até o fade de entrada terminar
+  }
+  if (reduced) { // versão estática: textos e a cena (enquadramento final, holograma parado) no fluxo normal (CSS)
+    if (hero.mode === 'map') hero.api.render({ ...mapView(1, heroEl.clientWidth, heroEl.clientHeight), alphas: alphas(1), rise: 1 });
+    return;
+  }
+  const hide = hero.mode === 'still' ? 1 - a : 1; // na reserva estática, os rótulos do canvas somem quando a imagem entra
   if (p < 0.29) updatePill(pill1, p < 0.14 ? 'Brasil' : 'Nordeste', p < 0.14 ? world(-54, -10) : world(-40.2, -6.4), easeOut(p, 0.27, 0.33) * easeOut(p, 0.75, 0.85), [24, -40]);
-  else if (p < 0.59) updatePill(pill1, p < 0.43 ? 'Pernambuco' : 'Recife · PE · exemplo', p < 0.43 ? world(-38.2, -8.2) : world(-34.91, -8.065), easeIn(p, 0.27, 0.32) * easeOut(p, 0.57, 0.63), [20, -35]);
-  else updatePill(pill1, 'Recife · PE · exemplo', DEST, easeIn(p, 0.59, 0.66) * easeOut(p, 0.74, 0.8), [25, -45]);
-  updatePill(pill2, pill2.official ? 'Boa Viagem · Recife' : 'Bairros · composição ilustrativa', DEST, easeIn(p, 0.68, 0.74) * easeOut(p, 0.79, 0.83), [-20, 45]);
-  updateStore(p);
+  else if (p < 0.59) updatePill(pill1, p < 0.43 ? 'Pernambuco' : 'Recife · PE · exemplo', p < 0.43 ? world(-38.2, -8.2) : world(-34.91, -8.065), easeIn(p, 0.27, 0.32) * easeOut(p, 0.57, 0.63) * hide, [20, -35]);
+  else updatePill(pill1, 'Recife · PE · exemplo', DEST, easeIn(p, 0.59, 0.66) * easeOut(p, 0.74, 0.8) * hide, [25, -45]);
+  updatePill(pill2, pill2.official ? 'Boa Viagem · Recife' : 'Bairros · composição ilustrativa', DEST, easeIn(p, 0.68, 0.74) * easeOut(p, 0.79, 0.83) * hide, [-20, 45]);
+  updateHero(p, a);
   const idx = (() => { const i = SCENE_BORDERS.findIndex((b) => p < b); return i < 0 ? 7 : i; })();
   if (idx !== sceneIdx) {
     sceneIdx = idx;
@@ -546,14 +626,7 @@ function resize() {
   ctx.lineJoin = 'round'; // (redimensionar o canvas zera o estado) cantos em ponta viram "espinhos" nos traços largos
   storyTop = story.getBoundingClientRect().top + scrollY;
   storyRange = Math.max(1, story.offsetHeight - innerHeight);
-  if (!reduced) {
-    // Círculo da loja: cobre o canto mais distante do marcador com folga (raio = 1,6 × essa distância).
-    const fx = 0.5, fy = size.mobile ? 0.665 : 0.52;
-    store.D = Math.ceil(2 * 1.6 * Math.hypot(Math.max(fx, 1 - fx) * size.w, Math.max(fy, 1 - fy) * size.h));
-    reveal.style.width = reveal.style.height = `${store.D}px`;
-    picture.style.width = `${size.w}px`; picture.style.height = `${size.h}px`;
-    for (const el of [reveal, picture]) delete el._v_transform;
-  }
+  hero.api?.resize(); // recalcula a câmera no tamanho novo, sem recarregar o mapa
   dirty = true;
   drawMiniMap();
   readScroll();
@@ -598,15 +671,11 @@ for (const a of document.querySelectorAll('[data-app-route]')) a.href = APP_URL 
 new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) { dirty = true; readScroll(); } }).observe(story);
 addEventListener('scroll', readScroll, { passive: true });
 addEventListener('resize', () => { size.maxDpr = 0; resize(); }, { passive: true });
-$('stage').addEventListener('pointermove', (e) => {
-  if (e.pointerType === 'touch' || reduced) return;
-  mouseX = clamp((e.clientX / size.w - 0.5) * 25, -12, 12);
-  mouseY = clamp((e.clientY / size.h - 0.5) * 19, -10, 10);
-  if (current > 0.79) { dirty = true; requestFrame(); }
-}, { passive: true });
-$('storeImg').decode?.().catch(() => {}); // decodifica fora do caminho crítico; o reveal começa bem depois
 resize();
 loadGeo();
+// O motor do mapa (~230 KB comprimidos) só vem depois que a landing carregou, no ocioso: o topo nunca espera por ele.
+const idleStart = () => (window.requestIdleCallback || ((f) => setTimeout(f, 600)))(startHero, { timeout: 3000 });
+if (document.readyState === 'complete') idleStart(); else addEventListener('load', idleStart, { once: true });
 
 // --- Painel de produto: revelação em cascata, números que contam e fontes reais (GET /api/catalog/sources) ---
 const io = new IntersectionObserver((entries) => {

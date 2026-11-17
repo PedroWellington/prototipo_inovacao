@@ -231,6 +231,24 @@ Medição com CPU 4×, janela visível (GPU de verdade; `HEADLESS=0 node perf/fl
 
 **Depois do tutorial e do assistente (2026-11-17).** Mesma medição (CPU 4×, janela visível): troca de página 109 fps · p95 14,0 · máx. 97 ms; rolagem 141 · 7,1; tema 138 · 7,1; detalhe 133 · 7,1; FLIP 140 · 7,1; tema sobre o mapa 133 · 7,4. Cinco de seis cenas dentro da meta; a troca de página fica um quadro de 144 Hz acima, com o pico de pintura já registrado. O assistente desligado não carrega nada (o módulo só é baixado com a flag ligada); o tutorial só existe na primeira entrada.
 
+**Hero com o mapa real (branch `hero-360`, 2026-11-17; docs/HERO-360.md).** Referência: **60 Hz** (decisão do Pedro, 2026-11-17): a meta é ≥ 55 fps e trabalho por quadro p95 ≤ 16,7 ms (o orçamento de um quadro a 60 Hz), também com CPU 4× mais lenta. Esta máquina tem tela de **144 Hz**: o intervalo entre quadros chega em degraus de 6,9 ms, então um quadro de 15 ms aparece como 20,8 ms; a coluna "acima de 7 ms" mostra quantos quadros perdem a batida numa tela de 144 Hz.
+
+`frontend/perf/hero-360.mjs`, Edge com janela visível, roda do mouse pelo hero inteiro (do Brasil ao holograma) e de volta:
+
+| Tela | CPU | fps | trabalho p95 | p95 do intervalo | acima de 7 ms | tiles carregando | holograma completo | pronto | 60 Hz |
+|---|---|---|---|---|---|---|---|---|---|
+| desktop | 1× | 142,2 | 2,9 ms | 7,0 ms | 0,7% | 23/140 | 360/360 | 4,2 s | ✅ |
+| desktop | 4× | 93,1 | 14,9 ms | 20,8 ms | 41,3% | 49/140 | 360/360 | 5,7 s | ✅ |
+| celular | 1× | 142,5 | 2,4 ms | 7,0 ms | 0,5% | 11/140 | 120/120 | 4,0 s | ✅ |
+| celular | 4× | 100,3 | 12,0 ms | 14,0 ms | 36,6% | 26/140 | 120/120 | 5,1 s | ✅ |
+
+- Cumpre a meta de 60 Hz em todos os perfis. Em tela de 144 Hz, com CPU 4×, 37 a 41% dos quadros passam de 7 ms (perdem uma batida); com CPU normal, menos de 1%.
+- "Tiles carregando" = passos da rolagem em que algum tile do nível novo ainda chegava. Não é tile cinza: o MapLibre mantém o tile do nível anterior até o novo chegar, e o fundo é o grafite do palco (conferido em capturas no meio do movimento). "Pronto" = do carregamento da página até o mapa real assumir, com os tiles de 14 pontos do caminho e os quadros do holograma pré-carregados; até lá o mapa em canvas mostra a mesma câmera.
+- O que mais custou e o que foi feito: (1) desenho por tile com a inclinação: tiles raster pintados como 512 px (~4× menos tiles); (2) recorte das malhas do IBGE a cada nível de zoom: camada com opacidade zero vira `visibility: none` e cada fonte tem `maxzoom` na escala em que aparece (desktop 4×: 81 → 93 fps, trabalho p95 17,5 → 14,9 ms).
+- Perfil de CPU (CDP Profiler, rolagem com CPU 4×, só a parte inclinada): 67% desenho nativo (WebGL, composição), 29% MapLibre (custo por tile), 3% landing, 1% holograma.
+- Continuidade (`frontend/perf/hero-360-continuidade.mjs`): zoom monotônico em 2.000 amostras (3,5 → 13,7 no desktop); nenhum degrau entre amostras vizinhas; nas fronteiras de capítulo, atravessar a fronteira muda o mesmo que um trecho igual ao lado (razão 1,01); o zoom do mapa real é o da linha do tempo (erro 0).
+- Memória (todos os processos do Edge do teste): 0,6 a 1,0 GB, abaixo da landing atual (1,0 a 1,2 GB).
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**
