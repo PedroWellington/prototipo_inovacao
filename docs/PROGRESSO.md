@@ -19,6 +19,9 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Redesign premium | 9. Verificação: axe 0 violações em 68 telas, journey 28/28, vitest 34/34, capturas; fluidez com CPU 4× | ✅ fechada em 2026-11-17: opções 1 e 2 aplicadas e o pico real do tema (mapa vivo em segundo plano) corrigido; sobra um quadro de pintura na troca de página, registrado | `docs/PERFORMANCE.md`, "Fase 9 fechada"; `perf/fluidez.mjs` |
 | Sem cara de IA (2026-11-16) | A1–A5 em todas as telas (acento chapado, número herói, uma métrica dominante, sombra só no que flutua, cabeçalho que informa + forma do número) | ✅ | `65ed2e3`, `bf038e8`; `docs/visual/sem-cara-de-ia/` (antes/depois, dois temas) |
 | Zoom do bairro | Zoom fixo `HOLO_ZOOM = 14.5` (em `map/hologram.js`) no ponto na superfície; holograma sempre do mesmo tamanho | ✅ | `4162b6f` |
+| Tutorial de primeira vez (2026-11-17) | 5 passos, uma vez por conta (`users.tutorial_concluido_em`, migração 0011), Pular/Próximo/Esc, foco preso, barra inferior no celular, "Ver tutorial novamente" em Minha conta | ✅ | `84d6b66`; `journey.mjs` (30/30) |
+| Assistente de IA (2026-11-17) | Botão flutuante e painel (sobrevive à troca de aba), `/api/assistente` com contexto real montado no servidor, regras conferidas na resposta, limites por conta e IP, `AI_ASSISTANT_ENABLED=false` por padrão | ✅ código; ⬜ chave do Groq na Vercel | `32901d3`; `docs/ASSISTENTE-IA.md`; `tests/test_assistant.py` |
+| Capturas leves | `docs/visual` de 23,5 MB para 9,2 MB (WebP e gravações reencodadas), nada apagado | ✅ | `f86932e` |
 | Landing e rolagem (PARTE A, 2026-11-16) | A1 a A12: progresso da esquerda para a direita, sem barra de rolagem, sem "Protótipo", tema na landing, textos novos, painel de produto (Conheça, Como funciona, Dados e fontes, Planos pagos, FAQ, rodapé legal), aviso legal fora do mapa, Comprar mais créditos, zoom ao bairro com holograma proporcional, menu Explorar | ✅ | `7704d8d`, `b2244de`, `917bdaa` e o commit seguinte; `docs/visual/parte-a/`; `docs/PERFORMANCE.md` (2026-11-16) |
 | Landing e rolagem | PARTE B: relatório em PDF + Google Maps | ⬜ espera a confirmação do Pedro (conta de faturamento e chave da API) | |
 | Redesign completo | 1. Paleta única (`shared/design-tokens.css`) | ✅ | `87e7a50`; `docs/visual/fase1-*` |
@@ -77,6 +80,8 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 - Build do Compose no Docker Desktop 29 (Compose v5) falha com "failed to execute bake" neste Windows; as imagens foram construídas com `docker build` direto e `docker compose up -d --no-build`.
 
 ## Decisões que dependem do Pedro
+
+- Ligar o assistente: `GROQ_API_KEY` e `AI_ASSISTANT_ENABLED=true` na Vercel (passo a passo em `docs/ASSISTENTE-IA.md`).
 
 - Criar os projetos Neon (`vicus-dados`, `vicus-contas`, São Paulo) e o projeto Vercel; carregar os bancos (`docs/DEPLOY.md`).
 - Mapa-base em produção: o servidor público do OSM não cobre produção; escolher MapTiler, Stadia ou PMTiles próprio antes de divulgar.

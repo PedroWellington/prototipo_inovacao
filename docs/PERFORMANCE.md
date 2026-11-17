@@ -229,6 +229,8 @@ Medição com CPU 4×, janela visível (GPU de verdade; `HEADLESS=0 node perf/fl
 - **O que sobra:** na troca de página, um quadro de ~106 ms sem script nem estilo (só pintura), no primeiro clique depois de ligar o freio; a atribuição por página não o repete. No modo headless (pintura por software), a rolagem e o detalhe oscilam entre 7 e 14 ms de p95 entre rodadas.
 - Fase encerrada com esses dois pontos registrados. Se precisar ir além: pré-pintar a Visão geral no ocioso ou reduzir a arte do herói.
 
+**Depois do tutorial e do assistente (2026-11-17).** Mesma medição (CPU 4×, janela visível): troca de página 109 fps · p95 14,0 · máx. 97 ms; rolagem 141 · 7,1; tema 138 · 7,1; detalhe 133 · 7,1; FLIP 140 · 7,1; tema sobre o mapa 133 · 7,4. Cinco de seis cenas dentro da meta; a troca de página fica um quadro de 144 Hz acima, com o pico de pintura já registrado. O assistente desligado não carrega nada (o módulo só é baixado com a flag ligada); o tutorial só existe na primeira entrada.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**
