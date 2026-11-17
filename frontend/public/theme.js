@@ -15,7 +15,7 @@
     root.dataset.theme = t;
     root.style.colorScheme = t;
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = t === 'dark' ? '#14191d' : '#20272d';
+    if (meta) meta.content = t === 'dark' ? '#181512' : '#20272d';
     root.dispatchEvent(new CustomEvent('themechange', { detail: t }));
   }
   apply(current());
