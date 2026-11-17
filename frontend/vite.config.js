@@ -51,6 +51,16 @@ export default defineConfig({
     sourcemap: false,
     // MapLibre (~800 KB) em chunk próprio: só carrega no explorador e não invalida o cache quando o app muda.
     chunkSizeWarningLimit: 900,
-    rollupOptions: { output: { manualChunks: { maplibre: ['maplibre-gl'] } } },
+    rollupOptions: {
+      // Segunda entrada: o hero da landing (src/hero/main.js) com o mesmo motor do explorador. Caminho estável
+      // (/app/hero/hero.js, sem cache longo; o CSS vai embutido) porque a landing estática o importa pelo nome; o resto
+      // (MapLibre, mapView, hologram) sai nos mesmos chunks com hash do app.
+      input: { main: resolve('index.html'), hero: resolve('src/hero/main.js') },
+      preserveEntrySignatures: 'exports-only',
+      output: {
+        manualChunks: { maplibre: ['maplibre-gl'] },
+        entryFileNames: (c) => (c.name === 'hero' ? 'hero/hero.js' : 'assets/[name]-[hash].js'),
+      },
+    },
   },
 });

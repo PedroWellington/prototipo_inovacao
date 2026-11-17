@@ -17,9 +17,11 @@ const ALL_LAYERS = Object.values(LEVEL_LAYERS).flat();
 const PAD = 48;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+// Tokens e tema lidos de um elemento (padrão: <html>). O hero da landing passa o próprio palco, que é sempre escuro
+// e define os tokens do mapa (frontend/src/hero/hero.css); o explorador continua lendo de <html>.
+const css = (name, el = document.documentElement) => getComputedStyle(el).getPropertyValue(name).trim();
 
-function baseStyle() {
+export function baseStyle(el) {
   return {
     version: 8,
     sources: {
@@ -33,43 +35,43 @@ function baseStyle() {
       },
     },
     layers: [
-      { id: 'bg', type: 'background', paint: { 'background-color': css('--color-bg') } },
+      { id: 'bg', type: 'background', paint: { 'background-color': css('--color-bg', el) } },
       { id: 'osm', type: 'raster', source: 'osm', // Sem fade de entrada: na inclinação, tiles novos com fade obrigavam a desenhar duas camadas por quadro.
-        paint: { ...themePaints().osm, 'raster-fade-duration': 0 } },
+        paint: { ...themePaints(el).osm, 'raster-fade-duration': 0 } },
     ],
   };
 }
 
 const hover = (on, off) => ['case', ['boolean', ['feature-state', 'hover'], false], on, off];
-const dark = () => document.documentElement.dataset.theme === 'dark';
+const dark = (el = document.documentElement) => (el.closest('[data-theme]') || document.documentElement).dataset.theme === 'dark';
 
 // Cores que dependem do tema (tokens), por camada. Usadas ao criar as camadas e reaplicadas na troca de tema
 // com setPaintProperty: instantâneo, mesmos tiles, mesma fonte. Os mesmos layers nos dois temas.
-function themePaints() {
-  const accent = css('--color-accent');
-  const text = css('--color-text');
-  const line = css('--map-line');
-  const stops = [1, 2, 3, 4, 5].map((i) => css(`--score-${i}`));
+export function themePaints(el) {
+  const accent = css('--color-accent', el);
+  const text = css('--color-text', el);
+  const line = css('--map-line', el);
+  const stops = [1, 2, 3, 4, 5].map((i) => css(`--score-${i}`, el));
   const scoreFill = [
     'case',
     ['==', ['typeof', ['feature-state', 'score']], 'number'],
     ['interpolate', ['linear'], ['feature-state', 'score'], 0, stops[0], 25, stops[1], 50, stops[2], 75, stops[3], 100, stops[4]],
-    css('--score-none'),
+    css('--score-none', el),
   ];
   return {
-    bg: { 'background-color': css('--color-bg') },
+    bg: { 'background-color': css('--color-bg', el) },
     // Escuro: mapa-base raster escurecido e sem cor (só pintura; nada é recarregado).
-    osm: dark()
+    osm: dark(el)
       ? { 'raster-saturation': -1, 'raster-brightness-max': 0.4, 'raster-brightness-min': 0.05, 'raster-contrast': -0.15, 'raster-opacity': 0.9 }
       : { 'raster-saturation': -0.85, 'raster-brightness-max': 1, 'raster-brightness-min': 0, 'raster-contrast': -0.05, 'raster-opacity': 0.85 },
     'regions-fill': { 'fill-color': accent },
     'regions-line': { 'line-color': accent },
     'states-fill': { 'fill-color': accent },
     'states-line': { 'line-color': accent },
-    'munis-fill': { 'fill-color': ['case', ['boolean', ['feature-state', 'hasData'], false], accent, css('--color-text-subtle')] },
-    'munis-line': { 'line-color': css('--color-border-strong') },
+    'munis-fill': { 'fill-color': ['case', ['boolean', ['feature-state', 'hasData'], false], accent, css('--color-text-subtle', el)] },
+    'munis-line': { 'line-color': css('--color-border-strong', el) },
     'hoods-fill': { 'fill-color': scoreFill },
-    'hoods-line': { 'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], css('--color-selected'), line] },
+    'hoods-line': { 'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], css('--color-selected', el), line] },
     'cities-fill': { 'fill-color': scoreFill },
     'cities-line': { 'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], text, line] },
   };

@@ -231,6 +231,20 @@ Medição com CPU 4×, janela visível (GPU de verdade; `HEADLESS=0 node perf/fl
 
 **Depois do tutorial e do assistente (2026-11-17).** Mesma medição (CPU 4×, janela visível): troca de página 109 fps · p95 14,0 · máx. 97 ms; rolagem 141 · 7,1; tema 138 · 7,1; detalhe 133 · 7,1; FLIP 140 · 7,1; tema sobre o mapa 133 · 7,4. Cinco de seis cenas dentro da meta; a troca de página fica um quadro de 144 Hz acima, com o pico de pintura já registrado. O assistente desligado não carrega nada (o módulo só é baixado com a flag ligada); o tutorial só existe na primeira entrada.
 
+**Hero com o mapa real (branch `hero-360`, 2026-11-17; docs/HERO-360.md).** `frontend/perf/hero-360.mjs`, Edge com janela visível, roda do mouse, só o trecho do mapa real (`DE=0.62`, até o fim e de volta):
+
+| Tela | CPU | fps | p95 do quadro | pior quadro | trabalho p95 | tiles faltando | holograma completo | pronto |
+|---|---|---|---|---|---|---|---|---|
+| desktop | 1× | 143,4 | 7,0 ms ✅ | 48,6 ms | 2,8 ms | 2/140 | 360/360 | 1,4 s |
+| desktop | 4× | 103,0 | 20,7 ms ❌ | 97,3 ms | 11,8 ms | 7/140 | 360/360 | 3,7 s |
+| celular | 1× | 143,1 | 7,0 ms ✅ | 69,4 ms | 2,2 ms | 0/140 | 120/120 | 1,3 s |
+| celular | 4× | 119,8 | 13,9 ms ❌ | 34,7 ms | 8,6 ms | 0/140 | 120/120 | 2,2 s |
+
+- Meta não cumprida com CPU 4×. Perfil de CPU da rolagem (4×): 67% desenho nativo (WebGL, composição), 29% MapLibre (custo por tile: matrizes, cobertura, desenho), 3% landing, 1% holograma.
+- Tiles raster como 512 px no hero: desktop 4× de 87,5 para 103 fps, trabalho p95 de 13,8 para 11,8 ms. Pitch 50° em vez de 58°: trabalho p95 10,6 → 9,9 ms, p95 do quadro igual (14 ms).
+- "Tiles faltando" = passos com tile ainda carregando (o fundo é o grafite do palco, não cinza). "Pronto" = do carregamento da página até a cena estar pré-carregada (tiles do caminho e quadros do holograma); a cena só aparece vários segundos de rolagem depois do topo.
+- Memória (todos os processos do Edge do teste): 0,86 a 1,21 GB, na mesma faixa da landing atual.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**
