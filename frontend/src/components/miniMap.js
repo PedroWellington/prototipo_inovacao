@@ -16,8 +16,20 @@ export function miniMap(geo, { fill = () => null, highlight = null, label = 'Min
   const k = Math.cos((((y0 + y1) / 2) * Math.PI) / 180); // equirretangular com correção de latitude
   const w = (x1 - x0) * k || 1, h = y1 - y0 || 1, S = 300 / Math.max(w, h);
   const W = w * S, H = h * S;
-  const pt = ([x, y]) => `${((x - x0) * k * S).toFixed(1)} ${((y1 - y) * S).toFixed(1)}`;
-  const d = (f) => rings(f.geometry).map((r) => 'M' + r.map(pt).join('L') + 'Z').join('');
+  // Só pontos a mais de 0,8 px do anterior: numa miniatura de 300 px o resto não aparece e só pesa na pintura.
+  const ring = (r) => {
+    const out = [];
+    let px = Infinity, py = Infinity;
+    for (const [x, y] of r) {
+      const X = (x - x0) * k * S, Y = (y1 - y) * S;
+      if (Math.abs(X - px) + Math.abs(Y - py) < 0.8) continue;
+      out.push(`${X.toFixed(1)} ${Y.toFixed(1)}`);
+      px = X;
+      py = Y;
+    }
+    return out.length > 2 ? 'M' + out.join('L') + 'Z' : '';
+  };
+  const d = (f) => rings(f.geometry).map(ring).join('');
   const paths = feats
     .map((f) => {
       const id = f.id ?? f.properties?.id;

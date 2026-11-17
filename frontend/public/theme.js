@@ -20,10 +20,22 @@
   }
   apply(current());
   system.addEventListener('change', function () { if (!stored()) apply(current()); });
+  // Aparelho lento troca na hora, sem o círculo: a captura da página inteira custa um quadro longo.
+  // Lento = poucos núcleos ou pouca memória, ou um microteste de CPU (~1,7 ms num desktop comum) acima de 4 ms.
+  // Medido uma vez, no primeiro clique (docs/PERFORMANCE.md, "Fase 9 fechada").
+  var slowCache = null;
+  function slow() {
+    if (slowCache !== null) return slowCache;
+    var cores = navigator.hardwareConcurrency || 8, mem = navigator.deviceMemory || 8;
+    var t0 = performance.now(), acc = 0;
+    for (var i = 0; i < 5e4; i++) acc += Math.sqrt(i) * Math.sin(i);
+    slowCache = cores <= 4 || mem <= 4 || performance.now() - t0 > 4 || acc !== acc;
+    return slowCache;
+  }
   function set(t, x, y) {
     try { localStorage.setItem(KEY, t); } catch (e) { /* sem armazenamento: vale só nesta página */ }
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!document.startViewTransition || reduced || x == null) return apply(t);
+    if (!document.startViewTransition || reduced || x == null || slow()) return apply(t);
     var r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
     document.startViewTransition(function () { apply(t); }).ready.then(function () {
       root.animate(

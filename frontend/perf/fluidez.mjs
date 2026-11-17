@@ -28,6 +28,10 @@ for (const r of ['#/home', '#/analises', '#/comparar', '#/dados', '#/criterios']
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU });
 
 const start = () => page.evaluate(() => {
+  window.__loaf = [];
+  window.__lo?.disconnect();
+  window.__lo = new PerformanceObserver((l) => window.__loaf.push(...l.getEntries().filter((e) => e.duration > 50).map((e) => `${Math.round(e.duration)} ms (estilo/layout ${Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0)}): ${e.scripts.map((x) => `${Math.round(x.duration)} ms ${x.invoker} ${(x.sourceURL || '').split('/').pop()}`).join('; ')}`)));
+  window.__lo.observe({ type: 'long-animation-frame' });
   window.__f = [];
   let last = performance.now();
   const tick = (t) => { window.__f.push(t - last); last = t; if (window.__f) window.__rf = requestAnimationFrame(tick); };
@@ -42,6 +46,8 @@ async function scene(name, fn) {
   const s = [...f].sort((a, b) => a - b);
   const p95 = s[Math.min(s.length - 1, Math.round(0.95 * (s.length - 1)))];
   const fps = 1000 / (f.reduce((a, b) => a + b, 0) / f.length);
+  const lo = await page.evaluate(() => window.__loaf);
+  if (process.env.LOAF && lo.length) console.log(name, lo);
   rows.push({ cena: name, quadros: f.length, fps: +fps.toFixed(1), p95_ms: +p95.toFixed(1), max_ms: +s.at(-1).toFixed(1), ok: fps >= 55 && p95 <= 12 ? '✅' : '❌' });
 }
 

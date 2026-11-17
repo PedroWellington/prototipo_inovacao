@@ -1585,3 +1585,13 @@ img.avatar {
 html.is-scrolled .topbar {
   box-shadow: var(--shadow-float);
 }
+
+/* Abaixo da dobra: o navegador pula layout e pintura até o bloco chegar perto da tela (Fase 9). */
+.ov-widegrid,
+.ov-topgrid-low,
+.bd-metrics,
+.cmp-grid,
+.ov-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}

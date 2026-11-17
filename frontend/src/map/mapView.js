@@ -208,14 +208,29 @@ export function createMap(container, handlers, opts = {}) {
     if (m) addBadge(Number(m[1]));
   });
   // Troca de tema: só pintura (setPaintProperty) e os números refeitos no lugar (updateImage). Nada recarrega.
+  // Custo medido: tudo de uma vez no clique do tema dava um quadro de ~185 ms com CPU 4x (docs/PERFORMANCE.md).
+  // Agora: com o explorador escondido (outra tela aberta), só marca e aplica ao voltar; visível, a pintura vai no
+  // próximo quadro e os números são redesenhados em lotes no ocioso.
+  let themeDirty = false;
+  const shown = () => container.closest('.view-layer')?.classList.contains('is-shown') ?? true;
   function applyTheme() {
+    themeDirty = false;
     for (const [layer, props] of Object.entries(themePaints())) for (const [k, v] of Object.entries(props)) map.setPaintProperty(layer, k, v);
-    for (const id of map.listImages()) {
-      const m = /^rank-(\d+)$/.exec(id);
-      if (m) map.updateImage(id, drawBadge(Number(m[1])).image);
-    }
+    const ids = map.listImages().filter((id) => /^rank-\d+$/.test(id));
+    const batch = (deadline) => {
+      while (ids.length && deadline.timeRemaining() > 2) {
+        const id = ids.shift();
+        map.updateImage(id, drawBadge(Number(id.slice(5))).image);
+      }
+      if (ids.length) idle(batch, { timeout: 1000 });
+    };
+    idle(batch, { timeout: 1000 });
   }
-  const onTheme = () => ready.then(applyTheme);
+  const onTheme = () =>
+    ready.then(() => {
+      if (!shown()) themeDirty = true;
+      else requestAnimationFrame(applyTheme);
+    });
   document.documentElement.addEventListener('themechange', onTheme);
   // Os números acima de 10 só aparecem perto (zoom 12,4+): desenhá-los todos no primeiro zoom custava uma
   // tarefa de ~75 ms. Aqui eles são preparados antes, em lotes pequenos, quando o navegador está ocioso.
@@ -439,7 +454,10 @@ export function createMap(container, handlers, opts = {}) {
     project: (lngLat) => map.project(lngLat),
     onMove: (fn) => map.on('move', fn),
     hoodAt: (point) => map.queryRenderedFeatures(point, { layers: ['hoods-fill'] })[0]?.id ?? null,
-    resize: () => map.resize(),
+    resize: () => {
+      map.resize();
+      if (themeDirty) ready.then(applyTheme); // tema trocado enquanto o explorador estava escondido
+    },
     destroy: () => {
       stopCamera();
       stopTilt();

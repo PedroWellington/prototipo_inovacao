@@ -23,14 +23,21 @@ export function appPage(root, { active, user, cls = 'overview', skeleton, load, 
   let off = () => {};
   load()
     .then((data) => {
-      if (ac.signal.aborted) return;
-      mount(root.querySelector('#main'), body(data));
-      if (!entered.done) {
-        cascade(root.querySelector('#main'));
-        entered.done = true;
-      }
-      off = animateOnView(root);
-      root.dispatchEvent(new CustomEvent('page:ready', { detail: data }));
+      // Dois quadros: o conteúdo entra no quadro seguinte ao do esqueleto e a cascata/formas no outro, para
+      // nenhum quadro somar desmontar a tela antiga, montar a nova e animar (docs/PERFORMANCE.md, Fase 9).
+      requestAnimationFrame(() => {
+        if (ac.signal.aborted) return;
+        mount(root.querySelector('#main'), body(data));
+        requestAnimationFrame(() => {
+          if (ac.signal.aborted) return;
+          if (!entered.done) {
+            cascade(root.querySelector('#main'));
+            entered.done = true;
+          }
+          off = animateOnView(root);
+          root.dispatchEvent(new CustomEvent('page:ready', { detail: data }));
+        });
+      });
     })
     .catch((e) => {
       if (ac.signal.aborted) return;

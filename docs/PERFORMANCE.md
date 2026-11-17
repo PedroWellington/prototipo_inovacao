@@ -208,6 +208,27 @@ Clicar num bairro agora **aproxima a câmera** (o bairro fica com cerca de metad
 
 **Sem cara de IA (2026-11-16).** Mesmo `perf/fluidez.mjs`, CPU 4×, depois de tirar sombras e gradientes: troca de página 97,5 fps · p95 20,8 ms · máx. 104 ms (❌, como antes); Visão geral rolando 138 fps · p95 7,1 ms (✅, antes 13,9); tema em círculo 104 fps · p95 13,9 ms · máx. 181 ms (❌); detalhe do bairro 136 fps · p95 7,1 ms (✅, antes 14,0); FLIP 139 fps · p95 7,1 ms (✅); tema sobre o mapa 115 fps · p95 13,9 ms (❌). Os três que falham são os picos já registrados acima, à espera da decisão.
 
+**Fase 9 fechada (2026-11-17).** Aplicadas as opções 1 e 2 e corrigida a causa real do pico do tema, achada com Long Animation Frames (`LOAF=1 node perf/fluidez.mjs` mostra a atribuição de cada quadro > 50 ms):
+
+- **Tema:** o pico não era o círculo. O clique rodava o `themechange` do mapa do explorador vivo em segundo plano: `setPaintProperty` em todas as camadas e o redesenho de todos os números de posição, 185 ms de script com CPU 4×. Agora, com o explorador escondido, ele só marca e aplica ao voltar; visível, a pintura vai no quadro seguinte e os números são redesenhados em lotes no ocioso (`map/mapView.js`). Script do clique: 185 → 9 ms.
+- **Opção 1:** aparelho lento troca o tema na hora, sem círculo (`public/theme.js`: ≤ 4 núcleos, ≤ 4 GB ou microteste de CPU > 4 ms; ~1,7 ms num desktop comum, ~7,5 ms com CPU 4×).
+- **Opção 2:** página nova em dois quadros (conteúdo no quadro seguinte ao esqueleto, cascata e formas no outro; `components/page.js`) e `content-visibility: auto` nos blocos abaixo da dobra.
+- **Miniaturas:** o SVG dos limites descarta pontos a menos de 0,8 px do anterior; pintar Comparar caiu de três quadros de 52 ms para nenhum acima de 50 ms.
+
+Medição com CPU 4×, janela visível (GPU de verdade; `HEADLESS=0 node perf/fluidez.mjs`):
+
+| Cena | Antes (Fase 9) fps · p95 · máx. | Depois fps · p95 · máx. | Meta |
+|---|---|---|---|
+| Troca de página (4 cliques) | 92–94 · 20,9–27,7 · 111 ms | 105 · 20,8 · 111 ms | ❌ um quadro de pintura (ver abaixo) |
+| Visão geral: rolagem | 130–133 · 13,8–13,9 · 35 ms | 136 · 7,1 · 28 ms | ✅ |
+| Tema em círculo (Visão geral) | 84–96 · 20,8 · 167–188 ms | 138 · 7,0 · 49 ms | ✅ |
+| Detalhe do bairro: entrada | 112–121 · 14,0 · 70–76 ms | 131 · 7,0 · 49 ms | ✅ |
+| Explorador: ranking reordena (FLIP) | 136–137 · 7,1 · 42–56 ms | 133 · 7,0 · 69 ms | ✅ |
+| Explorador: tema sobre o mapa | 109–110 · 13,9 · 174 ms | 126 · 13,9 · 42 ms | ❌ por um quadro de 144 Hz (13,9 ms ainda cabe num quadro de 60 Hz) |
+
+- **O que sobra:** na troca de página, um quadro de ~106 ms sem script nem estilo (só pintura), no primeiro clique depois de ligar o freio; a atribuição por página não o repete. No modo headless (pintura por software), a rolagem e o detalhe oscilam entre 7 e 14 ms de p95 entre rodadas.
+- Fase encerrada com esses dois pontos registrados. Se precisar ir além: pré-pintar a Visão geral no ocioso ou reduzir a arte do herói.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**
