@@ -231,6 +231,26 @@ Medição com CPU 4×, janela visível (GPU de verdade; `HEADLESS=0 node perf/fl
 
 **Depois do tutorial e do assistente (2026-11-17).** Mesma medição (CPU 4×, janela visível): troca de página 109 fps · p95 14,0 · máx. 97 ms; rolagem 141 · 7,1; tema 138 · 7,1; detalhe 133 · 7,1; FLIP 140 · 7,1; tema sobre o mapa 133 · 7,4. Cinco de seis cenas dentro da meta; a troca de página fica um quadro de 144 Hz acima, com o pico de pintura já registrado. O assistente desligado não carrega nada (o módulo só é baixado com a flag ligada); o tutorial só existe na primeira entrada.
 
+**Hero 360 (branch `hero-360`, 2026-11-17; docs/HERO-360.md).** A foto da loja com círculo (capítulos 6 a 8) virou a sequência ilustrativa do mapa ao holograma. Edge com janela visível (GPU de verdade), rolagem pela roda do mouse; `frontend/perf/hero-360.mjs`.
+
+Só o trecho da cena (`DE=0.74`, do capítulo 6 ao fim e de volta):
+
+| Tela | Caminho | CPU | fps | p95 do quadro | pior quadro | trabalho p95 | 1ª imagem | pronta |
+|---|---|---|---|---|---|---|---|---|
+| desktop | vídeo | 1× | 143,9 | 7,0 ms | 13,9 ms | 1,1 ms | 198 ms | 553 ms |
+| desktop | vídeo | 4× | 140,9 | 7,0 ms | 21,1 ms | 4,4 ms | 788 ms | 1,28 s |
+| desktop | quadros | 4× | 141,8 | 7,0 ms | 27,8 ms | 4,8 ms | 731 ms | 1,10 s |
+| celular | vídeo | 4× | 142,4 | 7,0 ms | 14,0 ms | 4,3 ms | 878 ms | 1,41 s |
+| celular | quadros (120) | 4× | 143,0 | 7,0 ms | 20,8 ms | 3,9 ms | 682 ms | 1,10 s |
+| desktop | `main` (foto da loja) | 4× | 106,3 | 20,8 ms | 83,4 ms | 5,1 ms | — | — |
+| celular | `main` (foto da loja) | 4× | 109,8 | 13,9 ms | 34,7 ms | 5,0 ms | — | — |
+
+- Meta (≥ 55 fps e p95 ≤ 12 ms com CPU 4×) cumprida na cena em todos os caminhos e telas. "1ª imagem" = pôster pronto desde a navegação; "pronta" = vídeo calibrado ou primeira onda de quadros (o hero começa pelo mapa em canvas, então a cena tem vários segundos de rolagem até ser vista).
+- Medição oficial da landing (`landing/perf/measure.mjs`, headless, mesma do registro acima), branch contra `main`: fps médio 102,5 / 97,8 / 122,4 (desktop / desktop 4× / celular 4×) contra 98,8 / 91,2 / 81,2; nas faixas da cena (progresso 0,8 e 0,9) 7 ms contra 13,8 a 48,6 ms; **nenhum quadro acima de 50 ms** (o `main` tem 2 no celular 4×). Um quadro de 55 ms na entrada da cena (celular 4×) sumiu deixando a camada visível e transparente pouco antes do fade.
+- O p95 da página inteira continua acima de 12 ms nas faixas do mapa em canvas (progresso 0,1 a 0,7), igual ao `main`: é o mapa, que esta mudança não tocou.
+- Memória (soma de todos os processos do Edge do teste): 0,94 a 1,15 GB com vídeo, 1,13 a 1,22 GB com quadros, ~1,02 GB no estático (que não baixa a cena) e 1,05 a 1,17 GB no `main`. O que a cena acrescenta: cerca de +50 a +80 MB (vídeo) e +120 a +180 MB (quadros, janela de 24 decodificados), abaixo do limite de 300 MB. O vídeo gasta menos que a foto da loja que ele substitui.
+- Buscas no vídeo (decidem o caminho; `docs/HERO-360.md`): MP4 original 40 ms (mediana) e 100 ms (p95); VP8 com quadro-chave a cada 6 quadros, 11 e 15 ms, também com CPU 4×.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**
