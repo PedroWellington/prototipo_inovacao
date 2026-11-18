@@ -31,10 +31,10 @@ function mountAssistant() {
   el.className = 'ai';
   mount(
     el,
-    html`<button type="button" class="ai-fab" aria-label="Abrir o assistente (Alt+A)" aria-keyshortcuts="Alt+A" aria-expanded="false" aria-controls="aiPanel">${icon('chat', 22)}</button>
+    html`<button type="button" class="ai-fab" aria-label="Assistente de IA" title="Assistente de IA" aria-keyshortcuts="Alt+A" aria-expanded="false" aria-controls="aiPanel">${icon('chat', 22)}<span class="ai-fab-label" aria-hidden="true">Assistente de IA</span></button>
       <section class="ai-panel" id="aiPanel" role="dialog" aria-modal="false" aria-labelledby="aiTitle" hidden>
-        <header class="ai-head"><div><h2 id="aiTitle">Assistente</h2>
-          <p>Responde com os dados do site, com fonte e data. Não escolhe bairro por você.</p></div>
+        <header class="ai-head"><div><h2 id="aiTitle">Assistente de IA</h2>
+          <p>Responde com base nos dados da sua análise. Não é recomendação nem promessa de resultado.</p></div>
           <button type="button" class="btn btn-ghost btn-sm btn-icon" data-ai-close aria-label="Fechar o assistente">${icon('close', 16)}</button></header>
         <div class="ai-log" aria-live="polite" aria-relevant="additions" data-ai-log></div>
         <form class="ai-form" data-ai-form>
@@ -77,7 +77,6 @@ function toggle(open) {
   const panel = el.querySelector('.ai-panel');
   const fab = el.querySelector('.ai-fab');
   fab.setAttribute('aria-expanded', String(open));
-  fab.setAttribute('aria-label', open ? 'Fechar o assistente (Alt+A)' : 'Abrir o assistente (Alt+A)');
   if (open) {
     panel.hidden = false;
     requestAnimationFrame(() => el.classList.add('is-open'));

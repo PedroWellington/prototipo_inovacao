@@ -23,6 +23,8 @@ async function check(page, name) {
 for (const [device, viewport, theme] of [['desktop', { width: 1440, height: 900 }, 'light'], ['celular', { width: 390, height: 844 }, 'light'], ['desktop escuro', { width: 1440, height: 900 }, 'dark'], ['celular escuro', { width: 390, height: 844 }, 'dark']]) {
   const ctx = await browser.newContext({ bypassCSP: true, viewport, isMobile: device.startsWith('celular'), hasTouch: device.startsWith('celular') });
   await ctx.addInitScript((t) => localStorage.setItem('theme', t), theme); // os dois temas (public/theme.js lê localStorage)
+  // Assistente de IA visível em todas as telas (a flag pública vem ligada aqui; nenhuma pergunta é enviada).
+  await ctx.route('**/api/config', async (r) => { const res = await r.fetch(); await r.fulfill({ response: res, json: { ...(await res.json()), assistant: true } }); });
   const page = await ctx.newPage();
   const d = (n) => `${device}: ${n}`;
   await page.goto(`${BASE}/`, { waitUntil: 'load' }); await check(page, d('landing (topo)'));

@@ -31,6 +31,10 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Relatório em PDF + Google Maps | 5. Botão no explorador e em Minhas análises, progresso, download, nova aba, erros | ✅ | `13d9fa0` |
 | Relatório em PDF + Google Maps | 6. Roteiro de visita e modo apresentação (dois temas, setas, toque, tela cheia) | ✅ | `07e9117`; axe 0 violações nas 4 telas novas × 4 perfis |
 | Relatório em PDF + Google Maps | 7. Verificação: p95 0,58 s sem Google, nenhuma tarefa longa no navegador, ≤ 2 MB (pior caso 322 KB), capturas de cada página | ✅ | `docs/PERFORMANCE.md` (relatório) |
+| Ajustes do relatório (2026-11-18) | 1. "Relatório desligado." = `PDF_ENABLED=false` na Vercel; base desatualizada vira mensagem clara (503) sem PDF incompleto; carga com URL escondida | ✅ código; ⬜ **Pedro: `PDF_ENABLED=true` + Redeploy e os passos de `docs/DEPLOY.md`, "Ligar o relatório em produção"** | `docs/DEPLOY.md` |
+| Ajustes do relatório | 2. Google "só na tela": tempo de carro só no Roteiro dentro do app; nenhum PDF chama o Google; seção do Google nos Termos só com a chave ligada | ✅ | `docs/GOOGLE-MAPS.md` (decisão de 2026-11-18); `test_google_only_on_screen_never_in_pdfs` |
+| Ajustes do relatório | 3. Relatório técnico (página de tabelas comparativas) e slides narrativos (12 telas, 16:9, número herói, Cascade/CountUp/GrowBar) | ✅ | `docs/RELATORIO.md`; `docs/visual/relatorio/` |
+| Ajustes do relatório | 4. Botão "Assistente de IA" (pílula no desktop, ícone com aria-label/title no celular; título e aviso no painel) | ✅ | axe: 104 telas, 0 violações, com o assistente visível |
 | Redesign completo | 1. Paleta única (`shared/design-tokens.css`) | ✅ | `87e7a50`; `docs/visual/fase1-*` |
 | Redesign completo | 2. Visão geral com dados reais | ✅ | `fab9d46`; `docs/visual/fase2-*` |
 | Redesign completo | 3. Explorador em três colunas, ranking FLIP, câmera contínua | ✅ | `0f9ae09`; `docs/visual/fase3-*`; `docs/PERFORMANCE.md` |
@@ -88,9 +92,8 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 
 ## Decisões que dependem do Pedro
 
-- **Google Maps no PDF (2026-11-17):** os termos atuais proíbem guardar ou recompartilhar conteúdo do Google fora dos Serviços (ToS 3.2.3(a)) e usar conteúdo da Routes API junto com mapa não-Google (19.2). O PDF baixado e os mapas SVG próprios no mesmo arquivo são zona cinzenta. Opções em `docs/GOOGLE-MAPS.md`, seção 4: só na tela, PDF como está (com advogado ou licença do Google) ou sem Google. Até decidir, `GOOGLE_MAPS_API_KEY` fica vazia.
+- **Google Maps:** decidido "só na tela" em 2026-11-18 (`docs/GOOGLE-MAPS.md`). Falta só, quando quiser, criar a chave restrita e preencher `GOOGLE_MAPS_API_KEY`.
 - **Cobrar o relatório?** `credit_settings.report_cost` está em 0 (cidade liberada não paga relatório).
-- **Páginas de Termos e Privacidade** precisam citar os Termos e a Política de Privacidade do Google antes de ligar a chave.
 
 - **Provedor de tiles (obrigatório antes de publicar o hero 360 e o explorador em produção).** Os tiles públicos do OSM não servem para produção, e o hero com o mapa real aumenta o volume (14 pontos pré-carregados por visita, do zoom 3 ao 14). Opções levantadas em 2026-11-17 (preços de sites de terceiros; confirmar no site de cada provedor): Stadia Maps (camada grátis de ~200 mil créditos/mês, pago a partir de ~US$ 20/mês), MapTiler (grátis só para uso não comercial; pago a partir de ~US$ 25–30/mês), Mapbox (franquia grátis mensal e depois ~US$ 0,50–1 por mil carregamentos), ou PMTiles próprio (Protomaps) num bucket sem taxa de saída como o Cloudflare R2 (centavos a poucos dólares por mês de armazenamento e requisições, mais o trabalho de gerar e atualizar o arquivo). Ordem de grandeza para o protótipo: de US$ 0 a ~US$ 30/mês; cresce com o número de visitas.
 
