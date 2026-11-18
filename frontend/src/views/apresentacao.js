@@ -129,7 +129,7 @@ export async function render(root) {
         <li>Perto: mais densidade combina mais. Longe: menos densidade combina mais.</li>
         <li>A nota é a média ponderada pelos pesos de 1 a 5, de 0 a 100. Empate: ordem alfabética.</li>
         <li>Mesmos critérios e mesma base = mesmo ranking (código ${d.params_code}).</li></ul>
-      <ul class="slide-sources">${d.sources.map((s) => html`<li>${s.name} (ref. ${s.reference_date})</li>`)}</ul></div>
+      <ul class="slide-sources">${d.sources.filter((s) => s.key !== 'ibge_malhas').map((s) => html`<li>${s.name} (ref. ${s.reference_date})</li>`)}</ul></div>
       <div class="slide-legal"><strong>${d.legal}</strong><p>${d.legal_app}</p></div></article>`);
     return out;
   }

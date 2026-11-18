@@ -32,6 +32,7 @@ backend/   FastAPI + SQLAlchemy Core (SQL explícito) + Alembic
   app/credits.py  única autoridade de saldo e liberação (regras em credit_settings); app/logos.py valida e recodifica imagens
   app/billing     ponto único do pagamento (planos, interesse em credit_purchase_interest, gancho checkout); PAYMENTS_ENABLED=false
   app/scoring  rank.py (bairros) e rank_cities.py (cidades): o mesmo motor em SQL
+  app/report   relatório em PDF (fpdf2), roteiro e slides; google_routes.py (Routes API com trava de cota); docs/RELATORIO.md
   app/etl      seed_catalog, ibge_boundaries (bairros ou áreas por setor), cnpj, locate, counts, census, cnes, load_city/load_uf/load_br, report
   app/seed     CSVs também definem a fonte de cada tipo (business_types.source: cnpj|cnes) e tipo -> TP_UNIDADE do CNES
   scripts/     medição (perf_rank) e auditoria de dados (audit_establishments, compare_cnes); só desenvolvimento
@@ -103,7 +104,6 @@ cd landing; npm run build-geo                                                 # 
 
 - Planos, cotas e pagamento.
 - Agente de IA.
-- Relatório em PDF.
 - Google Places.
 - Contas de equipe.
 - Verificação de e-mail, redefinição de senha e login com Google.

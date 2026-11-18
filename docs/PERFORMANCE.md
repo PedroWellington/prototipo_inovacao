@@ -18,6 +18,9 @@ O documento do produto não fixa números. As metas abaixo seguem referências p
 | Salto de layout (CLS) em login, início e explorador | zero |
 | Transições de interface | 150 a 200 ms (`--dur-fast` 150 ms, `--dur` 180 ms) |
 | Geometria na segunda visita | sai do cache do navegador |
+| Relatório em PDF sem Google (`POST /api/cities/{ibge}/report`) | p95 ≤ 3 s |
+| Relatório em PDF com Google | ≤ 6 s |
+| Mapa e interface durante a geração do relatório | nenhuma tarefa longa (> 50 ms) no navegador |
 
 ## Como medir
 
@@ -248,6 +251,26 @@ Medição com CPU 4×, janela visível (GPU de verdade; `HEADLESS=0 node perf/fl
 - Perfil de CPU (CDP Profiler, rolagem com CPU 4×, só a parte inclinada): 67% desenho nativo (WebGL, composição), 29% MapLibre (custo por tile), 3% landing, 1% holograma.
 - Continuidade (`frontend/perf/hero-360-continuidade.mjs`): zoom monotônico em 2.000 amostras (3,5 → 13,7 no desktop); nenhum degrau entre amostras vizinhas; nas fronteiras de capítulo, atravessar a fronteira muda o mesmo que um trecho igual ao lado (razão 1,01); o zoom do mapa real é o da linha do tempo (erro 0).
 - Memória (todos os processos do Edge do teste): 0,6 a 1,0 GB, abaixo da landing atual (1,0 a 1,2 GB).
+
+### Relatório em PDF (2026-11-17, Docker local, Recife, sem Google)
+
+Medido de ponta a ponta pela API (sessão, CSRF, ranking, PostGIS, PDF), com `uvicorn` de um processo:
+
+| Caso | Resultado |
+|---|---|
+| Relatório de Recife (94 bairros), 9 seguidos | p50 0,54 s, p95 0,58 s, 143 KB, 10 páginas |
+| Slides em PDF / roteiro em PDF | 0,38 s / 0,26 s |
+| Belo Horizonte (476 bairros, pior caso de mapa) | 1,35 s, 322 KB |
+| São Paulo | 0,81 s, 276 KB |
+| 4 pedidos ao mesmo tempo | 2 de cada vez (semáforo): 1,0 s, 1,0 s, 2,1 s, 2,1 s |
+| Navegador durante a geração (explorador aberto, Recife) | 629 ms do clique ao download; **nenhuma tarefa longa** (PerformanceObserver `longtask`) |
+
+- **Com Google:** a chamada tem tempo limite de 4 s (`GOOGLE_ROUTES_TIMEOUT_SECONDS`); o pior caso é ~0,6 s + 4 s, abaixo
+  da meta de 6 s. A latência real da Routes API não foi medida (a chave não está ligada; ver `docs/GOOGLE-MAPS.md`).
+- **Fora do ciclo principal:** os endpoints são síncronos e rodam no pool de threads do servidor; o laço do `uvicorn`
+  segue atendendo os outros pedidos. No navegador é um `fetch` assíncrono: o mapa não para.
+- **Tamanho:** mapas SVG próprios, simplificados no PostGIS a 1/900 da maior dimensão da cidade; fonte Inter reduzida
+  aos glifos usados.
 
 ## O que sustenta esses números
 

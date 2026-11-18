@@ -255,7 +255,7 @@ def render_slides(d: dict, shapes: dict) -> bytes:
               f"Mesmos critérios e mesma base = mesmo ranking (código {d['params_code']})."]:
         yy = pdf.text_at(X, yy, colw, "· " + t, 10, "", "ink", h=5) + 2
     yy = y
-    for s in d["sources"]:
+    for s in [s for s in d["sources"] if s["key"] != "ibge_malhas"]:
         yy = pdf.text_at(X + colw + 12, yy, colw, f"{s['name']} (ref. {s['reference_date']})", 7.8, "", "ink", h=3.7) + 1.4
     pdf.box(X, 156, SW, 34, "coal")
     yy = pdf.text_at(X + 6, 161, SW - 12, LEGAL, 11, "sb", "on_dark", h=5.4)

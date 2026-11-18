@@ -37,6 +37,10 @@ Para cada bairro `b` da cidade e cada critério `c`:
    - Empates são desfeitos pelo nome do bairro, em ordem de bytes (`COLLATE "C"`: a mesma em qualquer servidor; a ordem alfabética do idioma varia com a collation do banco), e depois pelo id.
    - Antes de ordenar, a nota é arredondada em 6 casas, para eliminar ruído de ponto flutuante.
 
+6. **Por critério (relatório):** `position` = posição do bairro só naquele critério (`rank()` pela aderência, empate = mesma
+   posição) e `contribution = 100 × w_c × (f − 0,5) / Σ(w_c)`: os pontos que o critério soma ou tira a partir de 50.
+   `nota = 50 + Σ contribution` (até o arredondamento). Os dois saem do mesmo SQL.
+
 A nota é **relativa à cidade**. Ela diz como o bairro se posiciona em relação aos outros bairros da mesma cidade. Não é uma medida absoluta nem uma probabilidade.
 
 ### Frase comparativa do tooltip

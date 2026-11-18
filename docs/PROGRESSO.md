@@ -24,7 +24,13 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Capturas leves | `docs/visual` de 23,5 MB para 9,2 MB (WebP e gravações reencodadas), nada apagado | ✅ | `f86932e` |
 | Hero 360 (branch `hero-360`, experimental, 2026-11-17) | Hero inteiro com o mapa real (MapLibre, tiles do OSM, malhas do IBGE) numa câmera só, do Brasil ao bairro, até o mesmo holograma do explorador; meta de fluidez em 60 Hz | ✅ na branch, aguardando decisão de merge; ⬜ **provedor de tiles (obrigatório antes de publicar)** | `docs/HERO-360.md`; `perf/hero-360*.mjs`; `docs/visual/hero-360/` |
 | Landing e rolagem (PARTE A, 2026-11-16) | A1 a A12: progresso da esquerda para a direita, sem barra de rolagem, sem "Protótipo", tema na landing, textos novos, painel de produto (Conheça, Como funciona, Dados e fontes, Planos pagos, FAQ, rodapé legal), aviso legal fora do mapa, Comprar mais créditos, zoom ao bairro com holograma proporcional, menu Explorar | ✅ | `7704d8d`, `b2244de`, `917bdaa` e o commit seguinte; `docs/visual/parte-a/`; `docs/PERFORMANCE.md` (2026-11-16) |
-| Landing e rolagem | PARTE B: relatório em PDF + Google Maps | ⬜ espera a confirmação do Pedro (conta de faturamento e chave da API) | |
+| Relatório em PDF + Google Maps (2026-11-17) | 1. Termos do Google lidos, SKU (Compute Route Matrix Essentials, 10.000 elementos/mês), conta da cota e passo a passo do Console | ✅ | `41345d6`; `docs/GOOGLE-MAPS.md` |
+| Relatório em PDF + Google Maps | 2. Dados dos 5 bairros (fonte própria), população dos bairros do Censo 2022, concorrência por ramo, posição e contribuição por critério no SQL, código dos parâmetros | ✅ | `e56b084` |
+| Relatório em PDF + Google Maps | 3. Routes API em lote, contador mensal com trava em 80%, limites por conta e IP, degradação suave, testes com falso | ✅ código; ⬜ **chave desligada até o Pedro decidir o conflito dos termos (GOOGLE-MAPS.md, seção 4)** | `8b7ad0b`; `tests/test_report.py` |
+| Relatório em PDF + Google Maps | 4. PDF (fpdf2, Inter embutida, mapas SVG próprios), roteiro e slides em PDF | ✅ | `3666bed`; `docs/RELATORIO.md`; `docs/visual/relatorio/` |
+| Relatório em PDF + Google Maps | 5. Botão no explorador e em Minhas análises, progresso, download, nova aba, erros | ✅ | `13d9fa0` |
+| Relatório em PDF + Google Maps | 6. Roteiro de visita e modo apresentação (dois temas, setas, toque, tela cheia) | ✅ | `07e9117`; axe 0 violações nas 4 telas novas × 4 perfis |
+| Relatório em PDF + Google Maps | 7. Verificação: p95 0,58 s sem Google, nenhuma tarefa longa no navegador, ≤ 2 MB (pior caso 322 KB), capturas de cada página | ✅ | `docs/PERFORMANCE.md` (relatório) |
 | Redesign completo | 1. Paleta única (`shared/design-tokens.css`) | ✅ | `87e7a50`; `docs/visual/fase1-*` |
 | Redesign completo | 2. Visão geral com dados reais | ✅ | `fab9d46`; `docs/visual/fase2-*` |
 | Redesign completo | 3. Explorador em três colunas, ranking FLIP, câmera contínua | ✅ | `0f9ae09`; `docs/visual/fase3-*`; `docs/PERFORMANCE.md` |
@@ -81,6 +87,10 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 - Build do Compose no Docker Desktop 29 (Compose v5) falha com "failed to execute bake" neste Windows; as imagens foram construídas com `docker build` direto e `docker compose up -d --no-build`.
 
 ## Decisões que dependem do Pedro
+
+- **Google Maps no PDF (2026-11-17):** os termos atuais proíbem guardar ou recompartilhar conteúdo do Google fora dos Serviços (ToS 3.2.3(a)) e usar conteúdo da Routes API junto com mapa não-Google (19.2). O PDF baixado e os mapas SVG próprios no mesmo arquivo são zona cinzenta. Opções em `docs/GOOGLE-MAPS.md`, seção 4: só na tela, PDF como está (com advogado ou licença do Google) ou sem Google. Até decidir, `GOOGLE_MAPS_API_KEY` fica vazia.
+- **Cobrar o relatório?** `credit_settings.report_cost` está em 0 (cidade liberada não paga relatório).
+- **Páginas de Termos e Privacidade** precisam citar os Termos e a Política de Privacidade do Google antes de ligar a chave.
 
 - **Provedor de tiles (obrigatório antes de publicar o hero 360 e o explorador em produção).** Os tiles públicos do OSM não servem para produção, e o hero com o mapa real aumenta o volume (14 pontos pré-carregados por visita, do zoom 3 ao 14). Opções levantadas em 2026-11-17 (preços de sites de terceiros; confirmar no site de cada provedor): Stadia Maps (camada grátis de ~200 mil créditos/mês, pago a partir de ~US$ 20/mês), MapTiler (grátis só para uso não comercial; pago a partir de ~US$ 25–30/mês), Mapbox (franquia grátis mensal e depois ~US$ 0,50–1 por mil carregamentos), ou PMTiles próprio (Protomaps) num bucket sem taxa de saída como o Cloudflare R2 (centavos a poucos dólares por mês de armazenamento e requisições, mais o trabalho de gerar e atualizar o arquivo). Ordem de grandeza para o protótipo: de US$ 0 a ~US$ 30/mês; cresce com o número de visitas.
 

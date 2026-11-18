@@ -8,6 +8,7 @@ Regra de ouro: as contagens vêm de dados abertos guardados no banco próprio. N
 
 | Dado | Fonte oficial | Formato | Referência |
 |---|---|---|---|
+| População dos bairros e áreas (relatório) | IBGE, Censo 2022, Agregados por bairros e por setores (básico), `v0001`; área = soma exata dos setores, só se todos tiverem valor (ver RELATORIO.md) | CSV (zip) | 2022, publicado em 20/05/2026 |
 | Regiões, estados e municípios | IBGE, API de localidades v1 (`servicodados.ibge.gov.br/api/v1/localidades/...`) | JSON | vigente |
 | Geometria de região, estado e município (mapa) | IBGE, API de malhas v3 (`/api/v3/malhas/paises/BR?intrarregiao=regiao\|UF`, `/estados/{UF}?intrarregiao=municipio`, `formato=application/vnd.geo+json`, `qualidade=minima`) | GeoJSON | versão vigente na API |
 | Limites de bairros | IBGE, Malha de Bairros do Censo Demográfico 2022, por UF: `geoftp.ibge.gov.br/.../censo_2022/bairros/gpkg/UF/PE/PE_bairros_CD2022.gpkg` | GeoPackage (EPSG:4674) | 2022 |

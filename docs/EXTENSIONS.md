@@ -51,7 +51,11 @@ Cada item abaixo diz onde encaixar a extensão sem mexer no motor de ranking.
 - **Hoje:** em memória, por processo ([`backend/app/auth/rate_limit.py`](../backend/app/auth/rate_limit.py)). Zera ao reiniciar e não vale com vários workers.
 - **Antes de produção:** trocar por Redis ou por uma tabela.
 
-## Agente de IA, relatório em PDF, comparar cidades, contas de equipe, aluguel
+## Relatório em PDF e Google Routes (feito em 2026-11-17)
+
+- Implementado: [RELATORIO.md](RELATORIO.md) e [GOOGLE-MAPS.md](GOOGLE-MAPS.md). Places continua fora (abaixo).
+
+## Agente de IA, comparar cidades, contas de equipe, aluguel
 
 - **Agente de IA (PDF, seção 7):** deve **chamar `rank()`**. Ele traduz o pedido em critérios e pesos e explica o resultado com os números da resposta. Nunca calcula nem inventa números.
 - **Comparar cidades:** feito como ranking de cidades ("Você já tem uma cidade em mente?" → Não). Ver [SCORING.md](SCORING.md).

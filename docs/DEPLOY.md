@@ -80,7 +80,8 @@ deve terminar com `TUDO IGUAL`.
    | `UPLOADS_ENABLED` | `false` |
    | `GOOGLE_LOGIN_ENABLED` | `false` |
    | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL` | só quando ligar o login com Google: ID e segredo do OAuth Client (Google Cloud Console) e `https://vicus-inovacao.vercel.app`; no Google: origem JavaScript `https://vicus-inovacao.vercel.app`, redirect URI `https://vicus-inovacao.vercel.app/api/auth/google/callback` |
-   | `PDF_ENABLED` | `false` |
+   | `PDF_ENABLED` | `true` (relatório, roteiro e slides; fpdf2 roda na função, ver `docs/RELATORIO.md`) |
+   | `GOOGLE_MAPS_API_KEY` | vazio por enquanto (tempo de carro desligado; ler `docs/GOOGLE-MAPS.md`, seção 4, antes de ligar) |
 
 4. Clique em **Deploy**. O primeiro build leva de 2 a 4 minutos. No fim aparece o endereço `https://<projeto>.vercel.app` (o protótipo está em `https://vicus-inovacao.vercel.app`).
 5. Confira: `https://<projeto>.vercel.app/` (landing), `/app/` (login), `/api/health` (`{"status":"ok"}`)
