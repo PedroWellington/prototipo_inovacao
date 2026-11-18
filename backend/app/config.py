@@ -22,7 +22,14 @@ GOOGLE_LOGIN_ENABLED = flag("GOOGLE_LOGIN_ENABLED", False)  # app/auth/google.py
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")  # ex.: https://vicus-inovacao.vercel.app (monta o redirect do Google)
-PDF_ENABLED = flag("PDF_ENABLED", False)  # ainda não implementado (docs/EXTENSIONS.md)
+PDF_ENABLED = flag("PDF_ENABLED", True)  # relatório em PDF, roteiro e modo apresentação (app/report)
+REPORT_DAILY_LIMIT = int(os.getenv("REPORT_DAILY_LIMIT", "10"))  # relatórios/roteiros em PDF por conta por dia
+REPORT_MAX_CONCURRENT = int(os.getenv("REPORT_MAX_CONCURRENT", "2"))  # geradores simultâneos por processo
+# Google Maps Platform, Routes API (docs/GOOGLE-MAPS.md). Sem chave: desligado; o relatório usa a distância em linha reta.
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")  # só no servidor; nunca no frontend nem no Git
+GOOGLE_ROUTES_MONTHLY_FREE = int(os.getenv("GOOGLE_ROUTES_MONTHLY_FREE", "10000"))  # cota grátis do SKU (elementos/mês)
+GOOGLE_ROUTES_CAP_SHARE = float(os.getenv("GOOGLE_ROUTES_CAP_SHARE", "0.8"))  # trava: fração da cota grátis
+GOOGLE_ROUTES_TIMEOUT_SECONDS = float(os.getenv("GOOGLE_ROUTES_TIMEOUT_SECONDS", "4"))
 PAYMENTS_ENABLED = flag("PAYMENTS_ENABLED", False)  # gateway de pagamento (app/billing); desligado = só registra interesse
 
 # Assistente de IA (app/assistant.py; docs/ASSISTENTE-IA.md). Desligado ou sem chave: o botão não aparece.
