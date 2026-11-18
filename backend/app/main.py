@@ -10,6 +10,7 @@ from app.billing import routes as billing_routes
 from app.auth import google
 from app.auth import routes as auth_routes
 from app import assistant, config
+from app.report import google_routes
 from app.config import PRODUCT_NAME
 from app.db import get_db
 
@@ -46,7 +47,7 @@ def public_config():
     """Só flags públicas: nada de segredo nem de regra de negócio aqui."""
     return {"prototype": config.PROTOTYPE, "demo_mode": config.DEMO_MODE, "uploads": config.UPLOADS_ENABLED,
             "google_login": google.enabled(), "pdf": config.PDF_ENABLED, "payments": config.PAYMENTS_ENABLED,
-            "assistant": assistant.enabled()}
+            "assistant": assistant.enabled(), "google_maps": google_routes.enabled()}
 
 
 @app.get("/api/health")

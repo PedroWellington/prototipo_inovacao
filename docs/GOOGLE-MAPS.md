@@ -64,7 +64,19 @@ Se a mesma conta de faturamento usar este SKU em outro projeto, a cota de 10.000
 | ToS 3.2.2(b) e Policies | Mostrar a atribuição; fora de um Google Map, a atribuição é obrigatória, preferencialmente o **logo do Google Maps**; com pouco espaço, o texto **"Google Maps"**. Separar visualmente o conteúdo do Google do resto. | Bloco do Google com borda própria e o texto "Fonte: Google Maps" em cada valor do Google. **Pendente:** trocar o texto pelo logo oficial (arquivo do kit de marca do Google, não incluído no repositório). |
 | Policies | O app precisa de Termos de Uso e Política de Privacidade públicos que citem os Termos e a Política de Privacidade do Google. | **Pendente para você:** acrescentar na página de Termos (já existe em `#/termos`) os links `https://maps.google.com/help/terms_maps/` e `https://policies.google.com/privacy` antes de ligar a chave. |
 
-## 4. Conflitos com o desenho pedido (decisão sua antes de ligar a chave)
+## Decisão: "só na tela" (Pedro, 2026-11-18)
+
+- Tempo e distância de carro do Google aparecem **só no Roteiro de visita, dentro do app** (tela `#/roteiro`, resposta de
+  `POST /api/cities/{ibge}/route`, sem mapa na tela).
+- **Nenhum PDF chama o Google:** relatório, roteiro em PDF e slides usam só a distância em linha reta, calculada por nós
+  (PostGIS). O PDF diz "Tempo de carro: só no Roteiro de visita, dentro do app". Teste: `test_google_only_on_screen_never_in_pdfs`.
+- Nada do Google no mapa MapLibre e nada gravado no banco (só a contagem de elementos em `google_routes_usage`).
+- `GOOGLE_MAPS_API_KEY` continua vazia por padrão. A página de Termos já tem a seção "Google Maps" (links para os Termos
+  adicionais do Google Maps e a Política de Privacidade do Google); ela só aparece quando a chave está ligada
+  (`google_maps: true` em `GET /api/config`).
+- Conta da cota: só o roteiro consome (12 elementos por roteiro): com a trava de 8.000, cabem 666 roteiros por mês.
+
+## 4. Conflitos com o desenho original (resolvidos pela decisão acima)
 
 **A. PDF baixado e compartilhado (ToS 3.2.3(a)).** O relatório e o roteiro em PDF ficam com a pessoa por tempo
 indeterminado e podem ser repassados a sócio, banco ou investidor. Os termos proíbem "guardar, recompartilhar ou hospedar

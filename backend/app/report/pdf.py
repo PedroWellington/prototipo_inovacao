@@ -1,8 +1,8 @@
 """PDF do relatório (A4, pt-BR) com fpdf2: Python puro, roda no Docker e na função da Vercel (sem Pango/Cairo).
 
 Paleta = shared/design-tokens.css; fonte Inter embutida (app/report/fonts, OFL). Mapas = SVG próprio a partir das
-geometrias do IBGE (app.report.data.city_shapes): sem tiles, sem imagem do Google. Conteúdo do Google (tempo de carro)
-só na página "Seus critérios e a sede", que não tem mapa (docs/GOOGLE-MAPS.md, termo 19.2).
+geometrias do IBGE (app.report.data.city_shapes): sem tiles, sem imagem do Google. Nada do Google no PDF: distância só em
+linha reta (decisão "só na tela", docs/GOOGLE-MAPS.md); o tempo de carro fica no Roteiro de visita dentro do app.
 Tudo em memória: nenhum arquivo temporário, nenhum log do conteúdo.
 """
 import io
@@ -50,8 +50,8 @@ def direction(c: dict) -> str:
 
 
 class Doc(FPDF):
-    def __init__(self, d: dict, title: str, orientation: str = "P"):
-        super().__init__(orientation, "mm", "A4")
+    def __init__(self, d: dict, title: str, orientation: str = "P", page_format="A4"):
+        super().__init__(orientation, "mm", page_format)
         self.d = d
         self.doc_title = title
         self.set_margins(M, M, M)
@@ -343,13 +343,13 @@ def summary(pdf: Doc, d: dict, shapes: dict):
         y = pdf.source(M, y, W, t.strip())
 
 
-def criteria_page(pdf: Doc, d: dict, google: dict):
+def criteria_page(pdf: Doc, d: dict):
     pdf.add_page()
     y = pdf.page_title("Seus critérios", "O que você pediu para esta análise",
                        "Os critérios, pesos e a cidade são os da tela do explorador no momento em que o relatório foi gerado.")
     c = d["company"]
     cw = W / 3
-    pdf.box(M, y, W, 20, "stone")
+    pdf.box(M, y, W, 25, "stone")
     for i, (k, v, note) in enumerate([
         ("Empresa", c["name"] or "não informada", None),
         ("Ramo", c["segment"] or "não informado", None),
@@ -359,7 +359,7 @@ def criteria_page(pdf: Doc, d: dict, google: dict):
         yy = pdf.text_at(M + 5 + i * cw, max(y + 8.5, ly + 1), cw - 8, v, 9.5, "sb", "ink", h=4.4)
         if note:
             pdf.source(M + 5 + i * cw, yy + 0.3, cw - 8, note)
-    y += 27
+    y += 32
     colw = (W - 8) / 2
     for j, (dirk, title) in enumerate((("attract", "O que você quer perto"), ("repel", "O que você quer longe"))):
         x = M + j * (colw + 8)
@@ -410,12 +410,8 @@ def criteria_page(pdf: Doc, d: dict, google: dict):
     if hq.get("note"):
         y = pdf.source(M, y + 0.5, W, hq["note"])
     y += 3
-    ok = google.get("ok")
     cols = [("Pos.", 12), (d["unit"][:-1].capitalize() if d["unit"] == "bairros" else "Área", 62), ("Linha reta (nossa conta)", 34)]
-    if ok:
-        cols += [("De carro: tempo", 32), ("De carro: distância", 34)]
     tw = sum(w for _, w in cols)
-    top = y
     pdf.color("fill", C["coal"])
     pdf.rect(M, y, tw, 8, "F")
     x = M
@@ -424,10 +420,7 @@ def criteria_page(pdf: Doc, d: dict, google: dict):
         x += w
     y += 8
     for i, h in enumerate(d["neighborhoods"]):
-        cell = google["cells"].get(i) if ok else None
         vals = [str(h["rank"]), h["name"], num(h["straight_km"], 1) + " km" if h["straight_km"] is not None else "sem dado"]
-        if ok:
-            vals += [f"{cell['min']} min" if cell else "sem rota", f"{num(cell['km'], 1)} km" if cell else "sem rota"]
         pdf.color("fill", C["stone"] if i % 2 == 0 else C["paper"])
         pdf.rect(M, y, tw, 8, "F")
         x = M
@@ -437,21 +430,81 @@ def criteria_page(pdf: Doc, d: dict, google: dict):
             pdf.cell(w - 4, 8, v)
             x += w
         y += 8
-    if ok:  # bloco do Google separado por borda e com atribuição (docs/GOOGLE-MAPS.md)
-        gx = M + 108
-        pdf.color("draw", C["sage_dark"])
-        pdf.set_line_width(0.4)
-        pdf.rect(gx, top, tw - 108, y - top, "D")
-        y = pdf.text_at(gx, y + 1.5, tw - 108, "Fonte: Google Maps", 7.5, "sb", "sage_dark", "R") + 0.5
-        pdf.source(M, y, W, f"Tempo e distância de carro: Google Maps, consultado em {d['generated_label']}, sem trânsito em tempo real, "
-                            "do ponto do bairro até a sede. Não são guardados pelo " + PRODUCT_NAME + ".")
-    else:
-        y = pdf.text_at(M, y + 2, W, "Tempo de deslocamento indisponível neste relatório.", 9, "sb", "muted") + 0.5
-        pdf.source(M, y, W, "Linha reta: calculada por nós (PostGIS) entre um ponto dentro do bairro e o ponto da sede; "
-                            "não considera ruas nem trânsito.")
+    y = pdf.source(M, y + 1.5, W, "Linha reta: calculada por nós (PostGIS) entre um ponto dentro do bairro e o ponto da sede; não "
+                                  "considera ruas nem trânsito. Tempo de carro: só no Roteiro de visita, dentro do app.")
 
 
-def neighborhood_page(pdf: Doc, d: dict, h: dict, shapes: dict, google_ok: bool):
+def counts_table(pdf: Doc, d: dict, y: float) -> float:
+    """Contagens por critério lado a lado: estabelecimentos no bairro e densidade (por km²)."""
+    y = pdf.label(M, y, "Contagens por critério nos " + str(len(d["neighborhoods"])) + " " + d["unit"], "copper_dark") + 1.5
+    crit = d["criteria"]
+    first = 46
+    cw = (W - first) / max(1, len(crit))
+    pdf.color("fill", C["coal"])
+    pdf.rect(M, y, W, 10, "F")
+    pdf.text_at(M + 2, y + 2, first - 4, d["unit"][:-1].upper() if d["unit"] == "bairros" else "ÁREA", 6.2, "sb", "on_dark", h=3, spacing=0.3)
+    for k, c in enumerate(crit):
+        pdf.text_at(M + first + k * cw + 1.5, y + 1.6, cw - 3, f"{c['name_plural']} ({'perto' if c['direction'] == 'attract' else 'longe'})".upper(),
+                    5.8, "sb", "on_dark", "R", h=2.9, spacing=0.2)
+    y += 10
+    for i, h in enumerate(d["neighborhoods"]):
+        pdf.color("fill", C["stone"] if i % 2 == 0 else C["paper"])
+        pdf.rect(M, y, W, 9.5, "F")
+        pdf.text_at(M + 2, y + 2.8, first - 4, f"{h['rank']}. {h['name']}", 8.2, "sb", "ink", h=3.8)
+        for k, c in enumerate(h["criteria"]):
+            x = M + first + k * cw
+            pdf.text_at(x + 1.5, y + 1.3, cw - 3, num(c["n"]), 8.6, "b", "ink", "R", h=3.8)
+            pdf.text_at(x + 1.5, y + 5.2, cw - 3, f"{num(c['density_per_km2'], 2)}/km²", 6.6, "", "muted", "R", h=3)
+        y += 9.5
+    return pdf.source(M, y + 1.2, W, f"Estabelecimentos distintos localizados em cada {d['unit'][:-1]} e densidade por km² de área. "
+                                   f"Receita Federal (CNPJ), ref. {d['reference_dates']['establishments']}; tipos de saúde: CNES.")
+
+
+def comparison_page(pdf: Doc, d: dict):
+    pdf.add_page()
+    n = len(d["neighborhoods"])
+    y = pdf.page_title("Tabelas comparativas", f"Os {n} {d['unit']} lado a lado",
+                       "Os mesmos números das páginas de cada " + d["unit"][:-1] + ", reunidos para comparar.")
+    y = counts_table(pdf, d, y) + 8
+    y = pdf.label(M, y, "Contexto: população, renda, concorrência e cobertura", "copper_dark") + 1.5
+    cols = [("Bairro" if d["unit"] == "bairros" else "Área", 40, "L"), ("População", 22, "R"), ("hab/km²", 18, "R"),
+            ("Renda mediana", 26, "R"), ("Mesmo ramo", 20, "R"), ("Mesmo ramo /km²", 22, "R"), ("Cobertura", 26, "R")]
+    pdf.color("fill", C["coal"])
+    pdf.rect(M, y, W, 10, "F")
+    x = M
+    for t, w, a in cols:
+        pdf.text_at(x + 1.5, y + 2, w - 3, t.upper(), 6.0, "sb", "on_dark", a, h=3, spacing=0.3)
+        x += w
+    y += 10
+    for i, h in enumerate(d["neighborhoods"]):
+        inc, comp, cov = h["income"], h["competition"], h["coverage"]
+        vals = [f"{h['rank']}. {h['name']}", cell_or(h["population"], num), cell_or(h["pop_density"], num),
+                (money(inc["median"]) + ("*" if inc.get("approximate") else "")) if inc.get("available") else "sem dado¹",
+                "sem dado¹" if comp is None else num(comp["n"]),
+                "sem dado¹" if comp is None or comp["density_per_km2"] is None else num(comp["density_per_km2"], 2),
+                f"{COVERAGE.get(cov['level'], cov['level'])} ({num(cov['located_count'])})"]
+        pdf.color("fill", C["stone"] if i % 2 == 0 else C["paper"])
+        pdf.rect(M, y, W, 9, "F")
+        x = M
+        for (t, w, a), v in zip(cols, vals):
+            pdf.text_at(x + 1.5, y + 2.6, w - 3, v, 8.2, "sb" if t in ("Bairro", "Área") else "", "ink", a, h=3.8)
+            x += w
+        y += 9
+    notes = [f"População e renda: IBGE, Censo 2022. Mesmo ramo: {d['competitor']['name_plural'].lower()} "
+             f"({'CNES' if d['competitor']['source'] == 'cnes' else 'Receita Federal, CNPJ'}, ref. {d['reference_dates']['establishments']})."
+             if d["competitor"] else "População e renda: IBGE, Censo 2022. " + d["competition_missing"],
+             "Cobertura: faixa (alta, média, baixa) de cadastros localizados no " + d["unit"][:-1] + " comparada aos outros da cidade; "
+             "entre parênteses, quantos cadastros foram localizados."]
+    if any(h["income"].get("approximate") for h in d["neighborhoods"]):
+        notes.append("* Renda aproximada: média das medianas dos setores censitários da área, ponderada pelos domicílios.")
+    if any(v is None for h in d["neighborhoods"] for v in (h["population"], h["pop_density"])) or d["competitor"] is None             or any(not h["income"].get("available") for h in d["neighborhoods"]):
+        notes.append("¹ sem dado: " + NO_DATA.format(item="[item da coluna]"))
+    y += 1.2
+    for t in notes:
+        y = pdf.source(M, y, W, t)
+
+
+def neighborhood_page(pdf: Doc, d: dict, h: dict, shapes: dict):
     pdf.add_page()
     unit1 = "bairro" if d["unit"] == "bairros" else "área"
     y = 28
@@ -564,8 +617,7 @@ def neighborhood_page(pdf: Doc, d: dict, h: dict, shapes: dict, google_ok: bool)
         pdf.text_at(x2 + 4, y + 8.5, bw2 - 8, NO_DATA.format(item="distância"), 8.4, "m", "muted", h=4)
     else:
         pdf.text_at(x2 + 4, y + 8, bw2 - 8, f"{num(h['straight_km'], 1)} km em linha reta", 13, "b", "ink", h=6)
-        pdf.text_at(x2 + 4, y + 14.5, bw2 - 8, "Tempo e distância de carro na página 3." if google_ok
-                    else "Tempo de deslocamento indisponível neste relatório.", 7.8, "", "muted", h=3.6)
+        pdf.text_at(x2 + 4, y + 14.5, bw2 - 8, "Tempo de carro: no Roteiro de visita, dentro do app.", 7.8, "", "muted", h=3.6)
         pdf.source(x2 + 4, y + 21.5, bw2 - 8, "Calculada por nós (PostGIS), do ponto do bairro à sede")
     y += 32
 
@@ -630,7 +682,7 @@ def method_page(pdf: Doc, d: dict):
         y = pdf.text_at(M, y, W, "· " + t, 9, "", "ink", h=4.5) + 1.5
 
 
-def sources_page(pdf: Doc, d: dict, google: dict):
+def sources_page(pdf: Doc, d: dict):
     pdf.add_page()
     y = pdf.page_title("Fontes, datas e cobertura", "De onde vem cada número")
     use = {
@@ -649,8 +701,6 @@ def sources_page(pdf: Doc, d: dict, google: dict):
         x += w
     y += 8
     rows = [(s["name"], s["reference_date"], use[s["key"]]) for s in d["sources"] if s["key"] in use and s["key"] != "ibge_malhas"]
-    if google.get("ok"):
-        rows.append(("Google Maps (Routes API), tempo e distância de carro", f"consulta em {d['generated_label']}", "deslocamento até a sede (página 3)"))
     for i, row in enumerate(rows):
         hgt = 3.2 + 3.3 * max(pdf.lines(w - 4, v, 7.4, "m" if t == "Fonte" else "") for (t, w), v in zip(cols, row))
         pdf.color("fill", C["stone"] if i % 2 == 0 else C["paper"])
@@ -672,8 +722,7 @@ def sources_page(pdf: Doc, d: dict, google: dict):
     if d["excluded"]:
         y = pdf.text_at(M, y, W, f"Fora do ranking: {', '.join(e['name'] for e in d['excluded'])} (área inválida no limite do IBGE).", 8.4, "", "muted", h=4.2) + 2
     y = pdf.text_at(M, y + 2, W, "Mapas deste relatório: desenho próprio a partir dos limites do IBGE, sem mapa-base de terceiros "
-                                 "(sem OpenStreetMap e sem Google). "
-                                 + ("Tempos de carro: Google Maps, na página 3, que não tem mapa." if google.get("ok") else ""),
+                                 "(sem OpenStreetMap e sem Google). Nenhum dado do Google neste documento.",
                     8.4, "", "muted", h=4.2) + 8
     # aviso legal
     hh = 36
@@ -684,16 +733,17 @@ def sources_page(pdf: Doc, d: dict, google: dict):
                 8.2, "", "on_dark_muted", h=4)
 
 
-def render_report(d: dict, shapes: dict, google: dict) -> bytes:
+def render_report(d: dict, shapes: dict) -> bytes:
     pdf = Doc(d, "Relatório de localização")
     pdf.has_cover = True
     n = len(d["neighborhoods"])
     cover(pdf, d, shapes, "Relatório de localização", f"Os {n} {d['unit']} que mais combinam com os seus critérios")
     summary(pdf, d, shapes)
-    criteria_page(pdf, d, google)
+    criteria_page(pdf, d)
+    comparison_page(pdf, d)
     for h in d["neighborhoods"]:
-        neighborhood_page(pdf, d, h, shapes, bool(google.get("ok")))
+        neighborhood_page(pdf, d, h, shapes)
     method_page(pdf, d)
-    sources_page(pdf, d, google)
+    sources_page(pdf, d)
     return bytes(pdf.output())
 

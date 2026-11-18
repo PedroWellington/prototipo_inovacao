@@ -2,6 +2,7 @@ import { html, mount } from '../html.js';
 import { PRODUCT_NAME } from '../brand.js';
 import { aboutLink, icon, logo } from '../icons.js';
 import { themeButton } from '../components/topbar.js';
+import { flags, flagsReady } from '../config.js';
 
 const DRAFT = 'Texto provisório, sujeito a revisão jurídica antes de uso real.';
 
@@ -20,7 +21,17 @@ function page(root, title, body, draft = true) {
   );
 }
 
-export function terms(root) {
+// Google Maps Platform (tempo de carro no Roteiro de visita): exigido pelos termos do Google antes de ligar a chave.
+// Só aparece quando o servidor diz que a Routes API está ligada (flag google_maps em /api/config).
+const googleTerms = () =>
+  html`<h2 id="google">Google Maps</h2>
+    <p>Quando disponível, o tempo e a distância de carro do Roteiro de visita vêm do Google Maps. Ao usar esse recurso, você também
+      concorda com os <a href="https://maps.google.com/help/terms_maps/" target="_blank" rel="noopener">Termos de Serviço adicionais do Google Maps</a>
+      e com a <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de Privacidade do Google</a>.
+      Esses dados aparecem só na tela e não são guardados.</p>`;
+
+export async function terms(root) {
+  await flagsReady;
   page(
     root,
     'Termos de uso',
@@ -35,6 +46,7 @@ export function terms(root) {
       <p>Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.</p>
       <p>Todo dado mostrado traz fonte e data de referência. A nota de cada área é relativa aos demais lugares comparados: não é uma medida absoluta nem uma previsão.</p>
       <p>As perguntas feitas ao assistente de IA, quando ligado, são processadas por um provedor externo (Google) para gerar a resposta.</p>
+      ${flags.google_maps ? googleTerms() : ''}
       <p><a class="btn btn-secondary btn-sm" href="#/como-calculamos">${icon('info', 16)} Como calculamos</a></p>`,
   );
 }

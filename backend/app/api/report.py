@@ -4,6 +4,8 @@ POST /api/cities/{ibge}/report        -> PDF (kind: report | route | slides)
 POST /api/cities/{ibge}/report/data   -> JSON do relatório para os slides (sem Google)
 POST /api/cities/{ibge}/route         -> JSON do roteiro de 3 bairros (com Google, se ligado e dentro da cota)
 
+Google "só na tela" (docs/GOOGLE-MAPS.md): o tempo de carro só sai no JSON do roteiro; nenhum PDF chama o Google.
+
 O ranking é recalculado no servidor com os critérios da tela (mesmo motor, mesmo resultado). Nada do conteúdo vai
 para log; o PDF é gerado em memória e não fica cópia. Endpoints síncronos: rodam no pool de threads do servidor,
 fora do laço principal; o semáforo limita a REPORT_MAX_CONCURRENT gerações ao mesmo tempo.
@@ -19,6 +21,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import Field, model_validator
 from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 
 from app import config, credits
@@ -76,10 +79,31 @@ def err(status: int, code: str, message: str):
     raise HTTPException(status, {"code": code, "message": message})
 
 
-def guard(request: Request, db: Session, user_id: int, ibge: int, body: CriteriaIn) -> None:
-    if not config.PDF_ENABLED:
-        err(404, "not_found", "Relatório desligado.")
+OUTDATED = ("O relatório ainda não pode ser gerado: a base de dados deste servidor está desatualizada (faltam a população "
+            "dos bairros e a concorrência). Nenhum PDF incompleto foi gerado. Tente de novo depois da atualização.")
+
+
+def base_ready(db: Session, data: Session, ibge: int) -> None:
+    """Base desatualizada (sem as colunas/tabelas do relatório ou sem população na cidade): mensagem clara, nunca PDF
+    incompleto. Produção: os bancos são montados à parte (docs/DEPLOY.md, "Ligar o relatório")."""
+    try:
+        ok = data.execute(
+            text("SELECT EXISTS (SELECT 1 FROM neighborhoods WHERE municipality_ibge = :m AND population IS NOT NULL) "
+                 "AND EXISTS (SELECT 1 FROM segments WHERE competitor_type_key IS NOT NULL)"), {"m": ibge}).scalar()
+        db.execute(text("SELECT 1 FROM report_usage LIMIT 0"))
+    except ProgrammingError:
+        data.rollback()
+        db.rollback()
+        ok = False
+    if not ok:
+        err(503, "base_outdated", OUTDATED)
+
+
+def guard(request: Request, db: Session, data: Session, user_id: int, ibge: int, body: CriteriaIn) -> None:
+    if not config.PDF_ENABLED:  # PDF_ENABLED=false na Vercel: o relatório não roda
+        err(503, "report_disabled", "O relatório ainda não está disponível neste servidor.")
     credits.require_city(db, user_id, ibge)
+    base_ready(db, data, ibge)
     if not body.criteria:
         err(422, "validation_error", "Adicione pelo menos um critério para gerar o relatório.")
     validate_references(db, body)
@@ -117,16 +141,6 @@ def slug(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "-", s).strip("-") or "cidade"
 
 
-def hq_matrix(db: Session, d: dict) -> dict:
-    """Relatório: origens = os bairros, destino = a sede (5 elementos). cells: índice do bairro -> {km, min}."""
-    if not d["hq"]:
-        return {"ok": False, "reason": "no_hq"}
-    g = google_routes.matrix(db, [h["point"] for h in d["neighborhoods"]], [d["hq"]])
-    if g["ok"]:
-        g["cells"] = {i: c for (i, _), c in g["cells"].items()}
-    return g
-
-
 def straight_legs(data: Session, pts: list[dict]) -> dict:
     """Distâncias em linha reta (PostGIS, km) entre todos os pares de pontos."""
     rows = data.execute(
@@ -142,15 +156,20 @@ def straight_legs(data: Session, pts: list[dict]) -> dict:
     return {(r.a, r.b): round(r.km, 1) for r in rows}
 
 
-def route_plan(db: Session, data: Session, d: dict) -> dict:
-    """Ordem de visita dos 3 bairros: a que soma menos tempo de carro (Google) ou, sem ele, menos linha reta.
+def route_plan(db: Session, data: Session, d: dict, use_google: bool) -> dict:
+    """Ordem de visita dos 3 bairros: a que soma menos tempo de carro (Google, só na tela) ou, sem ele, menos linha reta.
     Saída da sede quando há sede. Nada é guardado."""
     hoods = d["neighborhoods"]
     start = [d["hq"]] if d["hq"] else []
     pts = start + [h["point"] for h in hoods]
     off = len(start)
     straight = straight_legs(data, pts)
-    g = google_routes.matrix(db, pts, [h["point"] for h in hoods]) if d["hq"] else {"ok": False, "reason": "no_hq"}
+    if not use_google:
+        g = {"ok": False, "reason": "pdf"}
+    elif d["hq"]:
+        g = google_routes.matrix(db, pts, [h["point"] for h in hoods])
+    else:
+        g = {"ok": False, "reason": "no_hq"}
     car = g["cells"] if g["ok"] else {}
 
     def cost(order):
@@ -184,10 +203,10 @@ def render(db: Session, data: Session, user_id: int, ibge: int, criteria: list[d
     d = rdata.build(db, data, user_id, ibge, criteria, ids=ids)
     shapes = rdata.city_shapes(data, ibge)
     if kind == "report":
-        out = rpdf.render_report(d, shapes, hq_matrix(db, d))
+        out = rpdf.render_report(d, shapes)
         name = "relatorio"
     elif kind == "route":
-        out = extras.render_route(d, shapes, route_plan(db, data, d), CHECKLIST)
+        out = extras.render_route(d, shapes, route_plan(db, data, d, use_google=False), CHECKLIST)
         name = "roteiro"
     else:
         out = extras.render_slides(d, shapes)
@@ -198,7 +217,7 @@ def render(db: Session, data: Session, user_id: int, ibge: int, criteria: list[d
 @router.post("/{ibge}/report")
 def report_pdf(ibge: int, body: ReportIn, request: Request, user: CurrentUser = Depends(current_user),
                db: Session = Depends(get_db), data: Session = Depends(get_data_db)):
-    guard(request, db, user.id, ibge, body)
+    guard(request, db, data, user.id, ibge, body)
     take_daily(db, user.id)
     slot()
     try:
@@ -221,9 +240,9 @@ def report_pdf(ibge: int, body: ReportIn, request: Request, user: CurrentUser = 
 def report_data(ibge: int, body: CriteriaIn, request: Request, user: CurrentUser = Depends(current_user),
                 db: Session = Depends(get_db), data: Session = Depends(get_data_db)):
     """Os mesmos dados do PDF (sem Google), para o modo apresentação."""
-    guard(request, db, user.id, ibge, body)
+    guard(request, db, data, user.id, ibge, body)
     d = rdata.build(db, data, user.id, ibge, [c.model_dump() for c in body.criteria])
-    return {**d, "legal": rpdf.LEGAL, "legal_app": rpdf.LEGAL_APP, "not_advice": rpdf.NOT_ADVICE}
+    return {**d, **extras.story(d), "legal": rpdf.LEGAL, "legal_app": rpdf.LEGAL_APP, "not_advice": rpdf.NOT_ADVICE}
 
 
 @router.post("/{ibge}/route")
@@ -231,11 +250,11 @@ def route(ibge: int, body: ReportIn, request: Request, user: CurrentUser = Depen
           db: Session = Depends(get_db), data: Session = Depends(get_data_db)):
     if not body.neighborhoods or len(set(body.neighborhoods)) != 3:
         err(422, "validation_error", "Marque 3 bairros diferentes para montar o roteiro.")
-    guard(request, db, user.id, ibge, body)
+    guard(request, db, data, user.id, ibge, body)
     take_daily(db, user.id)  # usa o Google: conta no limite diário
     try:
         d = rdata.build(db, data, user.id, ibge, [c.model_dump() for c in body.criteria], ids=body.neighborhoods)
-        plan = route_plan(db, data, d)
+        plan = route_plan(db, data, d, use_google=True)
     except BaseException:
         give_back(db, user.id)
         raise

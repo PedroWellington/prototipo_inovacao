@@ -4,8 +4,10 @@
     python scripts/build_prod_db.py contas <url-destino>   # vicus-contas: só as tabelas de referência que as contas usam
                                                            #   (o esquema vem do `alembic upgrade head` rodado antes no destino)
 
+Sem <url-destino>, a URL vem da variável TARGET_DATABASE_URL (não aparece na linha de comando nem no histórico).
 "dados" recria tudo no destino. "contas" só insere o que falta (ON CONFLICT DO NOTHING): nunca apaga contas nem créditos.
 """
+import os
 import sys
 import time
 from pathlib import Path
@@ -85,6 +87,7 @@ def main(target: str, url: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3 or sys.argv[1] not in ("dados", "contas"):
+    url = sys.argv[2] if len(sys.argv) == 3 else os.environ.get("TARGET_DATABASE_URL", "")
+    if len(sys.argv) not in (2, 3) or sys.argv[1] not in ("dados", "contas") or not url:
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], url)

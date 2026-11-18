@@ -80,7 +80,7 @@ deve terminar com `TUDO IGUAL`.
    | `UPLOADS_ENABLED` | `false` |
    | `GOOGLE_LOGIN_ENABLED` | `false` |
    | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL` | só quando ligar o login com Google: ID e segredo do OAuth Client (Google Cloud Console) e `https://vicus-inovacao.vercel.app`; no Google: origem JavaScript `https://vicus-inovacao.vercel.app`, redirect URI `https://vicus-inovacao.vercel.app/api/auth/google/callback` |
-   | `PDF_ENABLED` | `true` (relatório, roteiro e slides; fpdf2 roda na função, ver `docs/RELATORIO.md`) |
+   | `PDF_ENABLED` | `true` (relatório, roteiro e slides; fpdf2 roda na função; ver "Ligar o relatório em produção") |
    | `GOOGLE_MAPS_API_KEY` | vazio por enquanto (tempo de carro desligado; ler `docs/GOOGLE-MAPS.md`, seção 4, antes de ligar) |
 
 4. Clique em **Deploy**. O primeiro build leva de 2 a 4 minutos. No fim aparece o endereço `https://<projeto>.vercel.app` (o protótipo está em `https://vicus-inovacao.vercel.app`).
@@ -96,6 +96,43 @@ escolha **São Paulo (gru1)** ali e faça **Redeploy**.
 - **Atualizar os dados** (novo mês do CNPJ): rodar o ETL local (`python -m app.etl.load_br`) e repetir só o passo 2.3.
 - **Mudar o código:** `git push` na `main` publica sozinho na Vercel. **Voltar atrás:** Vercel -> **Deployments** -> deploy
   anterior -> **... -> Promote to Production**. O banco não muda com deploy; migrations novas são o passo 2.1 de novo.
+
+## Ligar o relatório em produção (2026-11-18)
+
+O botão mostrava "Relatório desligado." porque a variável `PDF_ENABLED` foi criada como `false` no primeiro deploy.
+
+1. **Vercel:** Settings -> Environment Variables -> `PDF_ENABLED` = `true` (ambiente **Production**). Deixe
+   `GOOGLE_MAPS_API_KEY` sem valor. Depois, Deployments -> último deploy -> **Redeploy** (variável nova só vale num deploy novo).
+2. **Bancos:** o relatório precisa da migração `0013` no vicus-contas (tabelas `report_usage`, `google_routes_usage` e
+   `report_cost`) e da população dos bairros e da concorrência no vicus-dados (colunas `population`,
+   `population_method` e `segments.competitor_type_key`). Sem isso o botão mostra "a base de dados deste servidor está
+   desatualizada" e não gera PDF.
+
+Use as URLs **diretas** (sem `-pooler`) do painel do Neon (Connect -> desmarcar Pooled connection). Os comandos abaixo pedem
+a URL escondida (`-AsSecureString`): ela não aparece na tela, no histórico do PowerShell nem no chat. PowerShell, na raiz
+do repositório, com os containers de pé (`docker compose up -d`):
+
+```powershell
+# 0. Banco local completo em dia (idempotente): população dos bairros e tipo concorrente de cada ramo
+docker compose exec backend python -m app.etl.census --population
+docker compose exec backend python -m app.etl.seed_catalog
+
+# 1. vicus-contas: migrations (não apaga contas nem créditos)
+$s = Read-Host "URL DIRETA do vicus-contas (sem -pooler)" -AsSecureString
+$env:DATABASE_URL = [Net.NetworkCredential]::new('', $s).Password -replace '^postgres(ql)?://', 'postgresql+psycopg://'
+docker compose exec -e DATABASE_URL backend alembic upgrade head
+Remove-Item Env:DATABASE_URL
+
+# 2. vicus-dados: recria o banco de leitura inteiro a partir do local (5 a 20 minutos; o app lê dele, faça fora de pico)
+$s = Read-Host "URL DIRETA do vicus-dados (sem -pooler)" -AsSecureString
+$env:TARGET_DATABASE_URL = [Net.NetworkCredential]::new('', $s).Password
+docker compose exec -e TARGET_DATABASE_URL backend python scripts/build_prod_db.py dados
+Remove-Item Env:TARGET_DATABASE_URL
+```
+
+`-e NOME` sem valor repassa a variável do seu PowerShell só para aquele comando; nada vai para arquivo. Se a URL do Neon
+não terminar em `?sslmode=require`, acrescente ao colar. Para conferir: gere um relatório em Análises; se a mensagem de
+base desatualizada continuar, rode de novo o passo 2 (ele recria tudo).
 
 ## O que cada arquivo faz
 
