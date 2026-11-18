@@ -62,7 +62,8 @@ def seed_catalog_tables(conn) -> None:
     defaults = read_csv("segment_defaults.csv")
     conn.execute(text("DELETE FROM segment_defaults; DELETE FROM business_type_cnae; DELETE FROM business_type_cnes"))
     conn.execute(
-        text("INSERT INTO segments VALUES (:key, :name, :sort) ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, sort=EXCLUDED.sort"),
+        text("INSERT INTO segments (key, name, sort, competitor_type_key) VALUES (:key, :name, :sort, nullif(:competitor_type, '')) "
+             "ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, sort=EXCLUDED.sort, competitor_type_key=EXCLUDED.competitor_type_key"),
         segments,
     )
     conn.execute(text("DELETE FROM segments WHERE key <> ALL(:k)"), {"k": [s["key"] for s in segments]})

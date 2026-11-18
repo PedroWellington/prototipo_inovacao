@@ -1,9 +1,9 @@
-key,name,sort
-farmacia,Farmácia,1
-academia,Academia,2
-otica,Ótica,3
-restaurante,Restaurante,4
-suplementos,Loja de suplementos,5
-clinica,Clínica,6
-mercado,Supermercado/Mercado,7
-outro,Outro,99
+key,name,sort,competitor_type
+farmacia,Farmácia,1,farmacia
+academia,Academia,2,academia
+otica,Ótica,3,otica
+restaurante,Restaurante,4,restaurante
+suplementos,Loja de suplementos,5,suplementos
+clinica,Clínica,6,clinica
+mercado,Supermercado/Mercado,7,supermercado
+outro,Outro,99,

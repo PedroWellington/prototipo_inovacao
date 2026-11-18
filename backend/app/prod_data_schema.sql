@@ -27,7 +27,7 @@ CREATE INDEX municipalities_geom_high_idx ON municipalities USING gist (geom_hig
 CREATE TABLE neighborhoods (
   id integer PRIMARY KEY, municipality_ibge integer NOT NULL REFERENCES municipalities(ibge), name text NOT NULL,
   geom_simplified geometry(MultiPolygon, 4326) NOT NULL, label_point geometry(Point, 4326) NOT NULL,
-  area_km2 double precision, income_median numeric, income_method text
+  area_km2 double precision, income_median numeric, income_method text, population integer, population_method text
 );
 CREATE INDEX neighborhoods_mun_idx ON neighborhoods (municipality_ibge);
 
@@ -38,7 +38,7 @@ CREATE TABLE city_data_status (
   division_kind text NOT NULL DEFAULT 'bairro', located_alias integer NOT NULL DEFAULT 0
 );
 
-CREATE TABLE segments (key text PRIMARY KEY, name text NOT NULL, sort smallint NOT NULL);
+CREATE TABLE segments (key text PRIMARY KEY, name text NOT NULL, sort smallint NOT NULL, competitor_type_key text);
 CREATE TABLE business_types (
   key text PRIMARY KEY, name text NOT NULL, name_plural text NOT NULL, precision text NOT NULL, note text,
   selectable boolean NOT NULL DEFAULT true, source text NOT NULL DEFAULT 'cnpj'

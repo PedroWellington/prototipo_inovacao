@@ -78,15 +78,22 @@ RANK_SQL = text(
              coalesce((rank() OVER (PARTITION BY key ORDER BY density DESC) - 1)::float
                       / nullif(count(*) OVER (PARTITION BY key) - 1, 0), 0) AS higher_share
       FROM d
-    ), f AS (
+    ), f0 AS (
       SELECT p.*, CASE dir WHEN 'attract' THEN pct ELSE 1 - pct END AS fit FROM p
+    ), f AS (
+      -- position: posição do bairro só neste critério (empate = mesma posição);
+      -- contribution: pontos que o critério soma (+) ou tira (-) a partir de 50. nota = 50 + soma das contribuições.
+      SELECT f0.*, rank() OVER (PARTITION BY key ORDER BY fit DESC) AS position,
+             100 * w * (fit - 0.5) / sum(w) OVER (PARTITION BY id) AS contribution
+      FROM f0
     ), s AS (
       SELECT id, name,
              100 * sum(w * fit) / sum(w) AS score,
              json_agg(json_build_object(
                'type', key, 'direction', dir, 'weight', w, 'n', n, 'n_cnpj', n_cnpj,
                'density_per_km2', round(density::numeric, 2), 'percentile', round(pct::numeric, 4),
-               'lower_share', round(pct::numeric, 4), 'higher_share', round(higher_share::numeric, 4)
+               'lower_share', round(pct::numeric, 4), 'higher_share', round(higher_share::numeric, 4),
+               'position', position, 'contribution', round(contribution::numeric, 1)
              ) ORDER BY ord) AS criteria
       FROM f GROUP BY id, name
     )

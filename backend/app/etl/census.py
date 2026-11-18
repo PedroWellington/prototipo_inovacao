@@ -13,7 +13,9 @@ from sqlalchemy import text
 
 from app.config import DATA_DIR
 from app.etl.sources import (
+    IBGE_CENSO_BASICO_BAIRROS_URL,
     IBGE_CENSO_BASICO_MUN_URL,
+    IBGE_CENSO_BASICO_SETORES_URL,
     IBGE_MALHA_MUNICIPIOS_URL,
     IBGE_RENDA_BAIRROS_URL,
     IBGE_RENDA_MUN_URL,
@@ -82,6 +84,54 @@ def load_income_units(conn) -> dict:
     return out
 
 
+def load_population_units(conn) -> dict:
+    """População (v0001) dos bairros e setores. Código repetido no arquivo: nulo (não escolhemos um dos valores)."""
+    conn.execute(text("TRUNCATE census_population"))
+    out = {}
+    for level, url, code_col in (("setor", IBGE_CENSO_BASICO_SETORES_URL, "CD_SETOR"), ("bairro", IBGE_CENSO_BASICO_BAIRROS_URL, "CD_BAIRRO")):
+        by_code: dict[str, dict] = {}
+        for r in read_csv_zip(fetch(url, RAW / "censo2022")):
+            code = r[code_col]
+            pop = number(r["v0001"])
+            by_code[code] = {"l": level, "c": code, "p": None if code in by_code else pop}
+        conn.execute(text("INSERT INTO census_population VALUES (:l, :c, CAST(:p AS int))"), list(by_code.values()))
+        out[level] = len(by_code)
+    return out
+
+
+def update_neighborhood_population(conn, munis: list[int]) -> dict:
+    """Bairro: população publicada para o bairro. Área: soma dos setores, só se TODOS os setores tiverem valor."""
+    p = {"m": munis}
+    conn.execute(text("UPDATE neighborhoods SET population = NULL, population_method = NULL WHERE municipality_ibge = ANY(:m)"), p)
+    bairro = conn.execute(
+        text(
+            """
+            UPDATE neighborhoods n SET population = cp.population, population_method = 'ibge_bairro'
+            FROM census_population cp
+            WHERE n.municipality_ibge = ANY(:m) AND n.kind = 'bairro' AND cp.level = 'bairro' AND cp.code = n.ibge_code
+              AND cp.population IS NOT NULL
+            """
+        ),
+        p,
+    ).rowcount
+    area = conn.execute(
+        text(
+            """
+            WITH a AS (
+              SELECT t.unit_code, sum(cp.population)::int AS pop
+              FROM census_tracts t LEFT JOIN census_population cp ON cp.level = 'setor' AND cp.code = t.code
+              WHERE t.municipality_ibge = ANY(:m)
+              GROUP BY t.unit_code HAVING count(cp.population) = count(*)
+            )
+            UPDATE neighborhoods n SET population = a.pop, population_method = 'setores'
+            FROM a WHERE n.ibge_code = a.unit_code AND n.municipality_ibge = ANY(:m)
+            """
+        ),
+        p,
+    ).rowcount
+    return {"bairro": bairro, "area": area}
+
+
 def load_municipal_geometry(conn) -> int:
     path = fetch(IBGE_MALHA_MUNICIPIOS_URL, RAW)
     meta, _, geoms, data = pyogrio.raw.read(f"/vsizip/{path}", columns=["CD_MUN"])
@@ -140,7 +190,7 @@ def update_neighborhood_income(conn, munis: list[int]) -> dict:
         ),
         p,
     ).rowcount
-    return {"bairro": bairro, "area": area}
+    return {"bairro": bairro, "area": area, "population": update_neighborhood_population(conn, munis)}
 
 
 def save_sources(conn) -> None:
@@ -149,6 +199,8 @@ def save_sources(conn) -> None:
          "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel/", "2022 (publicado em 08/05/2026)"),
         ("ibge_censo_basico", "IBGE, Censo Demográfico 2022, Agregados por municípios (básico): população e área",
          IBGE_CENSO_BASICO_MUN_URL, "2022 (publicado em 20/05/2026)"),
+        ("ibge_censo_basico_bairros", "IBGE, Censo Demográfico 2022, Agregados por bairros e por setores (básico): população",
+         IBGE_CENSO_BASICO_BAIRROS_URL, "2022 (publicado em 20/05/2026)"),
         ("ibge_malha_municipal", "IBGE, Malha Municipal 2022", IBGE_MALHA_MUNICIPIOS_URL, "2022"),
     ]
     conn.execute(
@@ -161,15 +213,24 @@ def save_sources(conn) -> None:
 
 
 def load_national(conn) -> dict:
-    out = {**load_municipal(conn), "units": load_income_units(conn), "geometries": load_municipal_geometry(conn)}
+    out = {**load_municipal(conn), "units": load_income_units(conn), "population": load_population_units(conn),
+           "geometries": load_municipal_geometry(conn)}
     save_sources(conn)
     return out
 
 
 def main() -> None:
+    import sys
+
     from app.db import engine
 
     with engine.begin() as c:
+        if "--population" in sys.argv:  # só a população dos bairros, sem refazer o resto (python -m app.etl.census --population)
+            print(load_population_units(c))
+            save_sources(c)
+            munis = [r[0] for r in c.execute(text("SELECT DISTINCT municipality_ibge FROM neighborhoods"))]
+            print(update_neighborhood_population(c, munis))
+            return
         print(load_national(c))
         munis = [r[0] for r in c.execute(text("SELECT DISTINCT municipality_ibge FROM neighborhoods"))]
         print(update_neighborhood_income(c, munis))

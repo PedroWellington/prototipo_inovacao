@@ -26,6 +26,8 @@ _RENDA = f"{_CENSO}/Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel"
 IBGE_RENDA_SETORES_URL = f"{_RENDA}/Agregados_por_setores_renda_responsavel_BR_20260508_csv.zip"
 IBGE_RENDA_BAIRROS_URL = f"{_RENDA}/Agregados_por_bairros_renda_responsavel_BR_20260508_csv.zip"
 IBGE_RENDA_MUN_URL = f"{_RENDA}/Agregados_por_municipios_renda_responsavel_BR_20260508_csv.zip"
+IBGE_CENSO_BASICO_BAIRROS_URL = f"{_CENSO}/Agregados_por_Setores_Censitarios/Agregados_por_Bairro_csv/Agregados_por_bairros_basico_BR_20260520.zip"
+IBGE_CENSO_BASICO_SETORES_URL = f"{_CENSO}/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/Agregados_por_setores_basico_BR_20260520.zip"
 IBGE_CENSO_BASICO_MUN_URL = (
     f"{_CENSO}/Agregados_por_Setores_Censitarios/Agregados_por_Municipio_csv/Agregados_por_municipios_basico_BR_20260520.zip"
 )
