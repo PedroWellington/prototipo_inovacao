@@ -6,7 +6,7 @@
   "outputDirectory": ".vercel-out",
   "regions": ["gru1"],
   "functions": {
-    "api/index.py": { "maxDuration": 60 }
+    "api/index.py": { "maxDuration": 60, "includeFiles": "backend/app/report/fonts/**" }
   },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" },

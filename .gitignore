@@ -28,6 +28,8 @@ Thumbs.db
 
 # Arquivos enviados por usuários (logos) e dumps do banco: nunca no Git (repositório público)
 data/uploads/
+# Relatórios de exemplo gerados em desenvolvimento (scripts/sample_report.py)
+data/report_sample/
 *.dump
 *.sql.gz
 *.backup

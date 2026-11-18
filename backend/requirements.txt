@@ -11,3 +11,5 @@ pyogrio==0.10.0
 shapely==2.0.6
 Pillow==11.0.0
 pytest==8.3.4
+fpdf2==2.9.0
+pypdf==7.1.0

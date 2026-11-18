@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api import account, assistant as assistant_api, catalog, cities, credits, geo, profile
+from app.api import account, assistant as assistant_api, catalog, cities, credits, geo, profile, report
 from app.billing import routes as billing_routes
 from app.auth import google
 from app.auth import routes as auth_routes
@@ -15,7 +15,7 @@ from app.db import get_db
 
 app = FastAPI(title=f"{PRODUCT_NAME} API", docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-for module in (auth_routes, google, account, catalog, cities, credits, geo, profile, billing_routes, assistant_api):
+for module in (auth_routes, google, account, catalog, cities, report, credits, geo, profile, billing_routes, assistant_api):
     app.include_router(module.router)
 
 
