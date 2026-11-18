@@ -12,6 +12,7 @@ import { topbar, wireTopbar } from '../components/topbar.js';
 import { measure, rankListShell, updateRankList } from '../rankList.js';
 import { cityActive, creditsState, ensureCity, ensureSearch, loadCredits, onCredits } from '../credits.js';
 import { loadUser } from '../session.js';
+import { pdfButton, pdfStatus, rememberCriteria, wirePdf } from '../report.js';
 import '../styles/components.css';
 import '../styles/explorer.css';
 
@@ -587,9 +588,22 @@ export async function render(root) {
       result: () => html`${backButton()}<div class="ex-head"><h1>${s.city.name}</h1>
           <p class="muted small">${unit().Many} que mais combinam com os critérios que você definiu. Mude um peso e veja a ordem mudar no painel ao lado.</p></div>
         ${s.cityStatus && !s.cityStatus.has_data ? cityCoverage() : ''}
-        ${s.cityStatus?.has_data ? html`<section class="ex-section" data-section="criteria">${criteriaEditor()}</section>` : ''}`,
+        ${s.cityStatus?.has_data ? html`<section class="ex-section" data-section="criteria">${criteriaEditor()}</section>${reportSection()}` : ''}`,
     }[s.level];
     mount(panel, body());
+  }
+
+  // Relatório em PDF, roteiro de visita e modo apresentação, com os critérios desta tela (gerados no servidor).
+  function reportSection() {
+    return html`<section class="ex-section report-actions" data-section="report" data-pdf-scope>
+      <div class="section-head"><h2>Relatório</h2></div>
+      <p class="small muted">PDF com os ${unit().many} que mais combinam com os critérios desta tela, com números, fontes e datas.</p>
+      ${pdfButton('report')}
+      <div class="report-more">
+        <button type="button" class="btn btn-secondary btn-sm" data-open-report="roteiro">${icon('pin', 15)} Roteiro de visita</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-open-report="apresentacao">${icon('layers', 15)} Modo apresentação</button>
+      </div>
+      ${pdfStatus()}</section>`;
   }
 
   // ---------- Painel direito: Ranking | Detalhes ----------
@@ -1251,6 +1265,13 @@ export async function render(root) {
     else if (query.get('compare') && s.mode !== 'discover') goScope(); // "Comparar cidades" -> ranking de cidades
   }
   openFromQuery();
+  wirePdf(panel, { ibge: () => s.city.id, body: () => ({ criteria: s.criteria }), signal: ac.signal });
+  on(panel, 'click', (e) => {
+    const b = e.target.closest('[data-open-report]');
+    if (!b) return;
+    rememberCriteria(s.city.id, s.criteria);
+    location.hash = `/${b.dataset.openReport}?city=${s.city.id}`;
+  });
 
   const cleanup = () => {
     ac.abort();

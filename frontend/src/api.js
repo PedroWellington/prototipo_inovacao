@@ -16,7 +16,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(method, path, { body, signal } = {}) {
+async function request(method, path, { body, signal, file = false } = {}) {
   const headers = { Accept: 'application/json' };
   const binary = body instanceof Blob; // upload de imagem: corpo bruto, o servidor valida o conteúdo
   if (body !== undefined) headers['Content-Type'] = binary ? body.type || 'application/octet-stream' : 'application/json';
@@ -34,6 +34,11 @@ async function request(method, path, { body, signal } = {}) {
     if (e.name === 'AbortError') throw e;
     throw new ApiError(0, { error: { code: 'network', message: 'Sem conexão com o servidor. Verifique sua internet.' } });
   }
+  if (file && res.ok) {
+    // Arquivo (PDF): o nome vem do servidor em Content-Disposition.
+    const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') || '')?.[1] || 'arquivo.pdf';
+    return { blob: await res.blob(), name };
+  }
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) throw new ApiError(res.status, data);
   return data;
@@ -49,6 +54,7 @@ export function get(path, opts = {}) {
 }
 
 export const post = (path, body, opts) => request('POST', path, { ...opts, body: body ?? {} });
+export const postFile = (path, body, opts) => request('POST', path, { ...opts, body: body ?? {}, file: true });
 export const put = (path, body, opts) => request('PUT', path, { ...opts, body });
 export const del = (path, opts) => request('DELETE', path, opts);
 

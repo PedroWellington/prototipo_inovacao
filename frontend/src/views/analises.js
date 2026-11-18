@@ -9,6 +9,8 @@ import { activeCities } from '../lib.js';
 import { growBar, skeleton } from '../motion.js';
 import { go } from '../router.js';
 import { loadUser } from '../session.js';
+import { get } from '../api.js';
+import { pdfButton, pdfStatus, wirePdf } from '../report.js';
 import '../styles/components.css';
 
 const entered = { done: false };
@@ -55,12 +57,13 @@ export async function render(root) {
         <section class="ov-block" data-cx>
           ${items.length
             ? html`<ul class="ov-analyses">${items.map(
-                (x) => html`<li><div class="ov-analysis ${x.active ? '' : 'is-expired'}">
+                (x) => html`<li data-pdf-scope><div class="ov-analysis ${x.active ? '' : 'is-expired'}">
                   <span class="ov-miniicon">${icon(x.kind === 'city' ? 'map' : 'list', 15)}</span>
                   <span class="ov-analysis-name">${x.label}<small class="ov-days-bar">${growBar(x.active ? x.days_left / r.city_unlock_days : 0, `${x.days_left} de ${r.city_unlock_days} dias`)}</small></span>
                   <span class="ov-analysis-days small tabular">${icon('clock', 13)} ${daysText(x)}</span>
-                  <button type="button" class="btn btn-secondary btn-sm" ${x.kind === 'city' ? html`data-open-city="${x.ibge}"` : html`data-open-search="${x.scope_key}"`}>${x.active ? 'Continuar' : 'Reabrir'}</button>
-                </div></li>`,
+                  <span class="ov-analysis-actions">${x.kind === 'city' && x.active ? pdfButton('report', 'btn-ghost btn-sm', x.ibge) : ''}
+                  <button type="button" class="btn btn-secondary btn-sm" ${x.kind === 'city' ? html`data-open-city="${x.ibge}"` : html`data-open-search="${x.scope_key}"`}>${x.active ? 'Continuar' : 'Reabrir'}</button></span>
+                </div>${x.kind === 'city' && x.active ? pdfStatus() : ''}</li>`,
               )}</ul>`
             : html`<div class="ov-empty-big"><span class="ov-miniicon">${icon('map', 20)}</span><strong>Nenhuma análise ainda</strong><p>Abra uma cidade no explorador ou peça o ranking de cidades de um alcance. Cada análise fica aqui com os dias de validade.</p></div>`}
         </section>
@@ -79,5 +82,11 @@ export async function render(root) {
     else if (b.dataset.openSearch) go(`/explorer?search=${b.dataset.openSearch}`);
     else go(b.dataset.go);
   });
-  return cleanup;
+  // Relatório a partir daqui: critérios e pesos salvos no perfil (os mesmos que o explorador abre).
+  const ac = new AbortController();
+  wirePdf(root, { body: async () => ({ criteria: (await get('/api/profile')).criteria }), signal: ac.signal });
+  return () => {
+    ac.abort();
+    cleanup();
+  };
 }
