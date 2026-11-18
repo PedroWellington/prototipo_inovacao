@@ -37,8 +37,23 @@ frontend pede para abrir a cidade primeiro (o fluxo de crédito que já existe).
 - **Cor nunca sozinha:** número da posição em todo mapa e valor numérico ao lado de toda barra.
 - **Privacidade:** PDF em memória (sem arquivo temporário), sem cópia no servidor, sem log do conteúdo; só o dono
   da conta gera o seu. As marcações e anotações do roteiro ficam só no aparelho (localStorage).
-- **Google:** só no PDF do relatório (página 3, sem mapa) e no roteiro; nunca no MapLibre nem nos mapas do PDF;
-  nada gravado. Desligado sem `GOOGLE_MAPS_API_KEY`. Ver o conflito pendente em [GOOGLE-MAPS.md](GOOGLE-MAPS.md), seção 4.
+- **Google ("só na tela", 2026-11-18):** tempo de carro só no Roteiro de visita dentro do app; nenhum PDF chama o
+  Google; nada no MapLibre; nada gravado. Desligado sem `GOOGLE_MAPS_API_KEY`. Ver [GOOGLE-MAPS.md](GOOGLE-MAPS.md).
+- **Base desatualizada:** antes de gerar, o servidor confere se a base tem população dos bairros e concorrência
+  (`base_ready` em `app/api/report.py`). Se não tiver, responde 503 com uma mensagem clara e não gera PDF incompleto.
+  `PDF_ENABLED=false` responde 503 "O relatório ainda não está disponível neste servidor".
+
+## Relatório e slides são produtos diferentes
+
+- **Relatório (PDF, A4):** documento técnico para ler e conferir. Capa, resumo, critérios e sede, **tabelas
+  comparativas** (contagens e densidade por critério; população, renda, concorrência e cobertura lado a lado), uma página
+  por bairro, método, fontes e aviso legal.
+- **Slides (tela e PDF 16:9, 297 × 167 mm):** narrativa curta para sócio, banco ou investidor: (a) capa com cidade e
+  ramo, (b) o que buscamos (até 4 critérios em linguagem simples), (c) visão geral no mapa, (d) um slide por bairro com
+  a nota como número herói, 3 apoios e uma frase de leitura, (e) os 5 lado a lado, (f) como lemos os dados, (g) próximos
+  passos (botão para o Roteiro de visita), (h) fontes, datas, cobertura e aviso legal. Os textos da narrativa
+  (`wants`, `readings`) saem do servidor (`app/report/extras.py`, `story`), iguais na tela e no PDF. Movimento só com
+  `cascade`, `countNumber`/`countUp` e `growBar` (`src/motion.js`).
 
 ## Novos dados
 

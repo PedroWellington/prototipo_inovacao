@@ -71,8 +71,8 @@ def test_report_pdf_structure_and_language(client):
     assert re.search(r'filename="\w+-relatorio-Recife-\d{4}-\d{2}-\d{2}\.pdf"', r.headers["content-disposition"])
     assert len(r.content) < 2 * 1024 * 1024
     reader, txt = text_of(r.content)
-    # capa, resumo, critérios, 4 bairros (a cidade de teste só tem 4), método, fontes
-    assert len(reader.pages) == 9
+    # capa, resumo, critérios, tabelas comparativas, 4 bairros (a cidade de teste só tem 4), método, fontes
+    assert len(reader.pages) == 10
     assert reader.metadata.title == "Relatório de localização"
     assert reader.trailer["/Root"]["/Lang"] == "pt-BR"
     fonts = set()
@@ -90,8 +90,9 @@ def test_report_pdf_structure_and_language(client):
     assert "Não constituem aconselhamento jurídico nem financeiro" in flat
     # Delta sem população: mensagem padrão, nunca um número inventado
     assert "Não foi possível encontrar dados de população desta área." in flat
-    assert "Tempo de deslocamento indisponível neste relatório." in flat
-    assert "Google" not in flat.replace("sem Google", "")  # sem chave: nada do Google
+    assert "Tempo de carro: só no Roteiro de visita, dentro do app." in flat
+    assert "Google Maps" not in flat  # nunca no PDF (decisão "só na tela")
+    assert "contagens por critério" in flat.lower()
 
 
 def test_contributions_add_up_to_the_score(client):
@@ -113,25 +114,36 @@ def test_params_code_is_reproducible():
     assert re.fullmatch(r"[0-9A-F]{5}-[0-9A-F]{5}", a)
 
 
-def test_google_used_once_counted_and_attributed(client, monkeypatch):
+def ids_of(client, csrf, k=3):
+    ranking = client.post(f"/api/cities/{RECIFE}/rank", json=CRIT, headers={"X-CSRF-Token": csrf}).json()
+    return [n["id"] for n in ranking["neighborhoods"][:k]]
+
+
+def route_of(client, csrf, ids):
+    return client.post(f"/api/cities/{RECIFE}/route", json={**CRIT, "neighborhoods": ids}, headers={"X-CSRF-Token": csrf})
+
+
+def test_google_only_on_screen_never_in_pdfs(client, monkeypatch):
+    """Decisão "só na tela": com a chave ligada, nenhum PDF chama o Google; só o roteiro em JSON."""
     fake = FakeGoogle()
     monkeypatch.setattr(google_routes, "post", fake)
     monkeypatch.setattr(config, "GOOGLE_MAPS_API_KEY", "chave-de-teste")
     csrf = setup_user(client)
-    r = pdf_of(client, csrf)
-    assert r.status_code == 200, r.text
-    assert len(fake.calls) == 1  # uma chamada em lote
+    ids = ids_of(client, csrf)
+    for kind, extra in (("report", {}), ("slides", {}), ("route", {"neighborhoods": ids})):
+        r = pdf_of(client, csrf, kind=kind, **extra)
+        assert r.status_code == 200, r.text
+        assert "Google Maps" not in " ".join(text_of(r.content)[1].split())
+    assert fake.calls == []
+    out = route_of(client, csrf, ids).json()
+    assert len(fake.calls) == 1 and out["google_ok"] and out["attribution"] == "Google Maps"
     body = fake.calls[0]
-    assert len(body["origins"]) == 4 and len(body["destinations"]) == 1
     assert body["routingPreference"] == "TRAFFIC_UNAWARE" and body["travelMode"] == "DRIVE"
     with engine.connect() as c:
-        assert c.execute(text("SELECT elements, requests FROM google_routes_usage")).one() == (4, 1)
+        assert c.execute(text("SELECT elements, requests FROM google_routes_usage")).one() == (12, 1)
         # nada do Google gravado: a tabela só tem contagens
         cols = [r[0] for r in c.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'google_routes_usage'"))]
         assert sorted(cols) == ["elements", "month", "requests"]
-    _, txt = text_of(r.content)
-    flat = " ".join(txt.split())
-    assert "Fonte: Google Maps" in flat and "10 min" in flat
 
 
 def test_cap_at_80_percent_degrades_without_calling(client, monkeypatch):
@@ -140,14 +152,13 @@ def test_cap_at_80_percent_degrades_without_calling(client, monkeypatch):
     monkeypatch.setattr(config, "GOOGLE_MAPS_API_KEY", "chave-de-teste")
     monkeypatch.setattr(config, "GOOGLE_ROUTES_MONTHLY_FREE", 100)  # trava = 80
     with engine.begin() as c:
-        c.execute(text(f"INSERT INTO google_routes_usage VALUES ({google_routes.MONTH_SQL}, 78, 10)"))
+        c.execute(text(f"INSERT INTO google_routes_usage VALUES ({google_routes.MONTH_SQL}, 70, 10)"))
     csrf = setup_user(client)
-    r = pdf_of(client, csrf)
-    assert r.status_code == 200
-    assert fake.calls == []  # 78 + 4 > 80: não chama
+    out = route_of(client, csrf, ids_of(client, csrf)).json()
+    assert fake.calls == [] and not out["google_ok"]  # 70 + 12 > 80: não chama
+    assert out["unavailable"] == "Tempo de deslocamento indisponível neste roteiro."
     with engine.connect() as c:
-        assert c.execute(text("SELECT elements FROM google_routes_usage")).scalar() == 78
-    assert "Tempo de deslocamento indisponível neste relatório." in " ".join(text_of(r.content)[1].split())
+        assert c.execute(text("SELECT elements FROM google_routes_usage")).scalar() == 70
 
 
 def test_reserve_never_passes_the_cap(monkeypatch):
@@ -159,13 +170,29 @@ def test_reserve_never_passes_the_cap(monkeypatch):
         assert google_routes.used(db) == 8
 
 
-def test_google_error_never_breaks_the_report(client, monkeypatch):
+def test_google_error_never_breaks_the_route(client, monkeypatch):
     monkeypatch.setattr(google_routes, "post", FakeGoogle(status=500))
     monkeypatch.setattr(config, "GOOGLE_MAPS_API_KEY", "chave-de-teste")
     csrf = setup_user(client)
+    r = route_of(client, csrf, ids_of(client, csrf))
+    assert r.status_code == 200 and not r.json()["google_ok"]
+    assert all(s["leg"]["straight_km"] is not None for s in r.json()["stops"])
+
+
+def test_outdated_base_gives_clear_message_and_no_pdf(client):
+    csrf = setup_user(client)
+    with engine.begin() as c:
+        c.execute(text("UPDATE neighborhoods SET population = NULL"))
     r = pdf_of(client, csrf)
-    assert r.status_code == 200
-    assert "Tempo de deslocamento indisponível neste relatório." in " ".join(text_of(r.content)[1].split())
+    assert r.status_code == 503 and r.headers["content-type"].startswith("application/json")
+    assert r.json()["error"]["code"] == "base_outdated" and "desatualizada" in r.json()["error"]["message"]
+
+
+def test_report_flag_off_is_explained(client, monkeypatch):
+    monkeypatch.setattr(config, "PDF_ENABLED", False)
+    csrf = setup_user(client)
+    r = pdf_of(client, csrf)
+    assert r.status_code == 503 and r.json()["error"]["code"] == "report_disabled"
 
 
 def test_daily_limit_and_locked_city(client, monkeypatch):
@@ -248,5 +275,13 @@ def test_slides_data_and_pdf_carry_the_same_legal_notes(client):
     assert r.status_code == 200
     reader, txt = text_of(r.content)
     flat = " ".join(txt.split())
-    assert reader.pages[0].mediabox.width > reader.pages[0].mediabox.height  # paisagem
+    box = reader.pages[0].mediabox
+    assert float(box.width) / float(box.height) == pytest.approx(16 / 9, abs=0.01)  # 16:9, um slide por página
+    # narrativa: capa, o que buscamos, visão geral, 4 bairros, comparação, como lemos, próximos passos, fontes
+    assert len(reader.pages) == 11
+    for t in ("O que buscamos", "Visão geral", "lado a lado", "Como lemos os dados", "Próximos passos", "Roteiro de visita",
+              "Fontes, datas e cobertura", "Perto de hospitais", "O critério que mais pesou a favor"):
+        assert t.lower() in flat.lower(), t
     assert "Não garante resultado" in flat and "Não é uma recomendação" in flat and not FORBIDDEN.findall(txt)
+    assert d["wants"][0] == {"text": "Perto de hospitais", "importance": "importante", "weight": 3, "direction": "attract"}
+    assert set(d["readings"]) == {str(h["id"]) for h in d["neighborhoods"]}
