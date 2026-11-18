@@ -1,7 +1,8 @@
-"""Assistente de IA: regras de conteúdo, limites, falhas e privacidade. O Groq é simulado (sem rede)."""
+"""Assistente de IA: regras de conteúdo, limites, falhas e privacidade. O provedor é simulado (sem rede)."""
 
 import json
 
+import httpx
 import pytest
 
 from app import assistant, config
@@ -23,7 +24,7 @@ FORBIDDEN_SAMPLES = [
 @pytest.fixture
 def on(monkeypatch):
     monkeypatch.setattr(config, "AI_ASSISTANT_ENABLED", True)
-    monkeypatch.setattr(config, "GROQ_API_KEY", "chave-de-teste")
+    monkeypatch.setattr(config, "AI_API_KEY", "chave-de-teste")
     monkeypatch.setattr(config, "AI_DAILY_LIMIT", 3)
     api.clear_ip_limits()
     seed_minimal_catalog()
@@ -104,7 +105,7 @@ def test_ip_limit(client, on, monkeypatch):
     assert [ask(client, csrf).status_code for _ in range(3)] == [200, 200, 429]
 
 
-def test_groq_down_is_handled_and_not_counted(client, on, monkeypatch):
+def test_provider_down_is_handled_and_not_counted(client, on, monkeypatch):
     def down(msgs):
         raise assistant.Unavailable
 
@@ -122,8 +123,38 @@ def test_disabled_by_default_and_without_key(client, monkeypatch):
     assert client.get("/api/config").json()["assistant"] is False
     assert ask(client, csrf).status_code == 404
     monkeypatch.setattr(config, "AI_ASSISTANT_ENABLED", True)  # ligado mas sem chave: continua desligado
-    monkeypatch.setattr(config, "GROQ_API_KEY", "")
+    monkeypatch.setattr(config, "AI_API_KEY", "")
     assert client.get("/api/config").json()["assistant"] is False and ask(client, csrf).status_code == 404
+
+
+def test_call_model_uses_configured_provider_without_real_network(monkeypatch):
+    """Provedor simulado (httpx.MockTransport): confere URL, modelo e chave usados, sem rede de verdade."""
+    seen = {}
+
+    def fake_provider(request):
+        seen["url"] = str(request.url)
+        seen["auth"] = request.headers["authorization"]
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"choices": [{"message": {"content": "resposta do provedor simulado"}}]})
+
+    monkeypatch.setattr(config, "AI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai")
+    monkeypatch.setattr(config, "AI_API_KEY", "chave-gemini-de-teste")
+    monkeypatch.setattr(config, "AI_MODEL", "gemini-3.8-flash")
+    monkeypatch.setattr(assistant.httpx, "post", lambda url, **kw: httpx.Client(transport=httpx.MockTransport(fake_provider)).post(url, **kw))
+
+    out = assistant.call_model([{"role": "user", "content": "oi"}])
+
+    assert out == "resposta do provedor simulado"
+    assert seen["url"] == "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+    assert seen["auth"] == "Bearer chave-gemini-de-teste"
+    assert seen["body"]["model"] == "gemini-3.8-flash"
+
+
+def test_call_model_raises_unavailable_on_429(monkeypatch):
+    monkeypatch.setattr(config, "AI_API_KEY", "chave-de-teste")
+    monkeypatch.setattr(assistant.httpx, "post", lambda url, **kw: httpx.Response(429))
+    with pytest.raises(assistant.Unavailable):
+        assistant.call_model([{"role": "user", "content": "oi"}])
 
 
 def test_requires_session_and_csrf(client, on):

@@ -1,35 +1,41 @@
-# Assistente de IA (Groq)
+# Assistente de IA
 
 Botão redondo no canto inferior direito de todas as telas do app (só para quem está logado; nunca na landing). Abre um painel lateral (gaveta no celular) que sobrevive à troca de aba. Atalho: **Alt+A** abre e fecha; **Esc** fecha.
+
+O provedor é configurável: qualquer serviço compatível com a API do OpenAI (`/chat/completions`) funciona, trocando só as variáveis de ambiente abaixo. A lógica do assistente (contexto, filtro de saída, limites) não muda com o provedor.
 
 ## Como ligar
 
 | Variável (servidor) | Padrão | O que faz |
 |---|---|---|
 | `AI_ASSISTANT_ENABLED` | `false` | Liga o assistente. Desligado, ou ligado sem chave: o botão não aparece e `/api/assistente` responde 404. |
-| `GROQ_API_KEY` | vazio | Chave do Groq. **Só no servidor** (variável de ambiente). Nunca no frontend nem no Git. |
-| `GROQ_MODEL` | `openai/gpt-oss-120b` | Modelo do Groq (ver "Modelo" abaixo). |
+| `AI_API_KEY` | vazio | Chave do provedor. **Só no servidor** (variável de ambiente, Secret na Vercel). Nunca no frontend nem no Git. Se vazia, usa `GROQ_API_KEY` (alternativa antiga). |
+| `AI_BASE_URL` | `https://api.groq.com/openai/v1` | Base da API compatível com OpenAI (sem `/chat/completions`). |
+| `AI_MODEL` | vazio (usa `GROQ_MODEL`) | Modelo do provedor (ver "Modelo" abaixo). |
+| `GROQ_API_KEY`, `GROQ_MODEL` | vazio, `openai/gpt-oss-120b` | Alternativa antiga (Groq); usadas só enquanto `AI_API_KEY`/`AI_MODEL` não existirem. |
 | `AI_DAILY_LIMIT` | `30` | Perguntas por conta por dia. |
 | `AI_MAX_CHARS` | `600` | Tamanho máximo da pergunta. |
-| `AI_TIMEOUT_SECONDS` | `20` | Tempo máximo de espera pelo Groq. |
+| `AI_TIMEOUT_SECONDS` | `20` | Tempo máximo de espera pelo provedor. |
 
-Na Vercel: **Settings > Environment Variables** do projeto, ambiente *Production* (e *Preview*, se quiser testar lá), e depois um novo deploy. A chave sai de <https://console.groq.com/keys> ("Create API Key"); copie na hora, porque o Groq só a mostra uma vez.
+Na Vercel: **Settings > Environment Variables** do projeto, ambiente *Production* (e *Preview*, se quiser testar lá), e depois um novo deploy.
 
-## Modelo
+## Provedor: Google Gemini (plano gratuito do AI Studio)
 
-Lista consultada em **2026-11-17** em <https://console.groq.com/docs/models> e <https://console.groq.com/docs/deprecations>:
+- `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai` (endpoint compatível com OpenAI; confirmado em <https://ai.google.dev/gemini-api/docs/openai>, redireciona para <https://aistudio.google.com/docs/openai>).
+- `AI_MODEL=gemini-3.8-flash`: modelo Flash estável e principal, com preço "gratuito" na tabela de preços consultada em **2026-11-17** em <https://ai.google.dev/gemini-api/docs/pricing> (redireciona para <https://aistudio.google.com/docs/pricing>) e listado como estável em <https://aistudio.google.com/docs/models>. `gemini-2.5-flash`, usado antes, está descontinuado (passa a responder como `gemini-3.5-flash-lite` a partir de 01/12/2026).
+- `AI_API_KEY`: chave criada em <https://aistudio.google.com/apikey> ("Create API key"), plano gratuito. Só no servidor.
+- **Privacidade do plano gratuito:** a mesma página de preços e os termos (<https://ai.google.dev/gemini-api/terms>, seção "How Google Uses Your Data") confirmam que, no plano gratuito ("Unpaid Services"), o conteúdo enviado pode ser usado para melhorar os produtos do Google e pode ser lido por revisores humanos. Por isso o contexto montado pelo servidor (`build_context`) manda só dados abertos agregados e a pergunta da pessoa — nunca e-mail, nome, senha ou qualquer dado pessoal da conta (conferido em `test_context_is_real_and_private`). O aviso para quem usa o assistente fica nos Termos de uso, seção "Avisos legais".
+- Antes de trocar de modelo, consulte de novo as páginas acima (modelos do Gemini mudam e são descontinuados com frequência).
 
-- Produção: `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant` (mais `whisper-*`, só áudio).
-- `llama-3.3-70b-versatile` e `llama-3.1-8b-instant` têm desligamento anunciado para 16/08/2026 (aviso por e-mail em 17/06/2026); a página de descontinuação recomenda `openai/gpt-oss-120b` no lugar. Por isso não foram escolhidos, mesmo ainda aparecendo na lista.
-- Escolhido: **`openai/gpt-oss-120b`** (produção, sem aviso de descontinuação). Limites da conta gratuita publicados na data: 30 pedidos/min, 1.000/dia, 8 mil tokens/min, 200 mil tokens/dia. O contexto montado pelo servidor cabe com folga em 8 mil tokens.
-- É um modelo de raciocínio: o servidor manda `include_reasoning: false` e `reasoning_effort: "low"`, para o raciocínio interno não chegar à pessoa e a resposta sair mais rápido. Trocar de modelo é só mudar `GROQ_MODEL`; para modelos que não são `openai/gpt-oss-*`, esses dois parâmetros não vão.
-- Antes de trocar, consulte de novo as duas páginas acima (modelos mudam e são desligados).
+## Trocando de provedor
+
+Qualquer serviço com endpoint `/chat/completions` no formato OpenAI serve: ajuste `AI_BASE_URL`, `AI_API_KEY` e `AI_MODEL`. O parâmetro `reasoning_effort`/`include_reasoning` só é enviado quando `AI_MODEL` começa com `openai/gpt-oss` (específico do Groq); para outros modelos (Gemini incluído) esses campos não vão.
 
 ## O que ele pode e não pode dizer
 
 - As regras estão em `SYSTEM_PROMPT` (`backend/app/assistant.py`): usa só o bloco CONTEXTO; sem o dado, responde "Não tenho esse dado aqui." e aponta onde ver no site; cita fonte e data; não recomenda bairro nem cidade; não promete lucro, faturamento ou sucesso; usa "os bairros que mais combinam com os critérios que você definiu".
 - **Conferido no servidor:** toda resposta passa por `violations()` (expressão em `FORBIDDEN`: "melhor bairro", "garantido", "lucro certo", "recomendo", "ideal para você", "100% preciso"…). Se aparecer algo, o servidor pede de novo uma vez lembrando a regra; se repetir, devolve uma resposta segura fixa. Por isso as respostas não são em streaming: a verificação precisa do texto inteiro antes de ele chegar à tela. Enquanto isso, o painel mostra "Consultando os dados…" sem travar o mapa nem a interface.
-- Testes: `backend/tests/test_assistant.py` (frases proibidas, regras no prompt, limites, falha do Groq, flag desligada, sem e-mail no contexto) e `frontend/perf/assistente.mjs` (só logado, todas as abas, conversa que sobrevive à troca de aba, teclado, erro tratado).
+- Testes: `backend/tests/test_assistant.py` (frases proibidas, regras no prompt, limites, falha do provedor, provedor simulado sem rede de verdade, flag desligada, sem e-mail no contexto) e `frontend/perf/assistente.mjs` (só logado, todas as abas, conversa que sobrevive à troca de aba, teclado, erro tratado).
 
 ## Contexto enviado (LGPD: só o necessário)
 
@@ -42,4 +48,4 @@ Nunca vão: nome, e-mail, senha, dados de outras contas, nome da empresa, fatura
 - Por conta: `AI_DAILY_LIMIT` por dia (contagem atômica no banco). Ao atingir: "Você chegou ao limite de 30 perguntas por dia ao assistente. Ele volta amanhã."
 - Por IP: 20 pedidos por minuto (em memória, por processo; `# shortcut` no código).
 - Pergunta acima de `AI_MAX_CHARS`: recusada com a mensagem do limite.
-- Groq fora do ar, chave inválida ou tempo esgotado: "Assistente indisponível no momento." A pergunta não conta no limite e o resto do site segue normal.
+- Provedor fora do ar, chave inválida, limite do plano gratuito (429) ou tempo esgotado: "Assistente indisponível no momento." A pergunta não conta no limite e o resto do site segue normal.

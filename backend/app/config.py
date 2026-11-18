@@ -27,8 +27,12 @@ PAYMENTS_ENABLED = flag("PAYMENTS_ENABLED", False)  # gateway de pagamento (app/
 
 # Assistente de IA (app/assistant.py; docs/ASSISTENTE-IA.md). Desligado ou sem chave: o botão não aparece.
 AI_ASSISTANT_ENABLED = flag("AI_ASSISTANT_ENABLED", False)
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # só no servidor; nunca no frontend nem no Git
-GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")  # lista consultada em 2026-11-17 (docs/ASSISTENTE-IA.md)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # alternativa antiga; usada só se AI_API_KEY não existir
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+# Provedor compatível com OpenAI (/chat/completions). Padrão: Groq, mantido pelas duas variáveis acima.
+AI_API_KEY = os.getenv("AI_API_KEY") or GROQ_API_KEY  # só no servidor; nunca no frontend nem no Git
+AI_BASE_URL = os.getenv("AI_BASE_URL", "https://api.groq.com/openai/v1")
+AI_MODEL = os.getenv("AI_MODEL") or GROQ_MODEL
 AI_DAILY_LIMIT = int(os.getenv("AI_DAILY_LIMIT", "30"))  # mensagens por conta por dia
 AI_MAX_CHARS = int(os.getenv("AI_MAX_CHARS", "600"))  # tamanho máximo da pergunta
 AI_TIMEOUT_SECONDS = float(os.getenv("AI_TIMEOUT_SECONDS", "20"))

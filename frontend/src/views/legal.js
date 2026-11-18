@@ -34,6 +34,7 @@ export function terms(root) {
       <h2 id="avisos">Avisos legais</h2>
       <p>Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.</p>
       <p>Todo dado mostrado traz fonte e data de referência. A nota de cada área é relativa aos demais lugares comparados: não é uma medida absoluta nem uma previsão.</p>
+      <p>As perguntas feitas ao assistente de IA, quando ligado, são processadas por um provedor externo (Google) para gerar a resposta.</p>
       <p><a class="btn btn-secondary btn-sm" href="#/como-calculamos">${icon('info', 16)} Como calculamos</a></p>`,
   );
 }

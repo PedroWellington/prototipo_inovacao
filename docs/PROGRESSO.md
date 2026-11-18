@@ -84,7 +84,7 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 
 - **Provedor de tiles (obrigatório antes de publicar o hero 360 e o explorador em produção).** Os tiles públicos do OSM não servem para produção, e o hero com o mapa real aumenta o volume (14 pontos pré-carregados por visita, do zoom 3 ao 14). Opções levantadas em 2026-11-17 (preços de sites de terceiros; confirmar no site de cada provedor): Stadia Maps (camada grátis de ~200 mil créditos/mês, pago a partir de ~US$ 20/mês), MapTiler (grátis só para uso não comercial; pago a partir de ~US$ 25–30/mês), Mapbox (franquia grátis mensal e depois ~US$ 0,50–1 por mil carregamentos), ou PMTiles próprio (Protomaps) num bucket sem taxa de saída como o Cloudflare R2 (centavos a poucos dólares por mês de armazenamento e requisições, mais o trabalho de gerar e atualizar o arquivo). Ordem de grandeza para o protótipo: de US$ 0 a ~US$ 30/mês; cresce com o número de visitas.
 
-- Ligar o assistente: `GROQ_API_KEY` e `AI_ASSISTANT_ENABLED=true` na Vercel (passo a passo em `docs/ASSISTENTE-IA.md`).
+- Ligar o assistente: `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` (Gemini) e `AI_ASSISTANT_ENABLED=true` na Vercel (passo a passo em `docs/ASSISTENTE-IA.md`).
 
 - Criar os projetos Neon (`vicus-dados`, `vicus-contas`, São Paulo) e o projeto Vercel; carregar os bancos (`docs/DEPLOY.md`).
 - Mapa-base em produção: o servidor público do OSM não cobre produção; escolher MapTiler, Stadia ou PMTiles próprio antes de divulgar.

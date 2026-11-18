@@ -1,4 +1,5 @@
-"""Assistente de IA (Groq): responde só a partir dos dados reais que a conta já pode ver.
+"""Assistente de IA (provedor compatível com OpenAI, configurável por AI_API_KEY/AI_BASE_URL/AI_MODEL):
+responde só a partir dos dados reais que a conta já pode ver.
 
 - O contexto é montado aqui, no servidor: critérios e pesos, cidades abertas, ranking e números do bairro da
   tela atual (só de cidade liberada para a conta), fontes e datas. Nada de e-mail, senha ou dado de outra conta.
@@ -20,16 +21,15 @@ from app import config, credits
 from app.scoring.rank import rank
 
 log = logging.getLogger(__name__)
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 NO_DATA = "Não foi possível encontrar dados de {item} desta área."
 
 
 class Unavailable(Exception):
-    """Groq fora do ar, sem chave, tempo esgotado ou resposta inválida."""
+    """Provedor fora do ar, sem chave, limite do plano (429), tempo esgotado ou resposta inválida."""
 
 
 def enabled() -> bool:
-    return config.AI_ASSISTANT_ENABLED and bool(config.GROQ_API_KEY)
+    return config.AI_ASSISTANT_ENABLED and bool(config.AI_API_KEY)
 
 
 SYSTEM_PROMPT = f"""Você é o assistente do {config.PRODUCT_NAME}, uma plataforma que ordena cidades e bairros pelos critérios que a própria pessoa define (o que ela quer perto e o que quer longe, com peso de 1 a 5). Responda em português do Brasil, em frases curtas.
@@ -137,17 +137,19 @@ def city_block(data: Session, ibge: int, crit: list[dict], hood: int | None) -> 
 
 
 def call_model(messages: list[dict]) -> str:
-    """Uma chamada ao Groq (sem streaming). Erros viram Unavailable; nunca registra o conteúdo."""
-    body = {"model": config.GROQ_MODEL, "messages": messages, "temperature": 0.2, "max_completion_tokens": 700}
-    if config.GROQ_MODEL.startswith("openai/gpt-oss"):
+    """Uma chamada ao provedor configurado (sem streaming). Erros viram Unavailable; nunca registra o
+    conteúdo, a chave nem a URL."""
+    body = {"model": config.AI_MODEL, "messages": messages, "temperature": 0.2, "max_completion_tokens": 700}
+    if config.AI_MODEL.startswith("openai/gpt-oss"):
         body |= {"include_reasoning": False, "reasoning_effort": "low"}  # o raciocínio não vai para a pessoa
+    url = config.AI_BASE_URL.rstrip("/") + "/chat/completions"
     try:
-        r = httpx.post(GROQ_URL, json=body, headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"}, timeout=config.AI_TIMEOUT_SECONDS)
+        r = httpx.post(url, json=body, headers={"Authorization": f"Bearer {config.AI_API_KEY}"}, timeout=config.AI_TIMEOUT_SECONDS)
     except httpx.HTTPError as e:
         log.warning("assistente: falha de rede (%s)", type(e).__name__)
         raise Unavailable from e
     if r.status_code != 200:
-        log.warning("assistente: Groq respondeu %s", r.status_code)
+        log.warning("assistente: provedor respondeu %s", r.status_code)  # nunca o corpo: pode conter a chave
         raise Unavailable
     try:
         return r.json()["choices"][0]["message"]["content"].strip()
