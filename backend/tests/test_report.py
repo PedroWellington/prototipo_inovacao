@@ -235,7 +235,7 @@ def test_route_without_google_uses_straight_line(client):
     ranking = client.post(f"/api/cities/{RECIFE}/rank", json=CRIT, headers={"X-CSRF-Token": csrf}).json()
     ids = [n["id"] for n in ranking["neighborhoods"][:3]]
     out = client.post(f"/api/cities/{RECIFE}/route", json={**CRIT, "neighborhoods": ids}, headers={"X-CSRF-Token": csrf}).json()
-    assert not out["google_ok"] and out["unavailable"] == "Tempo de deslocamento indisponível neste relatório."
+    assert not out["google_ok"] and out["unavailable"] == "Tempo de deslocamento indisponível neste roteiro."
     assert out["stops"][0]["leg"] is None
 
 

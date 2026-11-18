@@ -17,6 +17,8 @@ const ROUTES = {
   '/dados': { load: () => import('./views/dados.js').then((m) => m.render) },
   '/criterios': { load: () => import('./views/criterios.js').then((m) => m.render) },
   '/bairro': { load: () => import('./views/bairro.js').then((m) => m.render) }, // #/bairro/<id>?city=<ibge>
+  '/roteiro': { load: () => import('./views/roteiro.js').then((m) => m.render) }, // #/roteiro?city=<ibge>
+  '/apresentacao': { load: () => import('./views/apresentacao.js').then((m) => m.render) }, // #/apresentacao?city=<ibge>
 };
 
 let cleanup = null;
@@ -25,7 +27,7 @@ let firstView = true; // a 1ª tela aparece já visível (sem fade): conteúdo n
 // O explorador fica vivo ao ir para a visão geral ou a conta: voltar não recria o mapa nem perde cidade,
 // critérios e aba. Ele mora numa camada própria; as outras telas, em #view.
 const KEEP = '/explorer';
-const KEEP_FOR = new Set(['/home', '/conta', '/creditos', '/analises', '/comparar', '/dados', '/criterios', '/bairro']); // telas que não descartam o explorador
+const KEEP_FOR = new Set(['/home', '/conta', '/creditos', '/analises', '/comparar', '/dados', '/criterios', '/bairro', '/roteiro', '/apresentacao']); // telas que não descartam o explorador
 let alive = null; // { el, cleanup }
 
 export function go(path) {

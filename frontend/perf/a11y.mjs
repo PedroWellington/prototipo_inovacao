@@ -66,6 +66,11 @@ for (const [device, viewport, theme] of [['desktop', { width: 1440, height: 900 
   await page.click('[data-rank-list] li >> nth=0 >> button'); await check(page, d('explorador (detalhes do bairro)'));
   const hood = await page.evaluate(() => document.querySelector('[data-holo]').holoState().top[0]);
   await page.goto(`${BASE}/app/#/bairro/${hood}?city=2611606`); await page.waitForSelector('.metric.is-primary', { timeout: 30000 }); await check(page, d('detalhe do bairro'));
+  await page.goto(`${BASE}/app/#/roteiro?city=2611606`); await page.waitForSelector('[data-pick]', { timeout: 30000 }); await check(page, d('roteiro (escolha)'));
+  for (let i = 0; i < 3; i++) await page.locator('[data-pick]').nth(i).check();
+  await page.click('[data-plan]'); await page.waitForSelector('[data-stop]', { timeout: 30000 }); await check(page, d('roteiro (checklist)'));
+  await page.goto(`${BASE}/app/#/apresentacao?city=2611606`); await page.waitForSelector('.slide', { timeout: 30000 }); await check(page, d('apresentação'));
+  await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await check(page, d('apresentação (bairro)'));
   await page.goto(`${BASE}/app/#/criterios`); await page.waitForSelector('[data-body] h2'); await check(page, d('editor de critérios'));
   await page.click('[data-step="3"]'); await check(page, d('editor de critérios (pesos)'));
   await page.goto(`${BASE}/app/#/comparar`); await page.waitForSelector('.cmp-grid'); await check(page, d('comparar'));

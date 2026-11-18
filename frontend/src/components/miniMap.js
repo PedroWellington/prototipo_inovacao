@@ -1,8 +1,9 @@
 // Miniatura da geometria real (bairros de uma cidade) em SVG: sem mapa-base, só os limites do IBGE.
 // fill(id) devolve a cor de cada área (ex.: pela nota que veio do banco) ou null para o tom neutro.
-import { html, raw } from '../html.js';
+import { escape, html, raw } from '../html.js';
 
-export function miniMap(geo, { fill = () => null, highlight = null, label = 'Miniatura dos limites' } = {}) {
+// labels: Map id -> texto (ex.: a posição), desenhado no ponto de rótulo do bairro (cor nunca é o único canal).
+export function miniMap(geo, { fill = () => null, highlight = null, label = 'Miniatura dos limites', labels = null } = {}) {
   const feats = geo?.features || [];
   if (!feats.length) return '';
   const rings = (g) => (g.type === 'Polygon' ? g.coordinates : g.type === 'MultiPolygon' ? g.coordinates.flat() : []);
@@ -39,5 +40,15 @@ export function miniMap(geo, { fill = () => null, highlight = null, label = 'Min
     .join('');
   // O destacado vai por último para o contorno ficar por cima.
   const hl = feats.find((f) => (f.id ?? f.properties?.id) === highlight);
-  return html`<svg class="mini-map" viewBox="-4 -4 ${(W + 8).toFixed(0)} ${(H + 8).toFixed(0)}" role="img" aria-label="${label}">${raw(paths)}${hl ? raw(`<path d="${d(hl)}" class="mm-hl"/>`) : ''}</svg>`;
+  const r = Math.max(W, H) / 34;
+  const marks = labels
+    ? feats
+        .filter((f) => labels.has(f.id ?? f.properties?.id) && f.properties?.lx != null)
+        .map((f) => {
+          const X = (f.properties.lx - x0) * k * S, Y = (y1 - f.properties.ly) * S;
+          return `<g class="mm-mark"><circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="${r.toFixed(1)}"/><text x="${X.toFixed(1)}" y="${Y.toFixed(1)}" font-size="${(r * 1.25).toFixed(1)}">${escape(labels.get(f.id ?? f.properties?.id))}</text></g>`;
+        })
+        .join('')
+    : '';
+  return html`<svg class="mini-map" viewBox="-4 -4 ${(W + 8).toFixed(0)} ${(H + 8).toFixed(0)}" role="img" aria-label="${label}">${raw(paths)}${hl ? raw(`<path d="${d(hl)}" class="mm-hl"/>`) : ''}${raw(marks)}</svg>`;
 }

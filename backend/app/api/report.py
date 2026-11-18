@@ -243,10 +243,10 @@ def route(ibge: int, body: ReportIn, request: Request, user: CurrentUser = Depen
     for s in plan["stops"]:
         h = by_id[s["id"]]
         s |= {"population": h["population"], "competition": h["competition"],
-              "criteria": [{"name_plural": c["name_plural"], "n": c["n"], "direction": c["direction"]} for c in h["criteria"]]}
+              "criteria": [{"type": c["type"], "name_plural": c["name_plural"], "n": c["n"], "direction": c["direction"]} for c in h["criteria"]]}
     return {"city": d["city"], "hq": d["hq"], "params_code": d["params_code"], "generated_label": d["generated_label"],
             "competitor": d["competitor"], "reference_dates": d["reference_dates"], **plan,
             "checklist": [{"title": t, "hint": h} for t, h in CHECKLIST],
-            "unavailable": None if plan["google_ok"] else google_routes.UNAVAILABLE,
+            "unavailable": None if plan["google_ok"] else "Tempo de deslocamento indisponível neste roteiro.",
             "attribution": google_routes.ATTRIBUTION if plan["google_ok"] else None,
             "legal": rpdf.LEGAL, "legal_app": rpdf.LEGAL_APP}
