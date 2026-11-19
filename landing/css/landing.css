@@ -181,10 +181,21 @@ html{scrollbar-width:none}html::-webkit-scrollbar{display:none}
 @media(max-width:1150px){.steps{gap:12px}.sources-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.pg{padding:70px 0 55px}.source-list li{flex-direction:column;gap:4px}.source-list li span:last-child{white-space:normal}.steps{grid-template-columns:1fr}.step{padding:22px}.stat-num{font-size:38px}.faq summary{font-size:15px}.footer-links{flex-direction:column;gap:8px;margin-top:10px}.theme-toggle{width:34px;height:34px}.nav-actions{gap:12px}}
 
-/* --- Tema escuro: as seções de página trocam a paleta clara pela grafite; o herói já é escuro por design --- */
-html[data-theme=dark] body{background:var(--bg)}html[data-theme=dark] .navbar.scrolled{background:color-mix(in srgb, var(--bg) 90%, transparent)}
-html[data-theme=dark] :is(.pg,.skip){--paper:var(--bg-2);--stone:var(--bg-2);--sand:var(--bg);--on-dark:var(--surface);--line:#4a3f38;--ink:var(--text);--coal-2:var(--text);--muted-dark:var(--text-2);--muted-ink:var(--text-2);--on-dark-muted:#5c514a;--copper-wash:#3f2f24;--copper-dark:var(--accent);--copper-deep:var(--accent);--copper:var(--accent-2);--sage:#9fbab3;--sage-light:#263330;--muted:#8a7d74}
-html[data-theme=dark] .plan-cta:not([disabled]){background:var(--copper-soft);color:var(--coal)}
+/* --- Tema escuro "azul" (teste): Egyptian Blue de fundo, Stone Blue no destaque, Scarlet na ação (shared/design-tokens.css).
+   O herói e o canvas leem --coal/--sage/--copper-soft uma vez ao carregar: remapeados aqui, acompanham o fundo novo. --- */
+html[data-theme=dark]{--coal:var(--egyptian-blue);--coal-2:var(--blue-surface);--sage:var(--stone-blue);--sage-dark:var(--stone-light);--sage-light:var(--stone-light);--copper-soft:var(--stone-light);--copper:var(--stone-blue);--copper-dark:var(--stone-blue);--muted:var(--blue-line-strong)}
+html[data-theme=dark] body{background:radial-gradient(ellipse 80% 50% at 70% 0,rgb(99 156 197/.16),transparent 70%) fixed,var(--bg)}html[data-theme=dark] .navbar.scrolled{background:color-mix(in srgb, var(--bg) 88%, transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+html[data-theme=dark] :is(.pg,.skip){--paper:var(--blue-surface);--stone:var(--blue-surface-2);--sand:var(--blue-line);--on-dark:var(--blue-surface);--line:var(--blue-line);--ink:var(--text);--coal-2:var(--text);--muted-dark:var(--text-2);--muted-ink:var(--text-2);--on-dark-muted:var(--blue-line-strong);--copper-wash:var(--blue-soft);--copper-dark:var(--accent);--copper-deep:var(--accent);--copper:var(--accent);--sage:var(--accent);--sage-dark:var(--accent);--sage-light:var(--blue-soft);--muted:var(--text-2)}
+html[data-theme=dark] :is(.product,.pg){background:transparent}
+/* Uma palavra em destaque nos títulos, etiquetas em maiúsculas, pílulas, vidro e o vermelho só na ação principal */
+html[data-theme=dark] :is(h1,h2) em{color:var(--stone-blue);font-style:normal}html[data-theme=dark] .pg :is(h1,h2) em{color:var(--accent)}
+html[data-theme=dark] :is(.subheading,.section-meta){color:var(--accent);text-transform:uppercase;letter-spacing:.16em}
+html[data-theme=dark] :is(.nav-cta,.chapter-button,.end-cta,.plan-cta:not([disabled])){background:var(--scarlet-btn);color:#fff;border-color:transparent;border-radius:999px;box-shadow:0 0 0 1px rgb(227 47 51/.35),0 8px 28px rgb(227 47 51/.38)}
+html[data-theme=dark] :is(.nav-cta,.chapter-button,.end-cta,.plan-cta:not([disabled])):hover{background:var(--scarlet-btn-hover);color:#fff}
+html[data-theme=dark] :is(.plan,.step,.stat,.benefit,.preview-card,.plans-note){background:rgb(16 49 80/.62);border:1px solid rgb(185 210 229/.18);border-radius:24px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+html[data-theme=dark] :is(.source-links a,.preview-tag,.theme-toggle,.text-link){border-radius:999px}
+html[data-theme=dark] a:focus-visible,html[data-theme=dark] :focus-visible{outline-color:var(--stone-blue)}
+html[data-theme=dark] ::selection{background:var(--stone-blue);color:var(--egyptian-blue)}
 
 /* --- Cena final do hero: o mapa real (frontend/src/hero/main.js; docs/HERO-360.md) ------------------------- */
 /* Camada inteira do palco; só a opacidade muda (a câmera do MapLibre e o holograma se movem dentro dela). */
