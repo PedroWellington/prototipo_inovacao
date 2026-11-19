@@ -53,6 +53,8 @@ Os prompts de cada etapa ficam em `design/prompts/` (fora deste repositório at�
 | Deploy | Fase 4: login com Google (OIDC + PKCE, ID token validado no servidor; cadastro normal continua) | ✅ código; ⬜ chaves na Vercel | `backend/app/auth/google.py`, `tests/test_google_login.py`; liga com `GOOGLE_LOGIN_ENABLED` + `GOOGLE_CLIENT_ID`/`SECRET` + `PUBLIC_BASE_URL` |
 | Deploy | Fase 5: verificação em produção | 🔄 | no ar em `https://vicus-inovacao.vercel.app` (2026-11-16); corrigidos: `.vercelignore` apagava `landing/data`, pooler do Neon rejeitava `options` na conexão (`7d6bb3f`); falta cadastro/login/explorador de ponta a ponta com números |
 | Deploy | Fase 6: operação (`docs/DEPLOY.md`, CI, monitoramento) | ❌ | |
+| Créditos (2026-11-19) | Boas-vindas (5 por conta nova, uma vez) e fim do "Plano Gratuito" | ✅ | `1ff3361`; migração 0014; `tests/test_credits.py`, `test_google_login.py` |
+| Créditos (2026-11-19) | Comprar créditos com pagamento SIMULADO (`PAYMENTS_MODE=demo`): pedido no servidor, checkout em nova aba, crédito idempotente, saldo ao vivo; interface de provedor para pagamento real | ✅ código; ⬜ migração 0015 e variável na Vercel | `ec99761`; `tests/test_billing.py`; `frontend/perf/compra.mjs`; capturas em `docs/visual/compra/` |
 
 ## Mudança de rumo (2026-11-15): protótipo no Neon grátis, sem servidor próprio
 
@@ -69,6 +71,12 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 - **Mapa-base:** `tile.openstreetmap.org` direto no MapLibre (`frontend/src/map/mapView.js`); precisa trocar antes de produção.
 
 ## Agora
+
+Créditos (2026-11-19): boas-vindas, compra simulada e vídeo da landing ajustados e commitados; axe 0 violações nas 108 telas do
+`perf/a11y.mjs` e na compra (`perf/compra.mjs`, dois temas, desktop e celular). **Próximo passo é seu:** migrações 0014 e 0015 no
+vicus-contas e `PAYMENTS_MODE=demo` na Vercel (`docs/DEPLOY.md`, "Ligar a compra de créditos simulada"). Pagamento real: decidir o provedor.
+
+Antes:
 
 Redesign premium (prompt recuperado da conversa de 2026-11-16, 16:36): Fases 2 a 8 commitadas; Fase 9 parada na meta de fluidez com CPU 4× (ver `docs/PERFORMANCE.md`, "Redesign, Fase 9"). Próximo: Pedro escolhe o ajuste (círculo só em aparelho rápido, montar a página em dois quadros, ou meta de 16,7 ms) e a Fase 9 fecha.
 
@@ -94,6 +102,8 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 
 - **Google Maps:** decidido "só na tela" em 2026-11-18 (`docs/GOOGLE-MAPS.md`). Falta só, quando quiser, criar a chave restrita e preencher `GOOGLE_MAPS_API_KEY`.
 - **Cobrar o relatório?** `credit_settings.report_cost` está em 0 (cidade liberada não paga relatório).
+- **Preço do crédito:** `credit_settings.credit_unit_price_cents` está em 1780 (R$ 17,80, base: plano Essencial), marcado na tela como "valor de demonstração, a definir". Trocar com UPDATE, sem deploy.
+- **Pagamento real:** Pix, Mercado Pago ou Stripe (gancho em `docs/EXTENSIONS.md`); exige CNPJ ou MEI e conta no provedor.
 
 - **Provedor de tiles (obrigatório antes de publicar o hero 360 e o explorador em produção).** Os tiles públicos do OSM não servem para produção, e o hero com o mapa real aumenta o volume (14 pontos pré-carregados por visita, do zoom 3 ao 14). Opções levantadas em 2026-11-17 (preços de sites de terceiros; confirmar no site de cada provedor): Stadia Maps (camada grátis de ~200 mil créditos/mês, pago a partir de ~US$ 20/mês), MapTiler (grátis só para uso não comercial; pago a partir de ~US$ 25–30/mês), Mapbox (franquia grátis mensal e depois ~US$ 0,50–1 por mil carregamentos), ou PMTiles próprio (Protomaps) num bucket sem taxa de saída como o Cloudflare R2 (centavos a poucos dólares por mês de armazenamento e requisições, mais o trabalho de gerar e atualizar o arquivo). Ordem de grandeza para o protótipo: de US$ 0 a ~US$ 30/mês; cresce com o número de visitas.
 

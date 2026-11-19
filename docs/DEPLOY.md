@@ -81,6 +81,7 @@ deve terminar com `TUDO IGUAL`.
    | `GOOGLE_LOGIN_ENABLED` | `false` |
    | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PUBLIC_BASE_URL` | só quando ligar o login com Google: ID e segredo do OAuth Client (Google Cloud Console) e `https://vicus-inovacao.vercel.app`; no Google: origem JavaScript `https://vicus-inovacao.vercel.app`, redirect URI `https://vicus-inovacao.vercel.app/api/auth/google/callback` |
    | `PDF_ENABLED` | `true` (relatório, roteiro e slides; fpdf2 roda na função; ver "Ligar o relatório em produção") |
+   | `PAYMENTS_MODE` | `off` (compra de créditos "em breve", só registra interesse) ou `demo` (compra com pagamento SIMULADO, sem cobrança; ver "Ligar a compra de créditos simulada") |
    | `GOOGLE_MAPS_API_KEY` | vazio por enquanto (tempo de carro desligado; ler `docs/GOOGLE-MAPS.md`, seção 4, antes de ligar) |
 
 4. Clique em **Deploy**. O primeiro build leva de 2 a 4 minutos. No fim aparece o endereço `https://<projeto>.vercel.app` (o protótipo está em `https://vicus-inovacao.vercel.app`).
@@ -133,6 +134,23 @@ Remove-Item Env:TARGET_DATABASE_URL
 `-e NOME` sem valor repassa a variável do seu PowerShell só para aquele comando; nada vai para arquivo. Se a URL do Neon
 não terminar em `?sslmode=require`, acrescente ao colar. Para conferir: gere um relatório em Análises; se a mensagem de
 base desatualizada continuar, rode de novo o passo 2 (ele recria tudo).
+
+## Ligar a compra de créditos simulada (2026-11-19)
+
+Duas migrações novas no vicus-contas: `0014` (créditos de boas-vindas: `signup_credits` = 5 e um índice único que garante
+uma concessão por conta; contas existentes não mudam) e `0015` (tabela `orders`, preço e limites em `credit_settings`, motivo
+`purchase` no extrato). Nenhuma mexe no vicus-dados nem apaga contas ou créditos; o banco de leitura não para.
+
+1. **vicus-contas:** o mesmo bloco do passo 1 de "Ligar o relatório em produção" (`alembic upgrade head` com a URL direta,
+   escondida). Conferir: `alembic current` = `0015 (head)`.
+2. **Vercel:** Settings -> Environment Variables -> `PAYMENTS_MODE` = `demo` (Production) -> **Redeploy**. Conferir:
+   `/api/config` mostra `"payments_mode":"demo"`. Para desligar: `off` e Redeploy (a tela volta a "Compra de créditos em breve").
+3. **Testar:** entrar, abrir "Comprar créditos" (link no saldo da barra, em Análises, na Visão geral ou em Minha conta),
+   comprar 5, confirmar na nova aba e ver o saldo subir na aba original sem recarregar.
+
+Preço por crédito e limites ficam em `credit_settings` (`credit_unit_price_cents`, `purchase_max_credits`,
+`purchase_daily_credits`, `order_expiry_minutes`): mudam com UPDATE, sem deploy. O limite de pedidos por minuto por IP fica na
+memória da função (10/min), como o do assistente.
 
 ## O que cada arquivo faz
 
