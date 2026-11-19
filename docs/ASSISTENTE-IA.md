@@ -48,4 +48,8 @@ Nunca vão: nome, e-mail, senha, dados de outras contas, nome da empresa, fatura
 - Por conta: `AI_DAILY_LIMIT` por dia (contagem atômica no banco). Ao atingir: "Você chegou ao limite de 30 perguntas por dia ao assistente. Ele volta amanhã."
 - Por IP: 20 pedidos por minuto (em memória, por processo; `# shortcut` no código).
 - Pergunta acima de `AI_MAX_CHARS`: recusada com a mensagem do limite.
-- Provedor fora do ar, chave inválida, limite do plano gratuito (429) ou tempo esgotado: "Assistente indisponível no momento." A pergunta não conta no limite e o resto do site segue normal.
+- Provedor fora do ar, chave inválida, limite do plano gratuito (429) ou tempo esgotado: "Assistente indisponível no momento (código: X)." A pergunta não conta no limite e o resto do site segue normal.
+  Códigos (os mesmos no log do servidor, junto com o modelo: `assistente indisponível: código=X modelo=Y`): `sem-chave`;
+  `provedor-400`/`provedor-404` (modelo errado ou inexistente); `provedor-401`/`provedor-403` (chave inválida ou sem
+  permissão); `limite` (429, cota do plano gratuito); `rede` (falha de rede ou tempo esgotado); `resposta-invalida`;
+  qualquer outro status vira `provedor-<status>`. Nunca entram a chave, a URL nem o corpo da resposta.

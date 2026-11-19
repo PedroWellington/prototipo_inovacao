@@ -82,8 +82,8 @@ def ask(body: AskIn, request: Request, user: CurrentUser = Depends(current_user)
     try:
         context = assistant.build_context(db, data, user.id, body.city, body.neighborhood)
         reply = assistant.answer(context, [t.model_dump() for t in body.history[-8:]], question)
-    except assistant.Unavailable:
+    except assistant.Unavailable as e:
         db.execute(text("UPDATE assistant_usage SET messages = messages - 1 WHERE user_id = :u AND day = current_date"), {"u": user.id})
         db.commit()
-        err(503, "assistant_unavailable", "Assistente indisponível no momento.")
+        err(503, "assistant_unavailable", f"Assistente indisponível no momento (código: {e.code}).")
     return {"reply": reply, "remaining": max(0, config.AI_DAILY_LIMIT - used)}

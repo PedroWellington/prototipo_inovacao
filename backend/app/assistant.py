@@ -25,7 +25,14 @@ NO_DATA = "Não foi possível encontrar dados de {item} desta área."
 
 
 class Unavailable(Exception):
-    """Provedor fora do ar, sem chave, limite do plano (429), tempo esgotado ou resposta inválida."""
+    """Provedor fora do ar, sem chave, limite do plano (429), tempo esgotado ou resposta inválida.
+    `code` é curto e sem dado sensível (vai para a tela e para o log): sem-chave, rede, limite, provedor-<status>,
+    resposta-invalida."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+        log.warning("assistente indisponível: código=%s modelo=%s", code, config.AI_MODEL)  # nunca chave, URL ou corpo
 
 
 def enabled() -> bool:
@@ -142,19 +149,19 @@ def call_model(messages: list[dict]) -> str:
     body = {"model": config.AI_MODEL, "messages": messages, "temperature": 0.2, "max_completion_tokens": 700}
     if config.AI_MODEL.startswith("openai/gpt-oss"):
         body |= {"include_reasoning": False, "reasoning_effort": "low"}  # o raciocínio não vai para a pessoa
+    if not config.AI_API_KEY:
+        raise Unavailable("sem-chave")
     url = config.AI_BASE_URL.rstrip("/") + "/chat/completions"
     try:
         r = httpx.post(url, json=body, headers={"Authorization": f"Bearer {config.AI_API_KEY}"}, timeout=config.AI_TIMEOUT_SECONDS)
-    except httpx.HTTPError as e:
-        log.warning("assistente: falha de rede (%s)", type(e).__name__)
-        raise Unavailable from e
-    if r.status_code != 200:
-        log.warning("assistente: provedor respondeu %s", r.status_code)  # nunca o corpo: pode conter a chave
-        raise Unavailable
+    except httpx.HTTPError as e:  # inclui tempo esgotado
+        raise Unavailable("rede") from e
+    if r.status_code != 200:  # nunca o corpo: pode conter a chave
+        raise Unavailable("limite" if r.status_code == 429 else f"provedor-{r.status_code}")
     try:
         return r.json()["choices"][0]["message"]["content"].strip()
     except (ValueError, KeyError, IndexError, AttributeError) as e:
-        raise Unavailable from e
+        raise Unavailable("resposta-invalida") from e
 
 
 def answer(context: dict, history: list[dict], question: str) -> str:

@@ -107,12 +107,12 @@ def test_ip_limit(client, on, monkeypatch):
 
 def test_provider_down_is_handled_and_not_counted(client, on, monkeypatch):
     def down(msgs):
-        raise assistant.Unavailable
+        raise assistant.Unavailable("provedor-404")
 
     monkeypatch.setattr(assistant, "call_model", down)
     csrf = login_new_user(client)
     r = ask(client, csrf)
-    assert r.status_code == 503 and r.json()["error"]["message"] == "Assistente indisponível no momento."
+    assert r.status_code == 503 and r.json()["error"]["message"] == "Assistente indisponível no momento (código: provedor-404)."
     monkeypatch.setattr(assistant, "call_model", lambda msgs: "ok")
     assert ask(client, csrf).json()["remaining"] == 2  # a falha não gastou a cota
 
@@ -155,6 +155,32 @@ def test_call_model_raises_unavailable_on_429(monkeypatch):
     monkeypatch.setattr(assistant.httpx, "post", lambda url, **kw: httpx.Response(429))
     with pytest.raises(assistant.Unavailable):
         assistant.call_model([{"role": "user", "content": "oi"}])
+
+
+def _raise_timeout(url, **kw):
+    raise httpx.ReadTimeout("tempo esgotado")
+
+
+@pytest.mark.parametrize("key, post, code", [
+    ("", None, "sem-chave"),
+    ("k", lambda url, **kw: httpx.Response(400, text="corpo-secreto"), "provedor-400"),
+    ("k", lambda url, **kw: httpx.Response(401, text="corpo-secreto"), "provedor-401"),
+    ("k", lambda url, **kw: httpx.Response(403, text="corpo-secreto"), "provedor-403"),
+    ("k", lambda url, **kw: httpx.Response(404, text="corpo-secreto"), "provedor-404"),
+    ("k", lambda url, **kw: httpx.Response(429, text="corpo-secreto"), "limite"),
+    ("k", _raise_timeout, "rede"),
+])
+def test_error_code_on_screen_and_log_without_secrets(monkeypatch, caplog, key, post, code):
+    monkeypatch.setattr(config, "AI_API_KEY", key and "chave-super-secreta")
+    monkeypatch.setattr(config, "AI_BASE_URL", "https://provedor.exemplo/v1?key=chave-super-secreta")
+    monkeypatch.setattr(config, "AI_MODEL", "modelo-x")
+    if post:
+        monkeypatch.setattr(assistant.httpx, "post", post)
+    with caplog.at_level("WARNING"), pytest.raises(assistant.Unavailable) as e:
+        assistant.call_model([{"role": "user", "content": "oi"}])
+    assert e.value.code == code
+    assert f"código={code} modelo=modelo-x" in caplog.text
+    assert "secreta" not in caplog.text + str(e.value) and "corpo" not in caplog.text + str(e.value)
 
 
 def test_requires_session_and_csrf(client, on):
