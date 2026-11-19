@@ -69,8 +69,18 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 - **Público no repositório (decidir):** `docs/LOCUS-logica-do-produto.pdf` (regras do produto), `design/brand/*.png` (painel de marca, 5,8 MB), `docs/COBERTURA.md`. Sem `LICENSE`. Nada de dado bruto, dump ou prompt.
 - **Segurança já existente:** cookie `httpOnly` + `SameSite=Lax` (+ `Secure` em produção), CSRF, argon2id, limite de tentativas no login; sem CSP/HSTS, sem CORS (mesma origem), pool de 10 conexões, sem `statement_timeout`.
 - **Mapa-base:** `tile.openstreetmap.org` direto no MapLibre (`frontend/src/map/mapView.js`); precisa trocar antes de produção.
+| Quatro ajustes (2026-11-19) | 1. Assistente resiliente: até 2 repetições em 5xx/tempo esgotado (0,7 s e 1,5 s), depois uma vez o `AI_FALLBACK_MODEL` (`gemini-3.5-flash-lite`), tudo em `AI_TOTAL_SECONDS=45` (abaixo dos 60 s da função); `AI_TIMEOUT_SECONDS` baixou para 10 | ✅ | `767d59a`; `tests/test_assistant.py` |
+| Quatro ajustes (2026-11-19) | 2. Mapinhas (Comparar, bairro, slides, PDF do bairro) com preenchimento abaixo do cartão, limites ≥ 3:1 e contorno da cidade mais forte (tokens `--mini-*`) | ✅ | `docs/visual/comparar/` (antes e depois, dois temas, desktop e celular) |
+| Quatro ajustes (2026-11-19) | 3. Comparar: seção "Lado a lado" (8 indicadores, diferença em número e razão, "maior" em texto, fonte em cada linha, "calculado a partir de" nos derivados, "sem dado suficiente") | ✅ | `src/compareRows.js` + teste; `perf/comparar.mjs`; axe 0 |
+| Quatro ajustes (2026-11-19) | 4. Renda só com o valor ("Renda mediana: R$ 1.500/mês") e a fonte, em tela, PDF, slides, assistente, landing e docs; frases de "poder de compra"/perfil removidas; regra no prompt; testes de guarda | ✅ | `src/noIncomeSpin.test.js`, `tests/test_assistant.py`; `docs/visual/comparar/pdf-bairro-renda.webp` |
 
 ## Agora
+
+Quatro ajustes (2026-11-19): assistente com repetição e modelo de reserva, mapinhas mais escuros, "Lado a lado" no Comparar e renda
+só com o valor em todo o site. **Na Vercel:** se `AI_TIMEOUT_SECONDS` existir lá com 20, trocar para 10 (ou apagar); `AI_FALLBACK_MODEL`
+é opcional (o padrão já é `gemini-3.5-flash-lite` quando `AI_BASE_URL` é do Google). Novo deploy depois.
+
+Antes:
 
 Créditos (2026-11-19): boas-vindas, compra simulada e vídeo da landing ajustados e commitados; axe 0 violações nas 108 telas do
 `perf/a11y.mjs` e na compra (`perf/compra.mjs`, dois temas, desktop e celular). **Próximo passo é seu:** migrações 0014 e 0015 no
