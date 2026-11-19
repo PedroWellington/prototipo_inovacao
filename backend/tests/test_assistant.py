@@ -22,6 +22,11 @@ FORBIDDEN_SAMPLES = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def no_reserve_by_default(monkeypatch):
+    monkeypatch.setattr(config, "AI_FALLBACK_API_KEY", "")  # o .env local não muda os testes
+
+
 @pytest.fixture
 def on(monkeypatch):
     monkeypatch.setattr(config, "AI_ASSISTANT_ENABLED", True)
@@ -169,7 +174,7 @@ def _raise_timeout(url, **kw):
     ("k", lambda url, **kw: httpx.Response(403, text="corpo-secreto"), "provedor-403"),
     ("k", lambda url, **kw: httpx.Response(404, text="corpo-secreto"), "provedor-404"),
     ("k", lambda url, **kw: httpx.Response(429, text="corpo-secreto"), "limite"),
-    ("k", _raise_timeout, "rede"),
+    ("k", _raise_timeout, "rede-timeout"),
 ])
 def test_error_code_on_screen_and_log_without_secrets(monkeypatch, caplog, key, post, code):
     monkeypatch.setattr(config, "AI_API_KEY", key and "chave-super-secreta")
@@ -186,66 +191,97 @@ def test_error_code_on_screen_and_log_without_secrets(monkeypatch, caplog, key, 
 
 
 class FakeProvider:
-    """Provedor simulado: devolve os status em ordem e anota o modelo pedido em cada tentativa."""
+    """Provedor simulado: devolve os status em ordem e anota (provedor, modelo) de cada tentativa."""
 
     def __init__(self, *statuses):
-        self.statuses, self.models = list(statuses), []
+        self.statuses, self.calls = list(statuses), []
 
-    def __call__(self, url, json=None, **kw):
-        self.models.append(json["model"])
+    def __call__(self, url, json=None, headers=None, **kw):
+        self.calls.append(("reserva" if "reserva.exemplo" in url else "principal", json["model"]))
+        assert headers["Authorization"] == ("Bearer chave-reserva" if "reserva.exemplo" in url else "Bearer chave-principal")
         st = self.statuses.pop(0)
         if st == "timeout":
             raise httpx.ReadTimeout("tempo esgotado")
+        if st == "conexao":
+            raise httpx.ConnectError("falha em https://principal.exemplo/v1?key=chave-principal")
         return httpx.Response(st, json={"choices": [{"message": {"content": "ok"}}]} if st == 200 else {})
 
 
+P1, P2, R = ("principal", "modelo-1"), ("principal", "modelo-2"), ("reserva", "modelo-reserva")
+
+
 @pytest.fixture
-def gemini(monkeypatch):
-    monkeypatch.setattr(config, "AI_API_KEY", "chave-de-teste")
-    monkeypatch.setattr(config, "AI_MODEL", "principal")
-    monkeypatch.setattr(config, "AI_FALLBACK_MODEL", "reserva")
+def providers(monkeypatch):
+    for k, v in {"AI_API_KEY": "chave-principal", "AI_BASE_URL": "https://principal.exemplo/v1", "AI_MODEL": "modelo-1",
+                 "AI_FALLBACK_MODEL": "modelo-2", "AI_FALLBACK_API_KEY": "chave-reserva",
+                 "AI_FALLBACK_BASE_URL": "https://reserva.exemplo/v1", "AI_FALLBACK_PROVIDER_MODEL": "modelo-reserva"}.items():
+        monkeypatch.setattr(config, k, v)
     monkeypatch.setattr(assistant.time, "sleep", lambda s: None)
 
 
-@pytest.mark.parametrize("statuses, models", [
-    ((503, 200), ["principal", "principal"]),
-    (("timeout", 502, 200), ["principal"] * 3),
-    ((503, 500, 504, 200), ["principal"] * 3 + ["reserva"]),
-])
-def test_retries_on_5xx_and_timeout_then_fallback(monkeypatch, caplog, gemini, statuses, models):
+def run(monkeypatch, *statuses):
     fake = FakeProvider(*statuses)
     monkeypatch.setattr(assistant.httpx, "post", fake)
+    return fake
+
+
+@pytest.mark.parametrize("statuses, calls", [
+    ((503, 200), [P1, P1]),  # principal em 503: uma nova tentativa no mesmo modelo
+    (("timeout", 502, 200), [P1, P1, P2]),  # depois o segundo modelo do principal
+    ((503, 500, 504, 200), [P1, P1, P2, R]),  # e por fim o provedor reserva
+    ((429, 200), [P1, R]),  # limite do principal: direto ao reserva, sem repetir
+    ((401, 200), [P1, R]),  # configuração errada no principal: não repete nele, tenta o reserva
+    (("conexao", 200), [P1, R]),
+])
+def test_attempt_order(monkeypatch, caplog, providers, statuses, calls):
+    fake = run(monkeypatch, *statuses)
     with caplog.at_level("INFO"):
         assert assistant.call_model([{"role": "user", "content": "oi"}]) == "ok"
-    assert fake.models == models
-    assert f"tentativas={len(models)} modelo={models[-1]}" in caplog.text
+    assert fake.calls == calls
+    assert f"provedor={calls[-1][0]} modelo={calls[-1][1]} tentativas={len(calls)}" in caplog.text
 
 
 @pytest.mark.parametrize("status", [400, 401, 403, 404, 429])
-def test_no_retry_on_config_or_limit_errors(monkeypatch, gemini, status):
-    fake = FakeProvider(status, 200)
-    monkeypatch.setattr(assistant.httpx, "post", fake)
-    with pytest.raises(assistant.Unavailable):
-        assistant.call_model([{"role": "user", "content": "oi"}])
-    assert fake.models == ["principal"]
-
-
-def test_all_attempts_fail_with_503(monkeypatch, gemini):
-    fake = FakeProvider(503, 503, 503, 503)
-    monkeypatch.setattr(assistant.httpx, "post", fake)
+def test_no_retry_and_reserve_off(monkeypatch, providers, status):
+    monkeypatch.setattr(config, "AI_FALLBACK_API_KEY", "")  # reserva desligada
+    fake = run(monkeypatch, status, 200)
     with pytest.raises(assistant.Unavailable) as e:
         assistant.call_model([{"role": "user", "content": "oi"}])
-    assert e.value.code == "provedor-503" and len(fake.models) == 4
+    assert fake.calls == [P1] and e.value.code == ("limite" if status == 429 else f"provedor-{status}")
 
 
-def test_retries_respect_the_total_deadline(monkeypatch, gemini):
-    fake = FakeProvider(503, 503, 503, 503)
-    monkeypatch.setattr(assistant.httpx, "post", fake)
+def test_everything_fails_shows_the_last_error(monkeypatch, providers):
+    fake = run(monkeypatch, 503, 503, 503, 404)
+    with pytest.raises(assistant.Unavailable) as e:
+        assistant.call_model([{"role": "user", "content": "oi"}])
+    assert fake.calls == [P1, P1, P2, R] and e.value.code == "provedor-404"
+
+
+def test_network_codes_and_exception_class_in_log(monkeypatch, caplog, providers):
+    monkeypatch.setattr(config, "AI_FALLBACK_API_KEY", "")
+    run(monkeypatch, "conexao")
+    with caplog.at_level("WARNING"), pytest.raises(assistant.Unavailable) as e:
+        assistant.call_model([{"role": "user", "content": "oi"}])
+    assert e.value.code == "rede-conexao" and "classe=ConnectError" in caplog.text
+    assert "chave-principal" not in caplog.text and "principal.exemplo" not in caplog.text
+
+
+def test_retries_respect_the_total_deadline(monkeypatch, providers):
+    monkeypatch.setattr(config, "AI_FALLBACK_API_KEY", "")
+    fake = run(monkeypatch, 503, 503, 503)
     clock = itertools.chain([0], itertools.repeat(60))  # depois da 1ª falha o prazo já passou
     monkeypatch.setattr(assistant.time, "monotonic", lambda: next(clock))
     with pytest.raises(assistant.Unavailable):
         assistant.call_model([{"role": "user", "content": "oi"}], deadline=10)
-    assert len(fake.models) == 1
+    assert fake.calls == [P1]
+
+
+def test_one_question_counts_once_in_the_daily_limit(client, on, monkeypatch, providers):
+    fake = run(monkeypatch, 503, 503, 503, 200)  # 4 tentativas, 1 pergunta
+    csrf = login_new_user(client)
+    r = ask(client, csrf)
+    assert r.status_code == 200 and len(fake.calls) == 4
+    assert r.json()["remaining"] == config.AI_DAILY_LIMIT - 1
 
 
 def test_503_message_on_screen(client, on, monkeypatch):

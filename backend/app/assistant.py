@@ -27,7 +27,7 @@ NO_DATA = "Não foi possível encontrar dados de {item} desta área."
 
 class Unavailable(Exception):
     """Provedor fora do ar, sem chave, limite do plano (429), tempo esgotado ou resposta inválida.
-    `code` é curto e sem dado sensível (vai para a tela e para o log): sem-chave, rede, limite, provedor-<status>,
+    `code` é curto e sem dado sensível (vai para a tela e para o log): sem-chave, rede-timeout, rede-conexao, limite, provedor-<status>,
     resposta-invalida."""
 
     def __init__(self, code: str):
@@ -149,21 +149,21 @@ def city_block(data: Session, ibge: int, crit: list[dict], hood: int | None) -> 
 
 
 RETRY_STATUS = {500, 502, 503, 504}  # sobrecarga ou falha temporária; 4xx é configuração ou limite: não repete
-RETRY_WAITS = (0.7, 1.5)  # espera antes da 2ª e da 3ª tentativa no modelo principal
+RETRY_WAIT = 0.7  # espera antes da nova tentativa no AI_MODEL
 
 
-def _post(model: str, messages: list[dict], timeout: float) -> str:
-    """Uma chamada (sem streaming). Erro vira Unavailable(código, quiet): quem decide se registra é call_model."""
+def _post(key: str, base_url: str, model: str, messages: list[dict], timeout: float) -> str:
+    """Uma chamada (sem streaming). Erro vira _Fail(código); quem registra é call_model."""
     body = {"model": model, "messages": messages, "temperature": 0.2, "max_completion_tokens": 700}
     if model.startswith("openai/gpt-oss"):
         body |= {"include_reasoning": False, "reasoning_effort": "low"}  # o raciocínio não vai para a pessoa
-    url = config.AI_BASE_URL.rstrip("/") + "/chat/completions"
+    url = base_url.rstrip("/") + "/chat/completions"
     try:
-        r = httpx.post(url, json=body, headers={"Authorization": f"Bearer {config.AI_API_KEY}"}, timeout=timeout)
+        r = httpx.post(url, json=body, headers={"Authorization": f"Bearer {key}"}, timeout=timeout)
     except httpx.TimeoutException as e:
-        raise _Fail("rede", retry=True) from e
-    except httpx.HTTPError as e:
-        raise _Fail("rede") from e
+        raise _Fail("rede-timeout", retry=True, cls=type(e).__name__) from e
+    except httpx.HTTPError as e:  # só a classe vai para o log: a mensagem pode trazer a URL
+        raise _Fail("rede-conexao", cls=type(e).__name__) from e
     if r.status_code != 200:  # nunca o corpo: pode conter a chave
         raise _Fail("limite" if r.status_code == 429 else f"provedor-{r.status_code}", retry=r.status_code in RETRY_STATUS)
     try:
@@ -173,9 +173,9 @@ def _post(model: str, messages: list[dict], timeout: float) -> str:
 
 
 class _Fail(Exception):
-    def __init__(self, code: str, retry: bool = False):
+    def __init__(self, code: str, retry: bool = False, cls: str = "-"):
         super().__init__(code)
-        self.code, self.retry = code, retry
+        self.code, self.retry, self.cls = code, retry, cls
 
 
 def income_line(inc: dict) -> str:
@@ -187,34 +187,43 @@ def income_line(inc: dict) -> str:
     return f'{inc["text"]}{approx}; fonte: {src.get("name", "IBGE, Censo 2022")}, ref. {src.get("reference_date", "2022")}'
 
 
+def _plan() -> list[tuple[str, str, str, str, float]]:
+    """(provedor, chave, URL, modelo, espera): AI_MODEL, AI_MODEL de novo, AI_FALLBACK_MODEL e o provedor reserva."""
+    k, u = config.AI_API_KEY, config.AI_BASE_URL
+    plan = [("principal", k, u, config.AI_MODEL, 0.0), ("principal", k, u, config.AI_MODEL, RETRY_WAIT)]
+    if config.AI_FALLBACK_MODEL and config.AI_FALLBACK_MODEL != config.AI_MODEL:
+        plan.append(("principal", k, u, config.AI_FALLBACK_MODEL, 0.0))
+    if config.AI_FALLBACK_API_KEY and config.AI_FALLBACK_PROVIDER_MODEL:
+        plan.append(("reserva", config.AI_FALLBACK_API_KEY, config.AI_FALLBACK_BASE_URL, config.AI_FALLBACK_PROVIDER_MODEL, 0.0))
+    return plan
+
+
 def call_model(messages: list[dict], deadline: float | None = None) -> str:
-    """Chama o modelo principal; em 5xx ou tempo esgotado tenta de novo até 2 vezes e depois, uma vez, o modelo de
-    reserva (AI_FALLBACK_MODEL). Tudo dentro de `deadline` (relógio monotônico), para caber no limite da função.
-    Erros viram Unavailable; o log guarda só tentativas, modelo e código (nunca conteúdo, chave ou URL)."""
+    """Principal com AI_MODEL (uma nova tentativa em 5xx ou tempo esgotado), depois AI_FALLBACK_MODEL no principal e,
+    por fim, uma vez o provedor reserva. Erro que não se resolve repetindo (429, 4xx, conexão, resposta inválida) pula
+    direto para o reserva. Tudo dentro de `deadline` (relógio monotônico), para caber no limite da função.
+    O log guarda provedor, modelo, tentativas, código e classe da exceção (nunca conteúdo, chave ou URL)."""
     if not config.AI_API_KEY:
         raise Unavailable("sem-chave")
     deadline = deadline or time.monotonic() + config.AI_TOTAL_SECONDS
-    plan = [(config.AI_MODEL, 0.0), *((config.AI_MODEL, w) for w in RETRY_WAITS)]
-    if config.AI_FALLBACK_MODEL and config.AI_FALLBACK_MODEL != config.AI_MODEL:
-        plan.append((config.AI_FALLBACK_MODEL, 0.0))
-    last = None
-    for attempt, (model, wait) in enumerate(plan, 1):
-        if wait and time.monotonic() + wait + 1 >= deadline:
-            break
+    last, attempts, skip_primary = None, 0, False
+    for provider, key, url, model, wait in _plan():
+        if provider == "principal" and (skip_primary or (wait and not (last and last.retry))):
+            continue  # a nova tentativa no AI_MODEL só acontece depois de 5xx ou tempo esgotado
+        if time.monotonic() + wait + 1 >= deadline:
+            continue  # sem tempo para esta; a seguinte (sem espera) ainda pode caber
         time.sleep(wait)
-        left = deadline - time.monotonic()
-        if left < 1:
-            break
+        attempts += 1
         try:
-            out = _post(model, messages, min(config.AI_TIMEOUT_SECONDS, left))
-            log.info("assistente respondeu: tentativas=%d modelo=%s", attempt, model)
+            out = _post(key, url, model, messages, min(config.AI_TIMEOUT_SECONDS, deadline - time.monotonic()))
+            log.info("assistente respondeu: provedor=%s modelo=%s tentativas=%d", provider, model, attempts)
             return out
         except _Fail as e:
             last = e
-            log.warning("assistente falhou: tentativa=%d modelo=%s código=%s", attempt, model, e.code)
-            if not e.retry:
-                break
-    raise Unavailable(last.code if last else "rede")
+            log.warning("assistente falhou: tentativa=%d provedor=%s modelo=%s código=%s classe=%s", attempts, provider, model, e.code, e.cls)
+            if provider == "principal" and not e.retry:
+                skip_primary = True
+    raise Unavailable(last.code if last else "rede-timeout")
 
 
 def answer(context: dict, history: list[dict], question: str) -> str:

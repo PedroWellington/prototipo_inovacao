@@ -16,8 +16,13 @@ O provedor é configurável: qualquer serviço compatível com a API do OpenAI (
 | `AI_DAILY_LIMIT` | `30` | Perguntas por conta por dia. |
 | `AI_MAX_CHARS` | `600` | Tamanho máximo da pergunta. |
 | `AI_TIMEOUT_SECONDS` | `10` | Tempo máximo de cada tentativa. |
-| `AI_TOTAL_SECONDS` | `45` | Prazo da pergunta inteira (todas as tentativas, esperas e reserva). Fica abaixo do `maxDuration` de 60 s da função (`vercel.json`): 3 × 10 s + 0,7 s + 1,5 s + 10 s = 42,2 s. |
-| `AI_FALLBACK_MODEL` | `gemini-3.5-flash-lite` com `AI_BASE_URL` do Google; vazio nos outros | Modelo de reserva (mesma URL e chave), tentado uma vez se o principal seguir falhando. Vazio desliga. |
+| `AI_TOTAL_SECONDS` | `45` | Prazo da pergunta inteira (todas as tentativas e esperas). Fica abaixo do `maxDuration` de 60 s da função (`vercel.json`): pior caso 10 s + 0,7 s + 10 s + 10 s + 10 s = 40,7 s. |
+| `AI_FALLBACK_MODEL` | `gemini-3.5-flash-lite` com `AI_BASE_URL` do Google; vazio nos outros | Segundo modelo **do provedor principal** (mesma URL e chave), tentado uma vez. Vazio desliga. |
+| `AI_FALLBACK_API_KEY` | vazio | Chave do **provedor reserva** (outro serviço). Vazia: o provedor reserva fica desligado. Só no servidor. |
+| `AI_FALLBACK_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` | Base da API do provedor reserva (sem `/chat/completions`). |
+| `AI_FALLBACK_PROVIDER_MODEL` | `gemini-3.8-flash` | Modelo do provedor reserva. |
+
+**Configuração atual (2026-11-19):** principal na OpenRouter (`AI_BASE_URL=https://openrouter.ai/api/v1`, `AI_API_KEY` e `AI_MODEL` da OpenRouter, `AI_FALLBACK_MODEL` opcional) e Google Gemini como provedor reserva (`AI_FALLBACK_API_KEY` do AI Studio; URL e modelo já são o padrão).
 
 Na Vercel: **Settings > Environment Variables** do projeto, ambiente *Production* (e *Preview*, se quiser testar lá), e depois um novo deploy.
 
@@ -50,9 +55,15 @@ Nunca vão: nome, e-mail, senha, dados de outras contas, nome da empresa, fatura
 - Por conta: `AI_DAILY_LIMIT` por dia (contagem atômica no banco). Ao atingir: "Você chegou ao limite de 30 perguntas por dia ao assistente. Ele volta amanhã."
 - Por IP: 20 pedidos por minuto (em memória, por processo; `# shortcut` no código).
 - Pergunta acima de `AI_MAX_CHARS`: recusada com a mensagem do limite.
-- **Repetição automática:** em 500, 502, 503, 504 ou tempo esgotado, o servidor tenta de novo até 2 vezes (espera de 0,7 s e 1,5 s) e, se continuar falhando, uma vez no `AI_FALLBACK_MODEL`, tudo dentro de `AI_TOTAL_SECONDS`. Nunca repete em 400, 401, 403, 404 nem 429 (configuração ou limite). O log registra cada tentativa (`assistente falhou: tentativa=N modelo=M código=C`) e quem respondeu (`assistente respondeu: tentativas=N modelo=M`), sem conteúdo, chave nem URL. Reserva escolhida: `gemini-3.5-flash-lite`, estável e "Free of charge" no plano gratuito (<https://aistudio.google.com/docs/models> e <https://aistudio.google.com/docs/pricing>, consultadas em 2026-11-19).
+- **Ordem das tentativas** (tudo dentro de `AI_TOTAL_SECONDS`; `call_model` em `backend/app/assistant.py`):
+  1. principal com `AI_MODEL`; em 500, 502, 503, 504 ou tempo esgotado, **uma** nova tentativa (espera de 0,7 s);
+  2. principal com `AI_FALLBACK_MODEL`, uma vez (se existir);
+  3. provedor reserva (`AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_PROVIDER_MODEL`), uma vez (se a chave existir).
+
+  Em 429 do principal (limite da OpenRouter) vai **direto** ao reserva, sem repetir. Em 400, 401, 403, 404, falha de conexão ou resposta inválida, não tenta de novo no principal, mas tenta o reserva. A pergunta conta **uma vez** em `AI_DAILY_LIMIT`, qualquer que seja o número de tentativas (e não conta se tudo falhar). A tela mostra o código do **último** erro.
+  O log registra cada falha (`assistente falhou: tentativa=N provedor=P modelo=M código=C classe=Exceção`) e quem respondeu (`assistente respondeu: provedor=P modelo=M tentativas=N`), sem conteúdo, chave nem URL. Reserva escolhida: `gemini-3.5-flash-lite`, estável e "Free of charge" no plano gratuito (<https://aistudio.google.com/docs/models> e <https://aistudio.google.com/docs/pricing>, consultadas em 2026-11-19).
 - Provedor fora do ar, chave inválida, limite do plano gratuito (429) ou tempo esgotado: "Assistente indisponível no momento (código: X)." A pergunta não conta no limite e o resto do site segue normal.
   Códigos (os mesmos no log do servidor, junto com o modelo: `assistente indisponível: código=X modelo=Y`): `sem-chave`;
   `provedor-400`/`provedor-404` (modelo errado ou inexistente); `provedor-401`/`provedor-403` (chave inválida ou sem
-  permissão); `limite` (429, cota do plano gratuito); `rede` (falha de rede ou tempo esgotado); `resposta-invalida`;
+  permissão); `limite` (429, cota do plano gratuito); `rede-timeout` (tempo esgotado); `rede-conexao` (falha de conexão; a classe da exceção vai para o log); `resposta-invalida`;
   qualquer outro status vira `provedor-<status>`. Em `provedor-503` a mensagem acrescenta "O serviço de IA está com muita demanda. Tente de novo em instantes.". Nunca entram a chave, a URL nem o corpo da resposta.
