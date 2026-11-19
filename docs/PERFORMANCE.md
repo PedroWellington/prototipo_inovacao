@@ -272,6 +272,26 @@ Medido de ponta a ponta pela API (sessão, CSRF, ranking, PostGIS, PDF), com `uv
 - **Tamanho:** mapas SVG próprios, simplificados no PostGIS a 1/900 da maior dimensão da cidade; fonte Inter reduzida
   aos glifos usados.
 
+### Vídeo "como funciona" na landing (2026-11-19, Docker local, nginx com os cabeçalhos de produção)
+
+Lighthouse 12.2.1 no Edge headless, `http://localhost:8080/`, 3 rodadas antes e 3 depois (mediana; faixa entre parênteses):
+
+| | Celular antes | Celular depois | Desktop antes | Desktop depois |
+|---|---|---|---|---|
+| Desempenho | 71 (67–73) | 68 (68–73) | 90 (88–90) | 90 (89–91) |
+| Acessibilidade | 100 | 100 | 100 | 100 |
+| FCP | 1,22 s | 1,29 s | 0,36 s | 0,36 s |
+| LCP | 2,63 s (1,87–2,63) | 1,86 s (1,83–2,63) | 0,45 s | 0,46 s |
+| TBT | 816 ms (673–1461) | 1195 ms (694–1250) | 148 ms | 149 ms |
+| CLS | 0 | 0 | 0,001 | 0,001 |
+| Peso | 3620 KiB | 3622 KiB | 8725 KiB | 8728 KiB |
+
+- **Com a página só entram** `js/video.js` (1 KB) e ~2 KB de CSS. A capa (`poster.jpg`, 61 KB) tem `loading="lazy"` e não
+  carrega no topo; o iframe, `video.js` da animação e `narracao.mp3` (480 KB) só são buscados depois do clique
+  (`frontend/perf/video.mjs` confere os pedidos).
+- As faixas de antes e depois se sobrepõem: a variação é do mergulho em canvas do hero (TBT oscila de 0,7 a 1,5 s no
+  celular em rodadas iguais), não do bloco. `width`/`height` na capa: CLS continua 0.
+
 ## O que sustenta esses números
 
 - **Geometria simplificada só para o mapa.**

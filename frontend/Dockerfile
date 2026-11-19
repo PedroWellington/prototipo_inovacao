@@ -20,5 +20,6 @@ COPY --from=landing css /usr/share/nginx/html/css
 COPY --from=landing js /usr/share/nginx/html/js
 COPY --from=landing assets /usr/share/nginx/html/assets
 COPY --from=landing data /usr/share/nginx/html/data
+COPY --from=landing video /usr/share/nginx/html/video
 COPY --from=shared design-tokens.css /usr/share/nginx/html/shared/
 COPY --from=build /app/dist /usr/share/nginx/html/app

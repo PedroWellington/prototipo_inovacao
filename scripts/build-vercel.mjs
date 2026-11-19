@@ -20,7 +20,7 @@ execSync('npx vite build', { cwd: join(ROOT, 'frontend'), stdio: 'inherit', env:
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 cpSync(join(ROOT, 'landing/index.html'), join(OUT, 'index.html'));
-for (const d of ['css', 'js', 'assets', 'data']) cpSync(join(ROOT, 'landing', d), join(OUT, d), { recursive: true });
+for (const d of ['css', 'js', 'assets', 'data', 'video']) cpSync(join(ROOT, 'landing', d), join(OUT, d), { recursive: true });
 mkdirSync(join(OUT, 'shared'));
 cpSync(join(ROOT, 'shared/design-tokens.css'), join(OUT, 'shared/design-tokens.css'));
 cpSync(join(ROOT, 'frontend/dist'), join(OUT, 'app'), { recursive: true });

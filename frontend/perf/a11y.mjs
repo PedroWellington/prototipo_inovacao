@@ -36,6 +36,8 @@ for (const [device, viewport, theme] of [['desktop', { width: 1440, height: 900 
     await check(page, d(`landing (${nome})`));
   }
   await page.evaluate(() => scrollTo(0, document.getElementById('planos').offsetTop)); await check(page, d('landing (planos)'));
+  await page.locator('#videoOpen').scrollIntoViewIfNeeded(); await check(page, d('landing (vídeo)'));
+  await page.click('#videoOpen'); await check(page, d('landing (vídeo aberto)')); await page.keyboard.press('Escape');
   await page.goto(`${BASE}/app/#/login`); await page.waitForSelector('#email'); await check(page, d('login'));
   await page.goto(`${BASE}/app/#/register`); await page.waitForSelector('#name'); await check(page, d('cadastro'));
   await page.fill('#name', 'Ana Acessível'); await page.fill('#email', `a11y-${Date.now()}-${device.replace(/\W/g, '')}@example.com`); await page.fill('#password', 'a11y-senha-12345');

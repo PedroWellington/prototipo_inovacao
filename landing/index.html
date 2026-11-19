@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="shared/design-tokens.css" />
   <link rel="stylesheet" href="css/landing.css" />
   <script type="module" src="js/landing.js"></script>
+  <script type="module" src="js/video.js"></script>
   <noscript><style>.hero-map{opacity:1;visibility:visible}</style></noscript>
 </head>
 <body>
@@ -128,6 +129,14 @@
           <div class="benefit rv" style="--i:1"><span>O QUE FAZEMOS</span><b>Comparamos lugares pelos seus critérios</b><p>Cidades e bairros do Brasil inteiro, ordenados pelo que você quer perto e longe, com o peso que você escolhe.</p></div>
           <div class="benefit rv" style="--i:2"><span>PARA QUEM</span><b>Para quem decide onde abrir</b><p>Redes, franquias, clínicas, comércios e serviços que precisam escolher uma cidade ou um bairro com dados à mão.</p></div>
         </div>
+        <!-- Vídeo: só a capa carrega com a página; iframe, áudio e animação só depois do clique (js/video.js). -->
+        <button type="button" class="video-cover rv" id="videoOpen">
+          <img src="video/poster.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+          <span class="video-play"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>Ver como funciona · 36 s</span>
+        </button>
+        <dialog class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-label="Vídeo: como o VICUS funciona">
+          <button type="button" class="video-close">Fechar</button>
+        </dialog>
       </div>
     </section>
 
