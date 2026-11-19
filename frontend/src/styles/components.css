@@ -2003,12 +2003,24 @@ html.is-scrolled .topbar {
   min-height: 52px;
   resize: none;
   padding: 10px 12px;
-  border: 1px solid var(--color-border-strong);
+  /* Sempre com cara de campo: borda na cor do foco (3,7:1 no claro, 6,6:1 no escuro sobre o cartão) */
+  border: 1.5px solid var(--color-focus);
   border-radius: 10px;
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
   font-size: 16px; /* sem zoom no iOS */
+}
+.ai-form textarea::placeholder {
+  color: var(--color-text-muted); /* 5,0:1 no claro, 6,0:1 no escuro */
+  opacity: 1;
+}
+/* Foco mais forte que o repouso: borda mais grossa e anel por fora */
+.ai-form textarea:focus-visible {
+  border-width: 2px;
+  padding: 9.5px 11.5px;
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 .ai-form-foot {
   display: flex;

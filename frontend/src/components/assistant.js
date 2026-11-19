@@ -38,8 +38,8 @@ function mountAssistant() {
           <button type="button" class="btn btn-ghost btn-sm btn-icon" data-ai-close aria-label="Fechar o assistente">${icon('close', 16)}</button></header>
         <div class="ai-log" aria-live="polite" aria-relevant="additions" data-ai-log></div>
         <form class="ai-form" data-ai-form>
-          <label class="sr-only" for="aiInput">Sua pergunta</label>
-          <textarea id="aiInput" rows="2" maxlength="${MAX}" placeholder="Pergunte sobre o método, a cobertura ou seus critérios"></textarea>
+          <label class="sr-only" for="aiInput">Pergunte sobre o método, a cobertura ou seus critérios</label>
+          <textarea id="aiInput" rows="2" maxlength="${MAX}" placeholder="Digite sua pergunta aqui"></textarea>
           <div class="ai-form-foot"><span class="small muted tabular" data-ai-count></span>
             <button type="submit" class="btn btn-primary btn-sm" data-ai-send>Enviar</button></div>
         </form>
