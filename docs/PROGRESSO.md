@@ -75,6 +75,7 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 | Quatro ajustes (2026-11-19) | 4. Renda só com o valor ("Renda mediana: R$ 1.500/mês") e a fonte, em tela, PDF, slides, assistente, landing e docs; frases que interpretavam a renda removidas; regra no prompt; testes de guarda | ✅ | `src/noIncomeSpin.test.js`, `tests/test_assistant.py`; `docs/visual/comparar/pdf-bairro-renda.webp` |
 | Assistente: provedor reserva e campo (2026-11-19) | A. Principal (OpenRouter) com `AI_MODEL` + 1 nova tentativa em 5xx/tempo, `AI_FALLBACK_MODEL`, depois o provedor reserva (Gemini: `AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_PROVIDER_MODEL`); 429 e 4xx pulam ao reserva; `rede-timeout`/`rede-conexao` com a classe no log; uma pergunta conta 1 no limite | ✅ código; ⬜ variáveis na Vercel | `0a4d4ed`; `tests/test_assistant.py` |
 | Assistente: provedor reserva e campo (2026-11-19) | B. Caixa de pergunta com borda sempre visível na cor do foco (≥ 3:1), foco mais forte (borda + anel), placeholder "Digite sua pergunta aqui" (≥ 4,5:1), rótulo acessível com o assunto | ✅ | `perf/assistente-campo.mjs` (axe 0, dois temas, desktop e celular); `docs/visual/assistente-campo/` |
+| Tema escuro azul (branch `teste/tema-escuro-azul`, 2026-11-19, teste) | Egyptian Blue, Stone Blue e Scarlet como tokens; derivados calculados; vidro, pílulas e botão vermelho só no escuro; claro sem mudança | ✅ na branch, sem merge | `docs/DESIGN-SYSTEM.md`; `docs/visual/tema-escuro-azul/`; axe 0 |
 
 ## Agora
 
