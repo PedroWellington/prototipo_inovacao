@@ -67,6 +67,7 @@ export async function render(root) {
             primary: true,
             label: 'Créditos disponíveis',
             value: credits.balance,
+            live: true,
             shape: credits.used + credits.balance > 0 ? shapeBar(credits.balance / (credits.used + credits.balance), `${credits.balance} restantes de ${credits.used + credits.balance}`) : '',
             extra: credits.used + credits.balance > 0 ? html`<span class="metric-split"><span>${credits.used} ${credits.used === 1 ? 'usado' : 'usados'}</span><span>${credits.balance} ${credits.balance === 1 ? 'restante' : 'restantes'}</span></span>` : '',
             note: html`1 crédito = 1 cidade por ${r.city_unlock_days} dias. O ranking de cidades usa ${r.city_search_cost} por busca. <a href="#/creditos">Comprar mais créditos</a>`,

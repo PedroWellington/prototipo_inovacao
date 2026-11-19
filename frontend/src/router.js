@@ -12,6 +12,7 @@ const ROUTES = {
   '/explorer': { load: () => import('./views/explorer.js').then((m) => m.render) },
   '/conta': { load: () => import('./views/account.js').then((m) => m.render) },
   '/creditos': { load: () => import('./views/billing.js').then((m) => m.render) },
+  '/checkout': { load: () => import('./views/checkout.js').then((m) => m.render) }, // #/checkout/<pedido> (nova aba)
   '/analises': { load: () => import('./views/analises.js').then((m) => m.render) },
   '/comparar': { load: () => import('./views/comparar.js').then((m) => m.render) },
   '/dados': { load: () => import('./views/dados.js').then((m) => m.render) },

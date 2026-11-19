@@ -30,7 +30,7 @@ backend/   FastAPI + SQLAlchemy Core (SQL explícito) + Alembic
   app/auth     sessão (cookie httpOnly + hash SHA-256 no banco), CSRF, argon2id, limite de tentativas
   app/api      catalog, geo (malhas do IBGE com cache), profile (+ logo), cities (status/geojson/rank), credits, account (LGPD)
   app/credits.py  única autoridade de saldo e liberação (regras em credit_settings); app/logos.py valida e recodifica imagens
-  app/billing     ponto único do pagamento (planos, interesse em credit_purchase_interest, gancho checkout); PAYMENTS_ENABLED=false
+  app/billing     ponto único do pagamento (pedidos, interface de provedor, interesse em credit_purchase_interest); PAYMENTS_MODE=off|demo
   app/scoring  rank.py (bairros) e rank_cities.py (cidades): o mesmo motor em SQL
   app/report   relatório em PDF (fpdf2), roteiro e slides; google_routes.py (Routes API com trava de cota); docs/RELATORIO.md
   app/etl      seed_catalog, ibge_boundaries (bairros ou áreas por setor), cnpj, locate, counts, census, cnes, load_city/load_uf/load_br, report

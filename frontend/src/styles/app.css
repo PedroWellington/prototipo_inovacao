@@ -752,7 +752,7 @@ textarea {
     border-color var(--dur-fast),
     color var(--dur-fast);
 }
-.chip:hover:not(:disabled) {
+.chip:hover:not(:disabled):not([aria-pressed='true']) {
   background: var(--color-surface-2);
 }
 .chip[aria-pressed='true'] {

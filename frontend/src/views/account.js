@@ -29,7 +29,7 @@ export async function render(root) {
         <h2>Créditos</h2>
         ${creditsCard(credits)}
         <div class="card-actions">
-          <a class="btn btn-primary btn-sm" href="#/creditos">${icon('coin', 16)} Comprar mais créditos</a>
+          <a class="btn btn-primary btn-sm" href="#/creditos">${icon('coin', 16)} Comprar créditos</a>
         </div>
       </section>
       <section class="card">

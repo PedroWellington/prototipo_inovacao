@@ -29,8 +29,13 @@ Cada item abaixo diz onde encaixar a extensão sem mexer no motor de ranking.
 
 ## Pagamentos, planos e cotas
 
-- **Hoje:** créditos sem pagamento. `credit_ledger` guarda concessões e gastos; `credit_settings` guarda as regras; a concessão é manual (`python -m app.credits grant`).
-- **Para cobrar:** o webhook do gateway grava uma concessão (`reason = 'grant'`, com o id do pagamento em `note`) em `credit_ledger`. Nada no motor muda.
+- **Hoje:** `PAYMENTS_MODE=off` (só registra interesse) ou `demo` (pedido real em `orders`, pagamento SIMULADO por um botão).
+  `credit_ledger` guarda boas-vindas, concessões, compras (`reason = 'purchase'`, com `order_id`) e gastos; `credit_settings`
+  guarda regras, preço por crédito e limites.
+- **Para cobrar de verdade (Pix, Mercado Pago ou Stripe):** em `backend/app/billing/__init__.py`, um `Provider` novo cujo
+  `start()` devolve a URL do checkout do provedor, registrado em `PROVIDERS` com o nome do modo novo; e uma rota
+  `POST /api/billing/webhook/<provedor>` que confere a assinatura do provedor e chama `mark_paid()` (idempotente; o índice
+  `credit_ledger_order_once` impede creditar o mesmo pedido duas vezes). A tela, os pedidos, os limites e o extrato não mudam.
 
 ### Plano original (PDF)
 

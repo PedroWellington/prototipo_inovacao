@@ -3,6 +3,7 @@
 import { ApiError, get, post } from './api.js';
 import { confirmDialog } from './components/dialog.js';
 import { spendText } from './lib.js';
+import { countUp } from './motion.js';
 
 let current = null;
 const listeners = new Set();
@@ -19,6 +20,37 @@ export const creditsState = () => current;
 export async function loadCredits(force = false) {
   if (current && !force) return current;
   return set(await get('/api/credits'));
+}
+
+// Saldo ao vivo: todo [data-credit-balance] (barra, Visão geral, Análises, conta) conta até o valor novo.
+onCredits((st) => {
+  for (const el of document.querySelectorAll('[data-credit-balance]')) countUp(el.querySelector('[data-count]') || el, st.balance);
+});
+
+// Compra confirmada em outra aba (checkout): BroadcastChannel, com o evento de storage como reserva.
+const CHANNEL = 'credits';
+const refresh = () => loadCredits(true).catch(() => {});
+try {
+  new BroadcastChannel(CHANNEL).onmessage = refresh;
+} catch {
+  /* navegador sem BroadcastChannel: fica o storage */
+}
+addEventListener('storage', (e) => e.key === 'credits-updated' && refresh());
+
+export function announceCredits(state) {
+  if (state) set(state);
+  try {
+    const bc = new BroadcastChannel(CHANNEL);
+    bc.postMessage('updated');
+    bc.close();
+  } catch {
+    /* sem BroadcastChannel */
+  }
+  try {
+    localStorage.setItem('credits-updated', String(Date.now()));
+  } catch {
+    /* armazenamento bloqueado: a tela de compra também consulta o servidor */
+  }
 }
 
 export const scopeKey = (scope) => (scope.kind === 'uf' ? scope.uf : scope.kind === 'region' ? `R${scope.id}` : 'BR');

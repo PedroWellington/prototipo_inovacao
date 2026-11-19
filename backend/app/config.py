@@ -30,7 +30,10 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")  # só no servidor; n
 GOOGLE_ROUTES_MONTHLY_FREE = int(os.getenv("GOOGLE_ROUTES_MONTHLY_FREE", "10000"))  # cota grátis do SKU (elementos/mês)
 GOOGLE_ROUTES_CAP_SHARE = float(os.getenv("GOOGLE_ROUTES_CAP_SHARE", "0.8"))  # trava: fração da cota grátis
 GOOGLE_ROUTES_TIMEOUT_SECONDS = float(os.getenv("GOOGLE_ROUTES_TIMEOUT_SECONDS", "4"))
-PAYMENTS_ENABLED = flag("PAYMENTS_ENABLED", False)  # gateway de pagamento (app/billing); desligado = só registra interesse
+# Compra de créditos (app/billing): off = só registra interesse; demo = pedido real com pagamento SIMULADO.
+PAYMENTS_MODE = os.getenv("PAYMENTS_MODE", "off").strip().lower()
+if PAYMENTS_MODE not in ("off", "demo"):
+    PAYMENTS_MODE = "off"
 
 # Assistente de IA (app/assistant.py; docs/ASSISTENTE-IA.md). Desligado ou sem chave: o botão não aparece.
 AI_ASSISTANT_ENABLED = flag("AI_ASSISTANT_ENABLED", False)

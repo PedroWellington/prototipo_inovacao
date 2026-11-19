@@ -46,7 +46,7 @@ async def validation_error(_: Request, exc: RequestValidationError):
 def public_config():
     """Só flags públicas: nada de segredo nem de regra de negócio aqui."""
     return {"prototype": config.PROTOTYPE, "demo_mode": config.DEMO_MODE, "uploads": config.UPLOADS_ENABLED,
-            "google_login": google.enabled(), "pdf": config.PDF_ENABLED, "payments": config.PAYMENTS_ENABLED,
+            "google_login": google.enabled(), "pdf": config.PDF_ENABLED, "payments": config.PAYMENTS_MODE != "off", "payments_mode": config.PAYMENTS_MODE,
             "assistant": assistant.enabled(), "google_maps": google_routes.enabled()}
 
 

@@ -2,9 +2,11 @@
 // Ordem combinada: Visão geral · Análises · Comparar · Dados e fontes · Explorar (por último). Cada item é uma
 // página com rota própria; o explorador fica vivo ao sair e voltar (router.js).
 import { PRODUCT_NAME } from '../brand.js';
-import { html, raw } from '../html.js';
+import { creditsState, loadCredits } from '../credits.js';
+import { fmt, html, raw } from '../html.js';
 import { aboutLink, icon, logo } from '../icons.js';
 import { initials } from '../lib.js';
+import { countUp } from '../motion.js';
 
 const NAV = [
   { key: 'home', label: 'Visão geral', href: '#/home' },
@@ -37,6 +39,7 @@ export function topbar({ active, user, profile }) {
     <div class="topbar-right">
       <span class="hide-sm">${aboutLink()}</span>
       ${themeButton()}
+      <a class="topbar-credits" href="#/creditos" title="Saldo de créditos · Comprar créditos">${icon('coin', 16)}<span class="tabular" data-credit-balance>${creditsState() ? fmt.int(creditsState().balance) : '–'}</span><span class="sr-only"> créditos. Comprar créditos</span></a>
       <a class="topbar-profile" href="#/conta">
         <span class="topbar-avatar" aria-hidden="true">${initials(name || PRODUCT_NAME)}</span><span class="sr-only-sm">Minha conta</span>
       </a>
@@ -79,6 +82,9 @@ export function wireTopbar(root, { signal } = {}) {
   bar.addEventListener('click', (e) => {
     if (e.target.closest('[data-nav]')) close();
   }, { signal });
+  // Saldo na barra: o valor do servidor; depois, onCredits (credits.js) atualiza com a contagem.
+  const n = bar.querySelector('[data-credit-balance]');
+  if (n) loadCredits().then((st) => countUp(n, st.balance)).catch(() => {});
   movePill(bar);
   document.fonts?.ready.then(() => movePill(bar)); // a fonte Inter muda a largura dos itens
   addEventListener('resize', () => movePill(bar), { signal, passive: true });

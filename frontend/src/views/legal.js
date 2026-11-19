@@ -30,6 +30,15 @@ const googleTerms = () =>
       e com a <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de Privacidade do Google</a>.
       Esses dados aparecem só na tela e não são guardados.</p>`;
 
+// Créditos: o texto acompanha o modo do servidor (flag payments_mode em /api/config). No modo demo, nada pode
+// sugerir cobrança real.
+const creditTerms = () =>
+  html`<h2 id="creditos">Créditos</h2>
+    <p>Toda conta nova recebe créditos de boas-vindas uma única vez. 1 crédito abre 1 cidade por 30 dias; o ranking de cidades usa créditos por busca.</p>
+    ${flags.payments_mode === 'demo'
+      ? html`<p><strong>A compra de créditos está em modo de demonstração: os pagamentos são simulados.</strong> Nenhuma cobrança real é feita e nenhum dado de pagamento é pedido. Os créditos não têm valor monetário e não são reembolsáveis.</p>`
+      : html`<p>A compra de créditos ainda não está disponível. Os créditos não têm valor monetário e não são reembolsáveis.</p>`}`;
+
 export async function terms(root) {
   await flagsReady;
   page(
@@ -46,12 +55,14 @@ export async function terms(root) {
       <p>Informações de caráter informativo. Não substituem análise própria ou profissional. Não constituem aconselhamento jurídico nem financeiro.</p>
       <p>Todo dado mostrado traz fonte e data de referência. A nota de cada área é relativa aos demais lugares comparados: não é uma medida absoluta nem uma previsão.</p>
       <p>As perguntas feitas ao assistente de IA, quando ligado, são processadas por um provedor externo (Google) para gerar a resposta.</p>
+      ${creditTerms()}
       ${flags.google_maps ? googleTerms() : ''}
       <p><a class="btn btn-secondary btn-sm" href="#/como-calculamos">${icon('info', 16)} Como calculamos</a></p>`,
   );
 }
 
-export function privacy(root) {
+export async function privacy(root) {
+  await flagsReady;
   page(
     root,
     'Política de privacidade',
@@ -60,6 +71,10 @@ export function privacy(root) {
       <p>Na tela Minha conta você pode baixar todos os seus dados em JSON e excluir a conta, o que apaga também sessões, perfil e critérios.</p>
       <h2>Dados de terceiros</h2>
       <p>Os dados de estabelecimentos vêm da base pública do CNPJ. Não guardamos nem exibimos razão social, nome fantasia, telefone, e-mail ou dados de sócios.</p>
+      <h2>Compra de créditos</h2>
+      <p>${flags.payments_mode === 'demo'
+        ? 'Os pagamentos estão em modo de demonstração (simulados). De cada pedido guardamos só a quantidade, o valor calculado, a data e a situação. Não pedimos nem guardamos cartão, CPF ou qualquer dado de pagamento.'
+        : 'A compra de créditos ainda não está disponível. Se você pedir aviso, guardamos só a quantidade escolhida; o aviso vai para o e-mail da sua conta.'}</p>
       <h2>Cookies</h2>
       <p>Usamos um único cookie de sessão, necessário para manter você conectado.</p>`,
   );

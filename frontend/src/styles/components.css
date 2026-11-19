@@ -278,6 +278,22 @@ img.avatar {
   color: var(--color-on-top);
   text-decoration: none;
 }
+.topbar-credits {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-on-top) 22%, transparent);
+  border-radius: var(--radius-full);
+  color: var(--color-on-top);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  text-decoration: none;
+}
+.topbar-credits:hover {
+  border-color: var(--color-brand-mark);
+}
 .topbar-avatar {
   display: grid;
   place-items: center;
@@ -1522,38 +1538,143 @@ img.avatar {
 .btn-google:focus-visible { outline: 3px solid var(--color-focus, #4285f4); outline-offset: 2px; }
 .auth-google .hint { margin-top: var(--space-2, 8px); }
 
-/* ---------- Comprar mais créditos (views/billing.js) ---------- */
-.page-wide {
-  max-width: 960px;
+/* ---------- Comprar créditos (views/billing.js) e checkout simulado (views/checkout.js) ---------- */
+.buy-balance {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  color: var(--color-text-muted);
 }
-.plans-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: var(--space-4);
-  margin: var(--space-6) 0 var(--space-4);
+.buy-balance strong {
+  color: var(--color-text);
+  font-size: var(--text-lg);
 }
-.plans-grid .card + .card {
-  margin-top: 0;
-}
-.plan-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.plan-card h2 {
-  margin: 0;
-  font-size: var(--text-sm);
+.buy-demo strong,
+.checkout-sim strong {
   font-weight: var(--weight-bold);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+}
+.buy-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: var(--space-4) 0;
+}
+.buy-grid h2 {
+  margin: 0;
+  font-size: var(--text-base);
+  letter-spacing: -0.02em;
+}
+.buy-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 var(--space-4);
+}
+.buy-step {
+  width: 56px;
+  min-height: 56px;
+  padding: 0;
+  font-size: 26px;
+  line-height: 1;
+}
+/* Número como herói: a quantidade é o próprio campo. */
+.buy-input {
+  width: 3.2ch;
+  min-width: 0;
+  flex: 0 1 auto;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: clamp(56px, 8vw, 88px);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.055em;
+  line-height: 1;
+  text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.buy-input::-webkit-inner-spin-button,
+.buy-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.buy-input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--color-accent);
+}
+.buy-packs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.buy-dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+.buy-dl dt {
+  color: var(--color-text-muted);
+}
+.buy-dl dd {
+  margin: 0;
+  font-weight: var(--weight-bold);
+  text-align: right;
+}
+.buy-total {
+  margin: 6px 0 2px;
+  font-size: clamp(40px, 5vw, 56px);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.05em;
+  line-height: 1.05;
+}
+.buy-note {
+  margin: 0 0 var(--space-4);
+  color: var(--color-warning);
+}
+.buy-status:not(:empty) {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}
+.buy-ok {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-bold);
+}
+.buy-ok .icon {
   color: var(--color-accent);
 }
-.plan-card .plan-price b {
-  font-size: var(--text-2xl);
-  letter-spacing: -0.03em;
+.checkout-page {
+  max-width: 560px;
 }
-.plan-card .btn {
-  margin-top: auto;
+.checkout-sim {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-6);
+  padding: var(--space-4);
+  border: 2px solid var(--color-warning);
+  border-radius: var(--radius);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: var(--text-md);
+}
+.checkout-dl {
+  padding: var(--space-4) 0;
+  border-block: 1px solid var(--color-border);
+  font-size: var(--text-base);
+}
+.checkout-total {
+  font-size: var(--text-xl);
+}
+@media (max-width: 760px) {
+  .buy-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .page .btn-ghost.btn-sm:first-child {
   margin-left: calc(-1 * var(--space-3));

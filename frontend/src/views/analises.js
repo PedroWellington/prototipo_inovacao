@@ -49,7 +49,7 @@ export async function render(root) {
           }),
           [
             metric({ label: 'Total de análises', value: items.length, note: 'cidades e alcances abertos até hoje' }),
-            metric({ label: 'Créditos', value: credits.balance, extra: html`<a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a>` }),
+            metric({ label: 'Créditos', value: credits.balance, live: true, extra: html`<a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a>` }),
           ],
         )}
         <div class="ov-section-head" data-cx><h2>Atividade recente</h2><span>${items.length ? `${items.length} no total` : ''}</span></div>

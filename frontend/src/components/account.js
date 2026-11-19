@@ -33,7 +33,7 @@ export function creditsCard(state, { compact = false } = {}) {
   return html`<section class="acc-card credits ${compact ? 'is-compact' : ''}" aria-label="Créditos">
     <span class="credits-icon">${icon('coin', compact ? 18 : 22)}</span>
     <div>
-      <strong class="tabular">${state.balance === 1 ? '1 crédito' : `${fmt.int(state.balance)} créditos`}</strong>
+      <strong class="tabular"><span data-credit-balance>${fmt.int(state.balance)}</span> ${state.balance === 1 ? 'crédito' : 'créditos'}</strong>
       ${compact
         ? ''
         : html`<p class="small muted">1 crédito = analisar 1 cidade por ${r.city_unlock_days} dias (reabrir no prazo não gasta).

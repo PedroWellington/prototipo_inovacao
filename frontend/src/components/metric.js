@@ -5,10 +5,11 @@ import { html } from '../html.js';
 import { countNumber, growBar, skeleton } from '../motion.js';
 
 // value: número (conta de 0 ao valor); text: texto curto no lugar do número; nenhum dos dois: "sem dado".
-export function metric({ label, value = null, text = null, decimals = 0, unit = '', shape = '', note = '', extra = '', primary = false }) {
+// live: o número acompanha o saldo de créditos ao vivo (credits.js atualiza todo [data-credit-balance]).
+export function metric({ label, value = null, text = null, decimals = 0, unit = '', shape = '', note = '', extra = '', primary = false, live = false }) {
   const num =
     value != null
-      ? html`<strong class="metric-num">${countNumber(value, { decimals })}${unit ? html`<small>${unit}</small>` : ''}</strong>`
+      ? html`<strong class="metric-num" ${live ? html`data-credit-balance` : ''}>${countNumber(value, { decimals })}${unit ? html`<small>${unit}</small>` : ''}</strong>`
       : html`<strong class="metric-num is-text">${text ?? 'sem dado'}</strong>`;
   return html`<div class="metric ${primary ? 'is-primary' : ''}" data-cx>
     <span class="metric-label">${label}</span>${num}${shape}${extra}${note ? html`<small class="metric-note">${note}</small>` : ''}</div>`;
