@@ -77,8 +77,14 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 | Assistente: provedor reserva e campo (2026-11-19) | B. Caixa de pergunta com borda sempre visível na cor do foco (≥ 3:1), foco mais forte (borda + anel), placeholder "Digite sua pergunta aqui" (≥ 4,5:1), rótulo acessível com o assunto | ✅ | `perf/assistente-campo.mjs` (axe 0, dois temas, desktop e celular); `docs/visual/assistente-campo/` |
 | Tema escuro azul (branch `teste/tema-escuro-azul`, 2026-11-19, teste) | Egyptian Blue, Stone Blue e Scarlet como tokens; derivados calculados; vidro, pílulas e botão vermelho só no escuro; claro sem mudança | ✅ na branch, sem merge | `docs/DESIGN-SYSTEM.md`; `docs/visual/tema-escuro-azul/`; axe 0 |
 | Tema escuro azul, 2ª rodada (branch, 2026-11-19) | Fundo `#02101e` (Egyptian Blue + 50% de preto), cartões em Egyptian Blue; mapas com moldura preta, contorno da cidade preto e limites internos claros (≥ 3:1) | ✅ na branch, sem merge | `docs/DESIGN-SYSTEM.md`; `docs/visual/tema-escuro-azul/r2-*`; axe 0 |
+| Vídeo por tema (2026-11-19) | `landing/video/escuro.html` (+ `escuro.js`, script à parte por causa da CSP) no tema escuro, `index.html` no claro; mesma `narracao.mp3` e mesmos CUES; `?embed=1`/`?auto=1`/`?cena=N`, rótulo "Voz" escondido, movimento reduzido sem tremores nem "whip"; capa `poster-escuro.jpg` (cena 8); aviso "Animação ilustrativa" | ✅ | `frontend/perf/video.mjs` (as 11 cenas dos dois vídeos com MP3, botão de som); axe 0 |
 
 ## Agora
+
+Vídeo por tema e tema escuro azul (2026-11-19): branch `teste/tema-escuro-azul` mesclada na `main` a pedido do Pedro.
+O tema escuro azul e o vídeo novo passam a valer em produção no próximo deploy da Vercel.
+
+Antes:
 
 Assistente (2026-11-19, segunda rodada): provedor reserva e caixa de pergunta. **Na Vercel:** `AI_FALLBACK_API_KEY` (chave do
 Google AI Studio) e, se quiser outro modelo/URL do reserva, `AI_FALLBACK_PROVIDER_MODEL`/`AI_FALLBACK_BASE_URL`. Novo deploy depois.
