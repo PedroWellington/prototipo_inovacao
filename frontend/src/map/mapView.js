@@ -70,6 +70,7 @@ export function themePaints(el) {
     'states-line': { 'line-color': accent },
     'munis-fill': { 'fill-color': ['case', ['boolean', ['feature-state', 'hasData'], false], accent, css('--color-text-subtle', el)] },
     'munis-line': { 'line-color': css('--color-border-strong', el) },
+    'hoods-edge': { 'line-color': css('--map-edge', el) },
     'hoods-fill': { 'fill-color': scoreFill },
     'hoods-line': { 'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], css('--color-selected', el), line] },
     'cities-fill': { 'fill-color': scoreFill },
@@ -107,6 +108,8 @@ function addLayers(map, opts) {
     },
   });
   map.addLayer({ id: 'munis-line', type: 'line', source: 'munis', paint: { ...P['munis-line'], 'line-width': 0.6 } });
+  // Contorno externo da cidade: linha grossa por baixo dos bairros (só a metade de fora aparece). Transparente no claro.
+  map.addLayer({ id: 'hoods-edge', type: 'line', source: 'hoods', paint: { ...P['hoods-edge'], 'line-width': 5 } });
   // Cor pela nota que veio do backend (feature-state): recolorir não recria camada nem fonte.
   map.addLayer({ id: 'hoods-fill', type: 'fill', source: 'hoods', paint: { ...P['hoods-fill'], 'fill-opacity': hover(0.95, 0.86) } });
   map.addLayer({

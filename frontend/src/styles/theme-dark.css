@@ -1,0 +1,121 @@
+/* Tema escuro "azul" (teste, branch teste/tema-escuro-azul): só a linguagem visual do escuro. Nada aqui vale no
+   claro (tudo sob :root[data-theme='dark']). Cores só por tokens (tokens.css / shared/design-tokens.css).
+   - fundo Egyptian Blue com um brilho Stone Blue no topo;
+   - cartões de vidro (superfície translúcida, desfoque e borda fina clara) e cantos bem arredondados;
+   - botões e campos em pílula; botão primário Scarlet com leve brilho vermelho;
+   - uma palavra em destaque nos títulos (o <span> que já existe) em Stone Blue; etiquetas em maiúsculas.
+   Os painéis do explorador ficam opacos: vidro por cima do mapa vivo custaria um quadro a cada movimento. */
+
+:root[data-theme='dark'] body {
+  background:
+    radial-gradient(ellipse 70% 45% at 75% -5%, rgb(99 156 197 / 0.16), transparent 70%) fixed,
+    var(--color-bg);
+}
+
+/* Vidro */
+:root[data-theme='dark'] :is(.ov-block, .metric, .card, .dialog, .cmp-col, .ov-empty-big) {
+  background: var(--color-glass);
+  border: 1px solid var(--color-glass-line);
+  border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+:root[data-theme='dark'] .cmp-side .metric {
+  border-radius: 18px;
+}
+
+/* Pílulas */
+:root[data-theme='dark'] :is(.btn, .btn-sm, .chip, .ex-chip, .input, .select, .topnav-link) {
+  border-radius: var(--radius-full);
+}
+:root[data-theme='dark'] .btn-icon {
+  border-radius: 50%;
+}
+:root[data-theme='dark'] :is(.btn-secondary, .input, .select) {
+  background: transparent;
+  border-color: var(--color-border-strong); /* 3,3:1 sobre a superfície */
+}
+
+/* Ação principal: Scarlet escurecido (branco 5,5:1) com leve brilho vermelho */
+:root[data-theme='dark'] .btn-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 0 0 1px rgb(227 47 51 / 0.35), 0 6px 22px var(--color-glow);
+}
+:root[data-theme='dark'] .btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  color: var(--color-on-primary);
+}
+:root[data-theme='dark'] .btn-primary[aria-busy='true']::after {
+  border-color: var(--color-on-primary);
+  border-right-color: transparent;
+}
+
+/* Títulos: a palavra em destaque e as etiquetas */
+:root[data-theme='dark'] .ov-head h1 span {
+  color: var(--color-focus); /* Stone Blue: 5,6:1 sobre o fundo, texto grande */
+}
+:root[data-theme='dark'] .ov-eyebrow {
+  color: var(--color-accent);
+}
+
+/* Foco: o contorno de app.css já usa --color-focus (Stone Blue no escuro); aqui só o anel dos campos em pílula */
+:root[data-theme='dark'] :is(.input, .select):focus {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+/* Assistente: balões e caixa no mesmo vidro */
+:root[data-theme='dark'] .ai-panel {
+  border: 1px solid var(--color-glass-line);
+  border-radius: var(--radius-lg);
+}
+:root[data-theme='dark'] .ai-msg {
+  border-radius: 18px;
+}
+:root[data-theme='dark'] .ai-user {
+  background: var(--color-accent-soft);
+}
+:root[data-theme='dark'] .ai-form textarea {
+  border-radius: 18px;
+  background: transparent;
+}
+:root[data-theme='dark'] .ai-error {
+  border-color: var(--color-danger);
+}
+
+/* ---------- Mapas com moldura preta (só no escuro) ----------
+   Borda preta grossa em volta e as beiradas escurecendo até o preto (sombra interna). A moldura fica abaixo dos
+   controles, da legenda e dos painéis (z-index 1), e só escurece as beiradas: os números das áreas no meio ficam
+   intactos. O contorno da cidade é preto (--mini-edge / --map-edge) e os limites internos, claros (--snow). */
+:root[data-theme='dark'] .ex-work::after {
+  content: '';
+  position: absolute;
+  inset: 0 var(--ex-right) 0 var(--ex-left);
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 5px var(--map-frame), inset 0 0 56px 18px rgb(0 0 0 / 0.8);
+  transition: left var(--dur-ui) var(--ease-spring);
+}
+:root[data-theme='dark'] .is-collapsed .ex-work::after {
+  left: 0;
+}
+:root[data-theme='dark'] .mini-map {
+  box-sizing: border-box;
+  padding: 12px;
+  border: 4px solid var(--map-frame);
+  border-radius: 18px;
+  background: radial-gradient(ellipse at center, var(--color-bg) 45%, #000 100%);
+  box-shadow: inset 0 0 28px 8px rgb(0 0 0 / 0.75);
+}
+:root[data-theme='dark'] .mm-hl {
+  fill: var(--color-text); /* bairro em destaque: claro sobre o preenchimento (5,4:1), com contorno preto */
+  stroke: var(--map-frame);
+}
+:root[data-theme='dark'] .slide-title .mm-area {
+  fill: var(--mini-fill);
+  stroke: var(--mini-line);
+}
+:root[data-theme='dark'] .slide-title .mm-edge {
+  stroke: var(--mini-edge);
+}

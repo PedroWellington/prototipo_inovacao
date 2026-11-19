@@ -20,6 +20,9 @@
   --color-accent-hover: var(--copper-deep);
   --color-accent-soft: var(--copper-wash);
   --color-on-accent: #ffffff;
+  --color-primary: var(--color-accent); /* botão primário (o escuro usa o Scarlet) */
+  --color-primary-hover: var(--color-accent-hover);
+  --color-on-primary: var(--color-on-accent);
   --color-focus: var(--copper);
   --color-focus-ring: rgb(173 118 81 / 0.28);
 
@@ -51,6 +54,7 @@
   --score-1: var(--scale-1);
   --score-none: var(--scale-none);
   --map-line: var(--paper);
+  --map-edge: rgba(0, 0, 0, 0); /* (sintaxe com vírgulas: o MapLibre lê este token) contorno externo da cidade no explorador: só o escuro desenha */
   /* Mapinhas (comparar, bairro, slides): preenchimento mais escuro que o cartão, limites ≥ 3:1 sobre ele */
   --mini-fill: var(--sand); /* 1,23:1 abaixo de --paper */
   --mini-line: var(--muted-dark); /* limites internos: 4,1:1 sobre --sand */
@@ -111,25 +115,29 @@
   --color-selected: var(--ink);
 }
 
-/* Tema escuro: só os tokens por função mudam, derivados dos papéis de shared/design-tokens.css. */
+/* Tema escuro "azul" (teste): Egyptian Blue de fundo, Stone Blue de destaque, Scarlet na ação principal.
+   Só tokens de shared/design-tokens.css (cores-base e derivados); contrastes medidos em docs/DESIGN-SYSTEM.md. */
 :root[data-theme='dark'] {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
-  --color-surface-2: var(--bg-2);
-  --color-surface-3: #3f3630;
-  --color-border: #4a3f38;
-  --color-border-strong: #5c514a;
-  --color-text: var(--text);
-  --color-text-muted: var(--text-2);
+  --color-surface-2: var(--blue-surface);
+  --color-surface-3: var(--blue-surface-2);
+  --color-border: var(--blue-line);
+  --color-border-strong: var(--blue-line-strong); /* 4,0:1 sobre a superfície */
+  --color-text: var(--text); /* 15,6:1 sobre a superfície */
+  --color-text-muted: var(--text-2); /* 10,5:1 sobre a superfície */
   --color-text-subtle: var(--text-2);
   --color-text-on-sand: var(--text-2);
 
-  --color-accent: var(--accent); /* texto #181512 sobre #eba774: 9,5:1 */
-  --color-accent-hover: #f2bd92;
-  --color-accent-soft: #3f2f24;
-  --color-on-accent: var(--bg);
-  --color-focus: var(--accent);
-  --color-focus-ring: rgb(235 167 116 / 0.32);
+  --color-accent: var(--accent); /* Stone Blue claro: 7,6:1 sobre a superfície, 8,9:1 sobre o fundo */
+  --color-accent-hover: var(--stone-lighter);
+  --color-accent-soft: var(--blue-soft);
+  --color-on-accent: var(--bg); /* 7,6:1 */
+  --color-primary: var(--scarlet-btn); /* Scarlet puro dá 4,45:1 com branco; o preenchimento escurece um pouco: 5,5:1 */
+  --color-primary-hover: var(--scarlet-btn-hover); /* 6,4:1 */
+  --color-on-primary: #ffffff;
+  --color-focus: var(--stone-blue); /* 5,5:1 sobre a superfície, 6,5:1 sobre o fundo */
+  --color-focus-ring: rgb(99 156 197 / 0.4);
 
   --color-top: var(--bg-2);
   --color-top-2: var(--surface);
@@ -137,29 +145,38 @@
   --color-on-top-muted: var(--text-2);
   --color-brand-mark: var(--accent);
 
-  --color-positive: #9fbab3;
-  --color-positive-soft: #263330;
-  --color-danger: #e8a496;
-  --color-danger-hover: #f0b9ae;
-  --color-danger-soft: #3d2a26;
+  --color-positive: var(--stone-light);
+  --color-positive-soft: var(--blue-soft);
+  --color-danger: var(--scarlet-light); /* 5,7:1 sobre a superfície; o Scarlet puro nunca vai em texto pequeno */
+  --color-danger-hover: var(--snow);
+  --color-danger-soft: var(--scarlet-deep);
   --color-warning: var(--accent);
-  --color-warning-soft: #3f2f24;
-  --color-info-soft: #263330;
-  --color-scrim: rgb(0 0 0 / 0.6);
-  --color-overlay: rgb(34 29 26 / 0.94);
+  --color-warning-soft: var(--blue-soft);
+  --color-info-soft: var(--blue-soft);
+  --color-demo: var(--scarlet-light);
+  --color-scrim: rgb(2 25 48 / 0.72);
+  --color-overlay: rgb(3 32 61 / 0.94);
   --color-holo: var(--holo);
-  --color-selected: var(--accent);
+  --color-selected: var(--stone-blue);
+  --color-glass: rgb(3 32 61 / 0.82); /* cartão de vidro: Egyptian Blue translúcido, com desfoque */
+  --color-glass-line: rgb(185 210 229 / 0.24); /* borda fina clara do vidro */
+  --color-glow: rgb(227 47 51 / 0.45); /* brilho do botão primário */
 
-  /* Escala dos bairros no escuro: luminosidade crescente (combina mais = mais claro), tons de cobre */
-  --score-5: var(--accent);
-  --score-4: #bf8a62;
-  --score-3: #8a6448;
-  --score-2: #5c4537;
-  --score-1: #3b302a;
-  --score-none: #2b2522;
-  --map-line: var(--bg);
-  --mini-fill: var(--bg-2); /* abaixo de --surface (#352d27) */
-  --mini-line: var(--text-2); /* 7,5:1 sobre --bg-2 */
-  --mini-edge: var(--text); /* 11,6:1 sobre --surface */
+  /* Escala dos bairros: do Egyptian Blue ao Stone Blue (combina mais = mais claro), parando antes do Stone Blue puro
+     para que o limite claro (--snow) tenha >= 3:1 em todos os tons; o número da posição vai sempre junto */
+  --score-5: #5e94bb; /* = color-mix(stone 95%, preto): limite 3,1:1 */
+  --score-4: #5083aa; /* = color-mix(egyptian 20%, stone): limite 3,9:1 */
+  --score-3: #3d6a8f; /* = color-mix(egyptian 40%, stone): limite 5,4:1 */
+  --score-2: #295273; /* = color-mix(egyptian 60%, stone): limite 7,8:1 */
+  --score-1: #183b5b; /* = color-mix(egyptian 78%, stone): limite 11:1 */
+  --score-none: #0b2a48; /* = color-mix(egyptian 92%, stone): limite 13,8:1 */
+  --map-line: var(--snow); /* limites internos sempre claros */
+  --map-edge: #000000; /* contorno externo da cidade, por baixo dos bairros */
+  --map-frame: #000000; /* moldura preta em volta dos mapas */
+  --mini-fill: #3d6a8f; /* = --score-3: contorno preto 3,7:1, limite claro 5,4:1 */
+  --mini-line: var(--snow);
+  --mini-edge: #000000;
+  --radius: 14px;
+  --radius-lg: 24px;
   --shadow-float: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.5);
 }

@@ -1,5 +1,6 @@
 import './styles/tokens.css';
 import './styles/app.css';
+import './styles/theme-dark.css';
 import { flags, flagsReady, loadFlags } from './config.js';
 import { loadUser } from './session.js';
 import { startRouter } from './router.js';

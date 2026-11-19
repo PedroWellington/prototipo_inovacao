@@ -71,14 +71,37 @@
   --holo: var(--copper-soft);
 }
 
-/* Tema escuro: tons quentes e sóbrios, sem preto puro. Tudo o mais deriva destes oito. */
+/* Tema escuro "azul": três cores-base e tons derivados só delas, de branco e de preto (nenhuma outra matiz).
+   Os derivados são hex calculados (o mapa lê os tokens com getComputedStyle e não entende color-mix);
+   a fórmula de cada um está ao lado e a tabela de contrastes em docs/DESIGN-SYSTEM.md. */
+:root {
+  --egyptian-blue: #03203d; /* superfície dos cartões e realce (o fundo da página é --blue-night) */
+  --stone-blue: #639cc5; /* destaque: foco, seleção, mapa, ícones ativos */
+  --scarlet: #e32f33; /* ação principal e alertas (nunca texto pequeno sobre o fundo: 3,7:1) */
+  --blue-night: #02101e; /* = color-mix(egyptian 50%, preto): fundo da página */
+  --blue-deep: #010c16; /* = color-mix(egyptian 36%, preto): topo do app */
+  --blue-surface: #103150; /* = color-mix(egyptian 86%, stone) */
+  --blue-surface-2: #163958; /* = color-mix(egyptian 80%, stone) */
+  --blue-surface-3: #1e4363; /* = color-mix(egyptian 72%, stone) */
+  --blue-line: #244a6b; /* = color-mix(egyptian 66%, stone) */
+  --blue-line-strong: #5083aa; /* = color-mix(egyptian 20%, stone): 3,3:1 sobre a superfície */
+  --blue-soft: #1c4060; /* = color-mix(egyptian 74%, stone) */
+  --stone-light: #8cb6d4; /* = color-mix(stone 74%, branco): texto em destaque, 6,2:1 sobre a superfície */
+  --stone-lighter: #b9d2e5; /* = color-mix(stone 45%, branco): texto secundário, 8,5:1 sobre a superfície */
+  --snow: #f6f9fc; /* = color-mix(branco 94%, stone): texto principal */
+  --scarlet-btn: #c8292d; /* = color-mix(scarlet 88%, preto): preenchimento do botão; branco 5,5:1 */
+  --scarlet-btn-hover: #b62629; /* = color-mix(scarlet 80%, preto) */
+  --scarlet-light: #f08d8f; /* = color-mix(scarlet 55%, branco): texto de erro, 5,7:1 sobre a superfície */
+  --scarlet-deep: #3b0c0d; /* = color-mix(scarlet 26%, preto): fundo de alerta */
+}
+
 :root[data-theme='dark'] {
-  --bg: #181512;
-  --bg-2: #221d1a;
-  --surface: #352d27;
-  --accent: #eba774;
-  --accent-2: #c58a62;
-  --text: #f3ede7;
-  --text-2: #b8aba2;
-  --holo: #61828a;
+  --bg: var(--blue-night);
+  --bg-2: var(--blue-deep);
+  --surface: var(--egyptian-blue);
+  --accent: var(--stone-light);
+  --accent-2: var(--stone-blue);
+  --text: var(--snow);
+  --text-2: var(--stone-lighter);
+  --holo: var(--stone-blue);
 }
