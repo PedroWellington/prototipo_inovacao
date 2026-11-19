@@ -72,9 +72,16 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 | Quatro ajustes (2026-11-19) | 1. Assistente resiliente: até 2 repetições em 5xx/tempo esgotado (0,7 s e 1,5 s), depois uma vez o `AI_FALLBACK_MODEL` (`gemini-3.5-flash-lite`), tudo em `AI_TOTAL_SECONDS=45` (abaixo dos 60 s da função); `AI_TIMEOUT_SECONDS` baixou para 10 | ✅ | `767d59a`; `tests/test_assistant.py` |
 | Quatro ajustes (2026-11-19) | 2. Mapinhas (Comparar, bairro, slides, PDF do bairro) com preenchimento abaixo do cartão, limites ≥ 3:1 e contorno da cidade mais forte (tokens `--mini-*`) | ✅ | `docs/visual/comparar/` (antes e depois, dois temas, desktop e celular) |
 | Quatro ajustes (2026-11-19) | 3. Comparar: seção "Lado a lado" (8 indicadores, diferença em número e razão, "maior" em texto, fonte em cada linha, "calculado a partir de" nos derivados, "sem dado suficiente") | ✅ | `src/compareRows.js` + teste; `perf/comparar.mjs`; axe 0 |
-| Quatro ajustes (2026-11-19) | 4. Renda só com o valor ("Renda mediana: R$ 1.500/mês") e a fonte, em tela, PDF, slides, assistente, landing e docs; frases de "poder de compra"/perfil removidas; regra no prompt; testes de guarda | ✅ | `src/noIncomeSpin.test.js`, `tests/test_assistant.py`; `docs/visual/comparar/pdf-bairro-renda.webp` |
+| Quatro ajustes (2026-11-19) | 4. Renda só com o valor ("Renda mediana: R$ 1.500/mês") e a fonte, em tela, PDF, slides, assistente, landing e docs; frases que interpretavam a renda removidas; regra no prompt; testes de guarda | ✅ | `src/noIncomeSpin.test.js`, `tests/test_assistant.py`; `docs/visual/comparar/pdf-bairro-renda.webp` |
+| Assistente: provedor reserva e campo (2026-11-19) | A. Principal (OpenRouter) com `AI_MODEL` + 1 nova tentativa em 5xx/tempo, `AI_FALLBACK_MODEL`, depois o provedor reserva (Gemini: `AI_FALLBACK_API_KEY`, `AI_FALLBACK_BASE_URL`, `AI_FALLBACK_PROVIDER_MODEL`); 429 e 4xx pulam ao reserva; `rede-timeout`/`rede-conexao` com a classe no log; uma pergunta conta 1 no limite | ✅ código; ⬜ variáveis na Vercel | `0a4d4ed`; `tests/test_assistant.py` |
+| Assistente: provedor reserva e campo (2026-11-19) | B. Caixa de pergunta com borda sempre visível na cor do foco (≥ 3:1), foco mais forte (borda + anel), placeholder "Digite sua pergunta aqui" (≥ 4,5:1), rótulo acessível com o assunto | ✅ | `perf/assistente-campo.mjs` (axe 0, dois temas, desktop e celular); `docs/visual/assistente-campo/` |
 
 ## Agora
+
+Assistente (2026-11-19, segunda rodada): provedor reserva e caixa de pergunta. **Na Vercel:** `AI_FALLBACK_API_KEY` (chave do
+Google AI Studio) e, se quiser outro modelo/URL do reserva, `AI_FALLBACK_PROVIDER_MODEL`/`AI_FALLBACK_BASE_URL`. Novo deploy depois.
+
+Antes:
 
 Quatro ajustes (2026-11-19): assistente com repetição e modelo de reserva, mapinhas mais escuros, "Lado a lado" no Comparar e renda
 só com o valor em todo o site. **Na Vercel:** se `AI_TIMEOUT_SECONDS` existir lá com 20, trocar para 10 (ou apagar); `AI_FALLBACK_MODEL`
