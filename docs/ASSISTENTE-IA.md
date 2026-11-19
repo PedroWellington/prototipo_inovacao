@@ -15,7 +15,9 @@ O provedor é configurável: qualquer serviço compatível com a API do OpenAI (
 | `GROQ_API_KEY`, `GROQ_MODEL` | vazio, `openai/gpt-oss-120b` | Alternativa antiga (Groq); usadas só enquanto `AI_API_KEY`/`AI_MODEL` não existirem. |
 | `AI_DAILY_LIMIT` | `30` | Perguntas por conta por dia. |
 | `AI_MAX_CHARS` | `600` | Tamanho máximo da pergunta. |
-| `AI_TIMEOUT_SECONDS` | `20` | Tempo máximo de espera pelo provedor. |
+| `AI_TIMEOUT_SECONDS` | `10` | Tempo máximo de cada tentativa. |
+| `AI_TOTAL_SECONDS` | `45` | Prazo da pergunta inteira (todas as tentativas, esperas e reserva). Fica abaixo do `maxDuration` de 60 s da função (`vercel.json`): 3 × 10 s + 0,7 s + 1,5 s + 10 s = 42,2 s. |
+| `AI_FALLBACK_MODEL` | `gemini-3.5-flash-lite` com `AI_BASE_URL` do Google; vazio nos outros | Modelo de reserva (mesma URL e chave), tentado uma vez se o principal seguir falhando. Vazio desliga. |
 
 Na Vercel: **Settings > Environment Variables** do projeto, ambiente *Production* (e *Preview*, se quiser testar lá), e depois um novo deploy.
 
@@ -48,8 +50,9 @@ Nunca vão: nome, e-mail, senha, dados de outras contas, nome da empresa, fatura
 - Por conta: `AI_DAILY_LIMIT` por dia (contagem atômica no banco). Ao atingir: "Você chegou ao limite de 30 perguntas por dia ao assistente. Ele volta amanhã."
 - Por IP: 20 pedidos por minuto (em memória, por processo; `# shortcut` no código).
 - Pergunta acima de `AI_MAX_CHARS`: recusada com a mensagem do limite.
+- **Repetição automática:** em 500, 502, 503, 504 ou tempo esgotado, o servidor tenta de novo até 2 vezes (espera de 0,7 s e 1,5 s) e, se continuar falhando, uma vez no `AI_FALLBACK_MODEL`, tudo dentro de `AI_TOTAL_SECONDS`. Nunca repete em 400, 401, 403, 404 nem 429 (configuração ou limite). O log registra cada tentativa (`assistente falhou: tentativa=N modelo=M código=C`) e quem respondeu (`assistente respondeu: tentativas=N modelo=M`), sem conteúdo, chave nem URL. Reserva escolhida: `gemini-3.5-flash-lite`, estável e "Free of charge" no plano gratuito (<https://aistudio.google.com/docs/models> e <https://aistudio.google.com/docs/pricing>, consultadas em 2026-11-19).
 - Provedor fora do ar, chave inválida, limite do plano gratuito (429) ou tempo esgotado: "Assistente indisponível no momento (código: X)." A pergunta não conta no limite e o resto do site segue normal.
   Códigos (os mesmos no log do servidor, junto com o modelo: `assistente indisponível: código=X modelo=Y`): `sem-chave`;
   `provedor-400`/`provedor-404` (modelo errado ou inexistente); `provedor-401`/`provedor-403` (chave inválida ou sem
   permissão); `limite` (429, cota do plano gratuito); `rede` (falha de rede ou tempo esgotado); `resposta-invalida`;
-  qualquer outro status vira `provedor-<status>`. Nunca entram a chave, a URL nem o corpo da resposta.
+  qualquer outro status vira `provedor-<status>`. Em `provedor-503` a mensagem acrescenta "O serviço de IA está com muita demanda. Tente de novo em instantes.". Nunca entram a chave, a URL nem o corpo da resposta.

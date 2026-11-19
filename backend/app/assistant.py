@@ -12,6 +12,7 @@ responde só a partir dos dados reais que a conta já pode ver.
 import json
 import logging
 import re
+import time
 
 import httpx
 from sqlalchemy import text
@@ -143,25 +144,64 @@ def city_block(data: Session, ibge: int, crit: list[dict], hood: int | None) -> 
     return block
 
 
-def call_model(messages: list[dict]) -> str:
-    """Uma chamada ao provedor configurado (sem streaming). Erros viram Unavailable; nunca registra o
-    conteúdo, a chave nem a URL."""
-    body = {"model": config.AI_MODEL, "messages": messages, "temperature": 0.2, "max_completion_tokens": 700}
-    if config.AI_MODEL.startswith("openai/gpt-oss"):
+RETRY_STATUS = {500, 502, 503, 504}  # sobrecarga ou falha temporária; 4xx é configuração ou limite: não repete
+RETRY_WAITS = (0.7, 1.5)  # espera antes da 2ª e da 3ª tentativa no modelo principal
+
+
+def _post(model: str, messages: list[dict], timeout: float) -> str:
+    """Uma chamada (sem streaming). Erro vira Unavailable(código, quiet): quem decide se registra é call_model."""
+    body = {"model": model, "messages": messages, "temperature": 0.2, "max_completion_tokens": 700}
+    if model.startswith("openai/gpt-oss"):
         body |= {"include_reasoning": False, "reasoning_effort": "low"}  # o raciocínio não vai para a pessoa
-    if not config.AI_API_KEY:
-        raise Unavailable("sem-chave")
     url = config.AI_BASE_URL.rstrip("/") + "/chat/completions"
     try:
-        r = httpx.post(url, json=body, headers={"Authorization": f"Bearer {config.AI_API_KEY}"}, timeout=config.AI_TIMEOUT_SECONDS)
-    except httpx.HTTPError as e:  # inclui tempo esgotado
-        raise Unavailable("rede") from e
+        r = httpx.post(url, json=body, headers={"Authorization": f"Bearer {config.AI_API_KEY}"}, timeout=timeout)
+    except httpx.TimeoutException as e:
+        raise _Fail("rede", retry=True) from e
+    except httpx.HTTPError as e:
+        raise _Fail("rede") from e
     if r.status_code != 200:  # nunca o corpo: pode conter a chave
-        raise Unavailable("limite" if r.status_code == 429 else f"provedor-{r.status_code}")
+        raise _Fail("limite" if r.status_code == 429 else f"provedor-{r.status_code}", retry=r.status_code in RETRY_STATUS)
     try:
         return r.json()["choices"][0]["message"]["content"].strip()
     except (ValueError, KeyError, IndexError, AttributeError) as e:
-        raise Unavailable("resposta-invalida") from e
+        raise _Fail("resposta-invalida") from e
+
+
+class _Fail(Exception):
+    def __init__(self, code: str, retry: bool = False):
+        super().__init__(code)
+        self.code, self.retry = code, retry
+
+
+def call_model(messages: list[dict], deadline: float | None = None) -> str:
+    """Chama o modelo principal; em 5xx ou tempo esgotado tenta de novo até 2 vezes e depois, uma vez, o modelo de
+    reserva (AI_FALLBACK_MODEL). Tudo dentro de `deadline` (relógio monotônico), para caber no limite da função.
+    Erros viram Unavailable; o log guarda só tentativas, modelo e código (nunca conteúdo, chave ou URL)."""
+    if not config.AI_API_KEY:
+        raise Unavailable("sem-chave")
+    deadline = deadline or time.monotonic() + config.AI_TOTAL_SECONDS
+    plan = [(config.AI_MODEL, 0.0), *((config.AI_MODEL, w) for w in RETRY_WAITS)]
+    if config.AI_FALLBACK_MODEL and config.AI_FALLBACK_MODEL != config.AI_MODEL:
+        plan.append((config.AI_FALLBACK_MODEL, 0.0))
+    last = None
+    for attempt, (model, wait) in enumerate(plan, 1):
+        if wait and time.monotonic() + wait + 1 >= deadline:
+            break
+        time.sleep(wait)
+        left = deadline - time.monotonic()
+        if left < 1:
+            break
+        try:
+            out = _post(model, messages, min(config.AI_TIMEOUT_SECONDS, left))
+            log.info("assistente respondeu: tentativas=%d modelo=%s", attempt, model)
+            return out
+        except _Fail as e:
+            last = e
+            log.warning("assistente falhou: tentativa=%d modelo=%s código=%s", attempt, model, e.code)
+            if not e.retry:
+                break
+    raise Unavailable(last.code if last else "rede")
 
 
 def answer(context: dict, history: list[dict], question: str) -> str:
@@ -171,10 +211,14 @@ def answer(context: dict, history: list[dict], question: str) -> str:
         *history,
         {"role": "user", "content": question},
     ]
-    out = call_model(messages)
-    if violations(out):  # uma segunda tentativa, lembrando a regra; se repetir, resposta segura
-        out = call_model(messages + [
-            {"role": "assistant", "content": out},
-            {"role": "system", "content": "A resposta anterior violou a regra 3 ou 4. Reescreva sem recomendar bairro e sem prometer resultado."},
-        ])
+    deadline = time.monotonic() + config.AI_TOTAL_SECONDS  # um prazo só para a pergunta inteira
+    out = call_model(messages, deadline)
+    if violations(out):  # uma segunda tentativa, lembrando a regra; se repetir (ou faltar tempo), resposta segura
+        try:
+            out = call_model(messages + [
+                {"role": "assistant", "content": out},
+                {"role": "system", "content": "A resposta anterior violou a regra 3 ou 4. Reescreva sem recomendar bairro e sem prometer resultado."},
+            ], deadline)
+        except Unavailable:
+            return SAFE_ANSWER
     return SAFE_ANSWER if violations(out) or not out else out

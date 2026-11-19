@@ -45,7 +45,14 @@ AI_BASE_URL = os.getenv("AI_BASE_URL", "https://api.groq.com/openai/v1")
 AI_MODEL = os.getenv("AI_MODEL") or GROQ_MODEL
 AI_DAILY_LIMIT = int(os.getenv("AI_DAILY_LIMIT", "30"))  # mensagens por conta por dia
 AI_MAX_CHARS = int(os.getenv("AI_MAX_CHARS", "600"))  # tamanho máximo da pergunta
-AI_TIMEOUT_SECONDS = float(os.getenv("AI_TIMEOUT_SECONDS", "20"))
+# Por tentativa; o total da pergunta (todas as tentativas + reserva) fica em AI_TOTAL_SECONDS, abaixo do
+# maxDuration de 60 s da função na Vercel (vercel.json): 3 x 10 s + esperas + 10 s da reserva = 42 s < 45 s.
+AI_TIMEOUT_SECONDS = float(os.getenv("AI_TIMEOUT_SECONDS", "10"))
+AI_TOTAL_SECONDS = float(os.getenv("AI_TOTAL_SECONDS", "45"))
+# Modelo de reserva (mesma URL e chave), tentado uma vez se o principal seguir com 5xx/tempo esgotado. Vazio desliga.
+AI_FALLBACK_MODEL = os.getenv(
+    "AI_FALLBACK_MODEL", "gemini-3.5-flash-lite" if "googleapis.com" in AI_BASE_URL else ""
+).strip()
 SESSION_COOKIE = f"{PRODUCT_NAME.lower()}_session"
 
 IBGE_API = "https://servicodados.ibge.gov.br/api"

@@ -85,5 +85,6 @@ def ask(body: AskIn, request: Request, user: CurrentUser = Depends(current_user)
     except assistant.Unavailable as e:
         db.execute(text("UPDATE assistant_usage SET messages = messages - 1 WHERE user_id = :u AND day = current_date"), {"u": user.id})
         db.commit()
-        err(503, "assistant_unavailable", f"Assistente indisponível no momento (código: {e.code}).")
+        busy = " O serviço de IA está com muita demanda. Tente de novo em instantes." if e.code == "provedor-503" else ""
+        err(503, "assistant_unavailable", f"Assistente indisponível no momento (código: {e.code}).{busy}")
     return {"reply": reply, "remaining": max(0, config.AI_DAILY_LIMIT - used)}
