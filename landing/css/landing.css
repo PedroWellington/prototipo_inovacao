@@ -209,3 +209,5 @@ html[data-theme=dark] .plan-cta:not([disabled]){background:var(--copper-soft);co
 .video-close{position:absolute;top:16px;right:16px;min-width:48px;min-height:48px;padding:12px 20px;border:0;border-radius:50px;background:var(--copper-soft);color:var(--coal);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .video-close:focus-visible{outline:3px solid var(--copper-soft);outline-offset:3px}
 @media(max-width:760px){.video-cover{margin-top:9px}.video-play{min-height:60px;font-size:13px;padding:16px 22px}.video-frame{width:100vw;border-radius:0}}
+/* Cabeçalho de "Como funciona": mesmas cores de texto de .plans (AA nos dois temas) */
+.how .section-meta{color:var(--muted-dark)}.how .subheading{color:var(--copper-dark)}

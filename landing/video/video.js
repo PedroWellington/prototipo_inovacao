@@ -237,7 +237,7 @@ const SCENES=[
     <div id="b1" class="fade hid">
       <div class="lbl" style="position:absolute;left:56px;top:110px;color:#F3EDE7">Estabelecimentos do mesmo tipo · já instalados</div>
       <div class="shops">${shops}</div>
-      <div class="lbl" style="position:absolute;left:56px;bottom:44px">Fonte · Receita Federal — CNPJ</div>
+      <div class="lbl" style="position:absolute;left:56px;bottom:44px">Exemplo ilustrativo · dados fictícios</div>
     </div></div>`;
   c.at(350,()=>{$('#g1').style.strokeDashoffset=82;sfx.ding()});
   c.at(1800,()=>{$('#p1').classList.add('shake');sfx.rumble()});
@@ -339,7 +339,8 @@ const SCENES=[
    <div class="bg" id="bz" style="transform-origin:0 0"><svg width="800" height="780" viewBox="0 0 800 780" style="overflow:visible"><path d="${bd}" fill="#352D27" stroke="#B8ABA2" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/><circle id="rdot" cx="${rec[0].toFixed(1)}" cy="${rec[1].toFixed(1)}" r="8" fill="#EBA774" style="transition:opacity .35s"/></svg></div>
    <div class="persp"><div class="plate" id="plate" style="transform:translate(0px,0px) rotateX(0deg) scale(.1);opacity:0">
      <svg width="1000" height="760" viewBox="0 0 1000 760" style="position:absolute;inset:0"><defs><clipPath id="blob"><path d="${C.blobD}"/></clipPath></defs><g clip-path="url(#blob)" id="cg">${cells}</g><path d="${C.blobD}" fill="none" stroke="#B8ABA2" stroke-width="2" opacity=".5"/><g id="bgs">${badges}</g></svg></div></div>
-   <div class="legend" id="lg" style="opacity:0"><div class="lbl" style="margin-bottom:6px">Combina com os critérios</div><div class="sw">${sw}</div><div class="ends"><span>Menos</span><span>Mais</span></div><div class="lbl" style="margin-top:34px;font-size:16px;opacity:.7">Exemplo ilustrativo</div></div>
+   <div class="legend" id="lg" style="opacity:0"><div class="lbl" style="margin-bottom:6px">Combina com os critérios</div><div class="sw">${sw}</div><div class="ends"><span>Menos</span><span>Mais</span></div></div>
+   <div class="lbl exm">Exemplo ilustrativo</div>
    <div class="osm">© OpenStreetMap contributors</div>`;
   const cr=$('#cr9');
   const add=(t,cur)=>{if(cr.children.length)cr.insertAdjacentHTML('beforeend','<span class="sep">›</span>');cr.insertAdjacentHTML('beforeend',`<span class="${cur?'cur':''}">${t}</span>`);cr.querySelectorAll('.cur').forEach((e,i,a)=>{if(i<a.length-1)e.classList.remove('cur')})};
