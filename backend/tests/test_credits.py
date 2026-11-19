@@ -23,9 +23,16 @@ def setup_module():
             c.execute(text("INSERT INTO city_data_status VALUES (:m, now(), '2026-10', 0, 0, 0, 0, 0, '[]')"), {"m": ibge})
 
 
-def fresh(client, email):
+def teardown_module():
+    with engine.begin() as c:
+        c.execute(text("UPDATE credit_settings SET value = 5 WHERE key = 'signup_credits'"))
+
+
+def fresh(client, email, welcome=1):
     seed_minimal_catalog()  # zera usuários (e, em cascata, créditos)
     setup_module()
+    with engine.begin() as c:  # créditos de boas-vindas do cadastro (os testes de gasto partem de 1)
+        c.execute(text("UPDATE credit_settings SET value = :v WHERE key = 'signup_credits'"), {"v": welcome})
     return login_new_user(client, email)
 
 
@@ -33,12 +40,20 @@ def post(client, csrf, url, json=None):
     return client.post(url, json=json, headers={"X-CSRF-Token": csrf})
 
 
-def test_signup_grants_one_free_city(client):
-    csrf = fresh(client, "a@example.com")
+def test_signup_grants_welcome_credits_once(client):
+    fresh(client, "a@example.com", welcome=5)  # padrão da migration
     st = client.get("/api/credits").json()
-    assert st["balance"] == 1 and st["plan"] == "Gratuito" and st["used"] == 0
+    assert st["balance"] == 5 and "plan" not in st and st["used"] == 0
     assert st["rules"] == {"city_unlock_cost": 1, "city_unlock_days": 30, "city_search_cost": 1, "city_search_days": 30}
     assert st["cities"] == [] and st["searches"] == []
+    with SessionLocal() as db:
+        uid = db.execute(text("SELECT id FROM users WHERE email = 'a@example.com'")).scalar()
+        credits.welcome(db, uid)  # segunda vez (ex.: repetição do cadastro): não credita de novo
+        db.commit()
+        rows = db.execute(text("SELECT delta, note FROM credit_ledger WHERE user_id = :u AND reason = 'signup'"), {"u": uid}).all()
+        assert [tuple(r) for r in rows] == [(5, "boas-vindas")] and credits.balance(db, uid) == 5
+    fresh(client, "a2@example.com", welcome=7)  # o valor vem de credit_settings
+    assert client.get("/api/credits").json()["balance"] == 7
 
 
 def test_unlock_spends_once_and_reopening_is_free(client):

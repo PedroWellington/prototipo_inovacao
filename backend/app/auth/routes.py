@@ -72,8 +72,7 @@ def register(body: RegisterIn, response: Response, db: Session = Depends(get_db)
     except IntegrityError:
         db.rollback()
         raise HTTPException(409, {"code": "email_taken", "message": "Já existe uma conta com este e-mail. Tente entrar."})
-    # Todo cadastro novo ganha a cidade grátis (valor em credit_settings).
-    credits.grant(db, user_id, credits.settings(db)["signup_grant"], "cadastro", reason="signup")
+    credits.welcome(db, user_id)  # créditos de boas-vindas (credit_settings.signup_credits)
     start_session(db, response, user_id)
     return {"ok": True}
 

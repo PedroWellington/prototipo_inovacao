@@ -1,4 +1,4 @@
-// Minhas análises (ref. 07): cidades e buscas abertas, validade, créditos e plano. Tudo da conta real.
+// Minhas análises (ref. 07): cidades e buscas abertas, validade e créditos. Tudo da conta real.
 import { daysText } from '../components/account.js';
 import { metric, metricGroup, metricGroupSkeleton, shapeBar } from '../components/metric.js';
 import { appPage, legalFooter, pageHead } from '../components/page.js';
@@ -50,7 +50,6 @@ export async function render(root) {
           [
             metric({ label: 'Total de análises', value: items.length, note: 'cidades e alcances abertos até hoje' }),
             metric({ label: 'Créditos', value: credits.balance, extra: html`<a class="ov-textlink" href="#/creditos">Comprar mais créditos ${icon('chevron', 14)}</a>` }),
-            metric({ label: 'Plano', text: credits.plan }),
           ],
         )}
         <div class="ov-section-head" data-cx><h2>Atividade recente</h2><span>${items.length ? `${items.length} no total` : ''}</span></div>

@@ -68,7 +68,7 @@ def test_disabled_without_keys(client, monkeypatch):
     assert client.get("/api/auth/google/start", follow_redirects=False).status_code == 404
 
 
-def test_new_account_gets_session_and_one_credit_once(client, monkeypatch):
+def test_new_account_gets_session_and_welcome_credits_once(client, monkeypatch):
     assert client.get("/api/config").json()["google_login"] is True
     r = finish(client, monkeypatch, make_token)
     assert r.status_code == 303 and r.headers["location"] == "/app/#/"
@@ -77,10 +77,10 @@ def test_new_account_gets_session_and_one_credit_once(client, monkeypatch):
     assert me["email"] == "ana@example.com" and me["name"] == "Ana Lima" and me["csrf_token"]
     [u] = users()
     assert u["google_sub"] == "sub-ana-1" and u["password_hash"] is None and u["email_verified"] is True
-    assert balance("ana@example.com") == 1
+    assert balance("ana@example.com") == 5
     # Entrar de novo: mesma conta, nenhum crédito a mais; e a senha vazia não entra pelo login normal.
     r = finish(client, monkeypatch, make_token)
-    assert r.status_code == 303 and len(users()) == 1 and balance("ana@example.com") == 1
+    assert r.status_code == 303 and len(users()) == 1 and balance("ana@example.com") == 5
     assert client.post("/api/auth/login", json={"email": "ana@example.com", "password": "qualquer-coisa"}).status_code == 401
 
 
@@ -108,7 +108,7 @@ def test_existing_password_account_links_only_with_verified_email(client, monkey
     assert r.status_code == 303 and r.headers["location"] == "/app/#/"
     [u] = users()
     assert u["google_sub"] == "sub-ana-1" and u["password_hash"].startswith("$argon2id$")
-    assert balance("ana@example.com") == 1  # o crédito do cadastro não é dado de novo ao vincular
+    assert balance("ana@example.com") == 5  # os créditos de boas-vindas não são dados de novo ao vincular
 
 
 def test_email_already_linked_to_another_google_account(client, monkeypatch):
@@ -125,6 +125,6 @@ def test_cancel_and_lgpd_for_google_account(client, monkeypatch):
     finish(client, monkeypatch, make_token)
     csrf = client.get("/api/auth/me").json()["csrf_token"]
     exported = client.get("/api/account/export").json()
-    assert exported["account"]["google_linked"] is True and exported["credits"]["balance"] == 1
+    assert exported["account"]["google_linked"] is True and exported["credits"]["balance"] == 5
     assert client.delete("/api/account", headers={"X-CSRF-Token": csrf}).status_code == 200
     assert users() == []

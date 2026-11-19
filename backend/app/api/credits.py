@@ -8,7 +8,6 @@ from app.auth.deps import CurrentUser, current_user
 from app.db import get_db
 
 router = APIRouter(prefix="/api/credits", tags=["credits"])
-PLAN = "Gratuito"  # sem pagamento nesta etapa (docs/EXTENSIONS.md)
 
 
 class SearchIn(BaseModel):
@@ -50,7 +49,6 @@ def state(db: Session, user_id: int) -> dict:
         # Créditos já gastos (soma dos débitos do extrato): a barra "usados / restantes" da Visão geral.
         "used": int(db.execute(text("SELECT coalesce(-sum(delta), 0) FROM credit_ledger WHERE user_id = :u AND delta < 0"),
                                {"u": user_id}).scalar()),
-        "plan": PLAN,
         "rules": {k: cfg[k] for k in ("city_unlock_cost", "city_unlock_days", "city_search_cost", "city_search_days")},
         "cities": [iso(dict(r)) for r in cities],
         "searches": [iso(dict(r)) for r in searches],

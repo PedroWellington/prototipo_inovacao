@@ -112,7 +112,7 @@ Antes: deploy do protótipo configurado e commitado (`node scripts/build-vercel.
 - Mapa-base no tema escuro (os tiles do OSM continuam claros; depende do provedor de tiles a escolher).
 - Holograma: conjunto de quadros para o tema escuro (o manifesto já aceita `sets.escuro`).
 - Prompt do redesign premium (Fases 4 a 9) e o da PARTE A/B em `design/prompts/`.
-- Decidir o crédito inicial de cadastro (1, em `credit_settings.signup_grant`): aparece em "Plano Gratuito" (nome do plano em `api/credits.py`), no cartão Créditos da Visão geral e no cartão de créditos do explorador e da conta.
+- Créditos de boas-vindas: decidido em 2026-11-19, 5 por conta nova (`credit_settings.signup_credits`, migração 0014), uma única vez (índice único no extrato). Não há plano gratuito: o cartão "Plano" saiu da Visão geral, de Análises e da conta.
 - Holograma: quando Pedro trocar os quadros (720×720, sem cone nem brilho), rodar `python -I scripts/build-holograma.py design/holograma-360/VICUS-Holograma-360-Frames-PNG/frames-png`, conferir ≤ 6 MB e versão nova no manifesto, commitar e conferir no link publicado.
 
 - Colocar os prompts (`.md`) em `design/prompts/` e versionar: sem eles, os checklists de aceite não estão no repositório.

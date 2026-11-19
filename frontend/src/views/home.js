@@ -72,7 +72,6 @@ export async function render(root) {
             note: html`1 crédito = 1 cidade por ${r.city_unlock_days} dias. O ranking de cidades usa ${r.city_search_cost} por busca. <a href="#/creditos">Comprar mais créditos</a>`,
           }),
           [
-            metric({ label: 'Plano', text: credits.plan }),
             metric({ label: 'Análises ativas', value: active.length, note: active.length === 1 ? 'cidade aberta e no prazo' : 'cidades abertas e no prazo' }),
             ...(hq ? [metric({ label: 'Cidade de referência', text: hq, note: 'A sede não entra no cálculo.' })] : []),
           ],

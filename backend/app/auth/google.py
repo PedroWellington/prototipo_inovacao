@@ -92,7 +92,7 @@ def account_for(db: Session, claims: dict) -> int:
         text("INSERT INTO users (name, email, password_hash, email_verified, terms_accepted_at, google_sub) "
              "VALUES (:n, :e, NULL, true, now(), :s) RETURNING id"), {"n": name, "e": email, "s": sub},
     ).scalar_one()
-    credits.grant(db, uid, credits.settings(db)["signup_grant"], "cadastro", reason="signup")  # o mesmo do cadastro normal
+    credits.welcome(db, uid)  # o mesmo do cadastro normal
     return uid
 
 

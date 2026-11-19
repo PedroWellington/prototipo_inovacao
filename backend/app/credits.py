@@ -114,6 +114,15 @@ def grant(db, user_id: int, amount: int, note: str | None, reason: str = "grant"
     return balance(db, user_id)
 
 
+def welcome(db, user_id: int) -> None:
+    """Créditos de boas-vindas (credit_settings.signup_credits), uma única vez por conta: o índice único
+    credit_ledger_signup_once faz uma segunda chamada não creditar nada."""
+    amount = settings(db).get("signup_credits", 0)
+    if amount:
+        db.execute(text("INSERT INTO credit_ledger (user_id, delta, reason, note) VALUES (:u, :d, 'signup', 'boas-vindas') "
+                        "ON CONFLICT (user_id) WHERE reason = 'signup' DO NOTHING"), {"u": user_id, "d": amount})
+
+
 def main() -> None:
     from app.db import engine
 
