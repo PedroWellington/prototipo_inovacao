@@ -54,6 +54,7 @@
   --score-1: var(--scale-1);
   --score-none: var(--scale-none);
   --map-line: var(--paper);
+  --map-edge: rgba(0, 0, 0, 0); /* (sintaxe com vírgulas: o MapLibre lê este token) contorno externo da cidade no explorador: só o escuro desenha */
   /* Mapinhas (comparar, bairro, slides): preenchimento mais escuro que o cartão, limites ≥ 3:1 sobre ele */
   --mini-fill: var(--sand); /* 1,23:1 abaixo de --paper */
   --mini-line: var(--muted-dark); /* limites internos: 4,1:1 sobre --sand */
@@ -119,23 +120,23 @@
 :root[data-theme='dark'] {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
-  --color-surface-2: var(--blue-surface-2);
-  --color-surface-3: var(--blue-surface-3);
+  --color-surface-2: var(--blue-surface);
+  --color-surface-3: var(--blue-surface-2);
   --color-border: var(--blue-line);
-  --color-border-strong: var(--blue-line-strong); /* 3,3:1 sobre a superfície */
-  --color-text: var(--text); /* 12,6:1 sobre a superfície */
-  --color-text-muted: var(--text-2); /* 8,5:1 sobre a superfície */
+  --color-border-strong: var(--blue-line-strong); /* 4,0:1 sobre a superfície */
+  --color-text: var(--text); /* 15,6:1 sobre a superfície */
+  --color-text-muted: var(--text-2); /* 10,5:1 sobre a superfície */
   --color-text-subtle: var(--text-2);
   --color-text-on-sand: var(--text-2);
 
-  --color-accent: var(--accent); /* Stone Blue claro: 6,2:1 sobre a superfície, 7,1:1 sobre o fundo */
+  --color-accent: var(--accent); /* Stone Blue claro: 7,6:1 sobre a superfície, 8,9:1 sobre o fundo */
   --color-accent-hover: var(--stone-lighter);
   --color-accent-soft: var(--blue-soft);
   --color-on-accent: var(--bg); /* 7,6:1 */
   --color-primary: var(--scarlet-btn); /* Scarlet puro dá 4,45:1 com branco; o preenchimento escurece um pouco: 5,5:1 */
   --color-primary-hover: var(--scarlet-btn-hover); /* 6,4:1 */
   --color-on-primary: #ffffff;
-  --color-focus: var(--stone-blue); /* 4,5:1 sobre a superfície, 5,6:1 sobre o fundo */
+  --color-focus: var(--stone-blue); /* 5,5:1 sobre a superfície, 6,5:1 sobre o fundo */
   --color-focus-ring: rgb(99 156 197 / 0.4);
 
   --color-top: var(--bg-2);
@@ -157,21 +158,24 @@
   --color-overlay: rgb(3 32 61 / 0.94);
   --color-holo: var(--holo);
   --color-selected: var(--stone-blue);
-  --color-glass: rgb(16 49 80 / 0.72); /* cartão de vidro: --blue-surface translúcida, com desfoque */
-  --color-glass-line: rgb(185 210 229 / 0.18); /* borda fina clara do vidro */
+  --color-glass: rgb(3 32 61 / 0.82); /* cartão de vidro: Egyptian Blue translúcido, com desfoque */
+  --color-glass-line: rgb(185 210 229 / 0.24); /* borda fina clara do vidro */
   --color-glow: rgb(227 47 51 / 0.45); /* brilho do botão primário */
 
-  /* Escala dos bairros: do fundo ao Stone Blue e ao branco (combina mais = mais claro); o número vai sempre junto */
-  --score-5: #b1cee2; /* = color-mix(stone 50%, branco) */
-  --score-4: var(--stone-blue);
-  --score-3: #46779c; /* = color-mix(egyptian 30%, stone) */
-  --score-2: #2e587a; /* = color-mix(egyptian 55%, stone) */
-  --score-1: #1a3e5e; /* = color-mix(egyptian 76%, stone) */
-  --score-none: #0d2c4b; /* = color-mix(egyptian 90%, stone) */
-  --map-line: var(--bg);
-  --mini-fill: var(--bg-2); /* abaixo da superfície do cartão */
-  --mini-line: var(--text-2); /* 11:1 sobre --bg-2 */
-  --mini-edge: var(--text); /* 12,6:1 sobre a superfície */
+  /* Escala dos bairros: do Egyptian Blue ao Stone Blue (combina mais = mais claro), parando antes do Stone Blue puro
+     para que o limite claro (--snow) tenha >= 3:1 em todos os tons; o número da posição vai sempre junto */
+  --score-5: #5e94bb; /* = color-mix(stone 95%, preto): limite 3,1:1 */
+  --score-4: #5083aa; /* = color-mix(egyptian 20%, stone): limite 3,9:1 */
+  --score-3: #3d6a8f; /* = color-mix(egyptian 40%, stone): limite 5,4:1 */
+  --score-2: #295273; /* = color-mix(egyptian 60%, stone): limite 7,8:1 */
+  --score-1: #183b5b; /* = color-mix(egyptian 78%, stone): limite 11:1 */
+  --score-none: #0b2a48; /* = color-mix(egyptian 92%, stone): limite 13,8:1 */
+  --map-line: var(--snow); /* limites internos sempre claros */
+  --map-edge: #000000; /* contorno externo da cidade, por baixo dos bairros */
+  --map-frame: #000000; /* moldura preta em volta dos mapas */
+  --mini-fill: #3d6a8f; /* = --score-3: contorno preto 3,7:1, limite claro 5,4:1 */
+  --mini-line: var(--snow);
+  --mini-edge: #000000;
   --radius: 14px;
   --radius-lg: 24px;
   --shadow-float: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.5);

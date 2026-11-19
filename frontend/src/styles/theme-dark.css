@@ -83,3 +83,39 @@
 :root[data-theme='dark'] .ai-error {
   border-color: var(--color-danger);
 }
+
+/* ---------- Mapas com moldura preta (só no escuro) ----------
+   Borda preta grossa em volta e as beiradas escurecendo até o preto (sombra interna). A moldura fica abaixo dos
+   controles, da legenda e dos painéis (z-index 1), e só escurece as beiradas: os números das áreas no meio ficam
+   intactos. O contorno da cidade é preto (--mini-edge / --map-edge) e os limites internos, claros (--snow). */
+:root[data-theme='dark'] .ex-work::after {
+  content: '';
+  position: absolute;
+  inset: 0 var(--ex-right) 0 var(--ex-left);
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 5px var(--map-frame), inset 0 0 56px 18px rgb(0 0 0 / 0.8);
+  transition: left var(--dur-ui) var(--ease-spring);
+}
+:root[data-theme='dark'] .is-collapsed .ex-work::after {
+  left: 0;
+}
+:root[data-theme='dark'] .mini-map {
+  box-sizing: border-box;
+  padding: 12px;
+  border: 4px solid var(--map-frame);
+  border-radius: 18px;
+  background: radial-gradient(ellipse at center, var(--color-bg) 45%, #000 100%);
+  box-shadow: inset 0 0 28px 8px rgb(0 0 0 / 0.75);
+}
+:root[data-theme='dark'] .mm-hl {
+  fill: var(--color-text); /* bairro em destaque: claro sobre o preenchimento (5,4:1), com contorno preto */
+  stroke: var(--map-frame);
+}
+:root[data-theme='dark'] .slide-title .mm-area {
+  fill: var(--mini-fill);
+  stroke: var(--mini-line);
+}
+:root[data-theme='dark'] .slide-title .mm-edge {
+  stroke: var(--mini-edge);
+}

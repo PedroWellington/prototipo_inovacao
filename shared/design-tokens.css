@@ -75,10 +75,11 @@
    Os derivados são hex calculados (o mapa lê os tokens com getComputedStyle e não entende color-mix);
    a fórmula de cada um está ao lado e a tabela de contrastes em docs/DESIGN-SYSTEM.md. */
 :root {
-  --egyptian-blue: #03203d; /* fundo principal */
+  --egyptian-blue: #03203d; /* superfície dos cartões e realce (o fundo da página é --blue-night) */
   --stone-blue: #639cc5; /* destaque: foco, seleção, mapa, ícones ativos */
   --scarlet: #e32f33; /* ação principal e alertas (nunca texto pequeno sobre o fundo: 3,7:1) */
-  --blue-deep: #021930; /* = color-mix(egyptian 78%, preto) */
+  --blue-night: #02101e; /* = color-mix(egyptian 50%, preto): fundo da página */
+  --blue-deep: #010c16; /* = color-mix(egyptian 36%, preto): topo do app */
   --blue-surface: #103150; /* = color-mix(egyptian 86%, stone) */
   --blue-surface-2: #163958; /* = color-mix(egyptian 80%, stone) */
   --blue-surface-3: #1e4363; /* = color-mix(egyptian 72%, stone) */
@@ -95,9 +96,9 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: var(--egyptian-blue);
+  --bg: var(--blue-night);
   --bg-2: var(--blue-deep);
-  --surface: var(--blue-surface);
+  --surface: var(--egyptian-blue);
   --accent: var(--stone-light);
   --accent-2: var(--stone-blue);
   --text: var(--snow);
