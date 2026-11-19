@@ -131,11 +131,14 @@
         </div>
         <!-- Vídeo: só a capa carrega com a página; iframe, áudio e animação só depois do clique (js/video.js). -->
         <button type="button" class="video-cover rv" id="videoOpen">
-          <img src="video/poster.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+          <img class="poster-claro" src="video/poster.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
+          <img class="poster-escuro" src="video/poster-escuro.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
           <span class="video-play"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>Ver como funciona · 36 s</span>
         </button>
+        <p class="video-note rv">Animação ilustrativa: os exemplos não representam dados reais.</p>
         <dialog class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-label="Vídeo: como o VICUS funciona">
           <button type="button" class="video-close">Fechar</button>
+          <p class="video-note">Animação ilustrativa: os exemplos não representam dados reais.</p>
         </dialog>
       </div>
     </section>
