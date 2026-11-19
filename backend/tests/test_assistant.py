@@ -264,3 +264,38 @@ def test_requires_session_and_csrf(client, on):
     assert client.post("/api/assistente", json={"message": "oi"}).status_code in (401, 403)
     login_new_user(client)
     assert client.post("/api/assistente", json={"message": "oi"}).status_code == 403
+
+
+INCOME_SPIN = ["Bairro com poder de compra alto.", "Pessoas dispostas a pagar mais.", "Consumidores com essa renda preferem…",
+               "Perfil de consumo premium.", "Perfil compatível com oferta premium.", "Bom poder aquisitivo."]
+
+
+@pytest.mark.parametrize("text", INCOME_SPIN)
+def test_income_interpretation_is_blocked_in_answers(text):
+    assert assistant.violations(text)
+
+
+def test_income_texts_show_only_the_value():
+    """Textos gerados de renda (tela, PDF, slides e contexto do assistente): só valor, fonte e data."""
+    from app.scoring.rank import income_block
+
+    src = {"name": "IBGE, Censo Demográfico 2022", "url": "", "reference_date": "2022"}
+    for approx in (False, True):
+        inc = income_block(1500.4, 4, "da cidade", approx, src)
+        assert inc["text"] == "Renda mediana: R$ 1.500/mês"
+        line = assistant.income_line(inc)
+        assert assistant.violations(inc["text"] + " " + line + " " + inc["note"]) == []
+        assert ("aproximado" in line) is approx and "IBGE, Censo Demográfico 2022" in line
+    assert "sem interpretar" in assistant.SYSTEM_PROMPT
+
+
+def test_backend_code_has_no_income_interpretation():
+    """Nenhum texto do backend (telas via API, PDF, slides, prompt) volta a interpretar a renda.
+    Linhas que só enunciam a regra ("nada de", "nunca") e a própria lista de expressões ficam de fora."""
+    import pathlib
+
+    root = pathlib.Path(assistant.__file__).parent
+    hits = [f"{p.relative_to(root)}:{i}" for p in root.rglob("*.py") for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
+            if assistant.violations(line) and not line.strip().startswith('r"')
+            and not any(k in line.lower() for k in ("nada de", "nunca"))]
+    assert hits == []

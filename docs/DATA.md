@@ -126,7 +126,7 @@ Não há CNAE confiável para estes tipos, então eles ficam fora da lista nesta
 - **É uma aproximação.** Sem coordenadas, a cobertura depende de o texto do bairro no CNPJ estar preenchido e grafado como o IBGE. Medir exatamente exigiria geocodificar por CEP/endereço (CNEFE; ver [EXTENSIONS.md](EXTENSIONS.md)).
 - **Áreas por setor censitário.** O IBGE não dá nome de bairro a esses setores. Por isso a localização nelas é mais fraca: depende dos aliases (nome do distrito, "centro", "zona rural") e de o CNPJ citar o nome do povoado. Muitas áreas pequenas ficam com cobertura baixa, e a tela diz isso.
 - **Bairro informado no CNPJ.** É declarado pela empresa e pode estar desatualizado. Muitos usam "CENTRO" mesmo em cidades cujo centro tem outro nome oficial. No Recife, por exemplo, não há bairro "Centro". Esses casos ficam **não localizados**, e não atribuídos por palpite.
-- **Renda (Censo 2022).** É a renda da **pessoa responsável** pelo domicílio, não a renda total do domicílio, e é de 2022. Serve como indicador de poder de compra relativo. Não diz nada sobre patrimônio nem sobre o quanto alguém "está disposto a pagar". A tela sempre traz a nota "Renda é um indicador e não determina preferências."
+- **Renda (Censo 2022).** É a renda da **pessoa responsável** pelo domicílio, não a renda total do domicílio, e é de 2022. A interface mostra só o valor, com fonte e data, sem interpretação. A tela sempre traz a nota "Renda é um indicador e não determina preferências."
 
 ## O que é um estabelecimento
 

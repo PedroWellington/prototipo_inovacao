@@ -26,7 +26,7 @@ const UNITS = {
   area: { many: 'áreas', Many: 'Áreas', of: 'da área', inAny: 'alguma das', all: (n) => `Todas as ${n} áreas`, top: (n) => `As ${n} que mais combinam`, seeAll: 'Ver todas as áreas', among: 'as áreas' },
 };
 const NO_DATA = (item) => `Não foi possível encontrar dados de ${item} desta área.`;
-const INCOME_DIR = { attract: 'poder de compra acima da mediana', repel: 'poder de compra abaixo da mediana' };
+const INCOME_DIR = { attract: 'renda mediana acima da mediana', repel: 'renda mediana abaixo da mediana' };
 const DEFAULT_MIN_POP = 20000;
 // Holograma da unidade: ângulo de quem olha (90 = de cima). No MapLibre, pitch = 90 - ângulo.
 const HOLO_VIEW_ANGLE_DEG = 50;
@@ -758,8 +758,8 @@ export async function render(root) {
       <label class="ctl small">Renda (opcional)
         <select class="select" data-income aria-label="Renda como critério">
           <option value="" ${s.income ? '' : 'selected'}>Não usar</option>
-          <option value="attract" ${s.income?.direction === 'attract' ? 'selected' : ''}>Poder de compra acima da mediana</option>
-          <option value="repel" ${s.income?.direction === 'repel' ? 'selected' : ''}>Poder de compra abaixo da mediana</option>
+          <option value="attract" ${s.income?.direction === 'attract' ? 'selected' : ''}>Renda mediana acima da mediana</option>
+          <option value="repel" ${s.income?.direction === 'repel' ? 'selected' : ''}>Renda mediana abaixo da mediana</option>
         </select></label>
       ${s.income
         ? html`<div class="crit-weight"><input type="range" min="1" max="5" step="1" value="${s.income.weight}" data-income-weight aria-label="Peso da renda" />

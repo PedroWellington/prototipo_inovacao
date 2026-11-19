@@ -79,11 +79,10 @@ export function cityRankRows(res) {
       higher: c.higher_share[j],
     }));
     c.coverage = { total_active: c.total_active, located: c.located, share: c.total_active ? c.located / c.total_active : 0 };
-    const level = c.income_quartile != null ? inc.levels[c.income_quartile] : null;
     c.income =
       c.income_median == null
         ? { available: false, message: inc.missing, note: inc.note, source: inc.source }
-        : { available: true, median: c.income_median, quartile: c.income_quartile, level, text: inc.texts[level], approximate: false, note: inc.note, source: inc.source };
+        : { available: true, median: c.income_median, quartile: c.income_quartile, text: `Renda mediana: ${brl(c.income_median)}/mês`, approximate: false, note: inc.note, source: inc.source };
     return c;
   });
 }

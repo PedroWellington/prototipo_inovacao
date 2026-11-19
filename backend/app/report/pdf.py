@@ -158,12 +158,16 @@ class Doc(FPDF):
         ox, oy = x + (w - mw) / 2, y + (h - mh) / 2
         stroke = max(sw, sh) / (500 if focus is None else 260)
         parts = []
+        if focus is not None:  # mini-mapa: contorno da cidade (traço grosso por baixo) mais forte que os limites internos
+            parts.append(f'<path d="{"".join(p["d"] for p in shapes["paths"])}" fill="none" stroke="{C["ink"]}" '
+                         f'stroke-width="{stroke * 4:.0f}" stroke-linejoin="round"/>')
         for p in shapes["paths"]:
             if focus is not None:
                 fill = C["copper"] if p["id"] == focus else C["sand"]
             else:
                 fill = SCALE[ranks[p["id"]] - 1] if p["id"] in ranks else C["base"]
-            parts.append(f'<path d="{p["d"]}" fill="{fill}" stroke="{C["paper"]}" stroke-width="{stroke:.0f}" stroke-linejoin="round"/>')
+            line = C["muted"] if focus is not None else C["paper"]  # limites internos: 4,1:1 sobre --sand
+            parts.append(f'<path d="{p["d"]}" fill="{fill}" stroke="{line}" stroke-width="{stroke:.0f}" stroke-linejoin="round"/>')
         svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{sw:.0f}" height="{sh:.0f}" viewBox="0 0 {sw:.0f} {sh:.0f}">'
                + "".join(parts) + "</svg>")
         self.image(io.BytesIO(svg.encode()), x=ox, y=oy, w=mw, h=mh, alt_text=alt)
@@ -557,7 +561,8 @@ def neighborhood_page(pdf: Doc, d: dict, h: dict, shapes: dict):
             pdf.text_at(x + 4, yv, tw4 - 8, unit, 7.5, "", "muted", h=3.4)
         pdf.source(x + 4, y + 24, tw4 - 8, src)
     if inc.get("available"):
-        y2 = pdf.source(M, y + 31.5, W, inc["text"] + " " + inc["note"])
+        src = inc.get("source") or {}
+        y2 = pdf.source(M, y + 31.5, W, f'{inc["text"]}. Fonte: {src.get("name", "IBGE, Censo 2022")}, ref. {src.get("reference_date", "2022")}. {inc["note"]}')
     else:
         y2 = y + 31.5
     y = y2 + 5

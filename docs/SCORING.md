@@ -96,15 +96,9 @@ Repare em Gama: tem tantos hospitais quanto Alfa, mas o dobro da área. Por isso
 
 - **Valor:** mediana do rendimento nominal mensal das pessoas responsáveis pelo domicílio (Censo 2022, IBGE, variável V06006). Ver [DATA.md](DATA.md).
 - **Bairro da malha do IBGE:** valor publicado pelo IBGE para o bairro. **Área por setor censitário:** média das medianas dos setores, ponderada pelos responsáveis (V06001), marcada como **aproximado**.
-- **Comparação por quartis** (no SQL de `rank.py` e de `/api/cities/{ibge}/status`): a mediana do lugar é comparada aos quartis Q1, Q2 e Q3 das medianas da referência (bairros da cidade; para a cidade, os municípios da mesma UF; no ranking de cidades, as cidades analisadas).
-
-| Quartil | Frase mostrada |
-|---|---|
-| 1º (≤ Q1) | Poder de compra abaixo da média … Perfil compatível com oferta de melhor custo-benefício. |
-| 2º e 3º | Poder de compra próximo da média … Perfil compatível com oferta mista. |
-| 4º (> Q3) | Poder de compra acima da média … Perfil compatível com oferta premium. |
-
-- Sempre com fonte, data e a nota **"Renda é um indicador e não determina preferências."** Nunca "dispostos a pagar" nem patrimônio: o dado é renda.
+- **Só o dado:** a tela, o PDF, os slides e o assistente mostram "Renda mediana: R$ 1.500/mês" (`income_text` em `rank.py`), com a linha de fonte e data ("IBGE, Censo Demográfico 2022, Agregados por Setores Censitários: Rendimento do Responsável") e, quando vem de setores, o aviso "aproximado". Nenhuma frase interpreta o valor; `frontend/src/noIncomeSpin.test.js` e `backend/tests/test_assistant.py` falham se uma delas voltar.
+- O quartil da mediana na referência (Q1–Q3 dos bairros da cidade ou dos municípios da UF) continua na resposta da API como dado, sem frase associada.
+- Sempre com fonte, data e a nota **"Renda é um indicador e não determina preferências."**
 - Sem valor (sigilo "X" do IBGE, setor sem domicílio): `Não foi possível encontrar dados de renda desta área.`
 - No ranking de **bairros**, a renda só aparece no detalhe: não entra na nota.
 
@@ -118,7 +112,7 @@ O mesmo motor, por município. O SQL está em [`backend/app/scoring/rank_cities.
 - **Critérios:** os mesmos do perfil (tipo, perto/longe, peso de 1 a 5).
 - **Normalização:** `population` (padrão) ou `area`.
 - **População mínima:** padrão 20 mil habitantes, ajustável. Pode ser 0.
-- **Renda (opcional):** `{direction: attract | repel, weight}`. `attract` = poder de compra acima da mediana; `repel` = abaixo.
+- **Renda (opcional):** `{direction: attract | repel, weight}`. `attract` = renda mediana maior, mais pontos; `repel` = o contrário.
 
 ### Quem entra
 

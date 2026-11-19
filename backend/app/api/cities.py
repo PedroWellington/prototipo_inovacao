@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/cities", tags=["cities"], dependencies=[Depends(
 
 
 class IncomeCriterion(BaseModel):
-    direction: Literal["attract", "repel"]  # attract = poder de compra acima; repel = abaixo
+    direction: Literal["attract", "repel"]  # attract = renda mediana acima da mediana; repel = abaixo
     weight: int = Field(ge=1, le=5)
 
 

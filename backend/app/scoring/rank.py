@@ -23,26 +23,22 @@ def missing_types(types: dict, keys: list[str]) -> list[str]:
     """Tipo sem mapeamento na sua fonte (CNAE para cnpj, TP_UNIDADE para cnes): não calcula e não assume zero."""
     return [k for k in keys if k not in types or (types[k].n_cnes if types[k].source == "cnes" else types[k].n_cnae) == 0]
 INCOME_NOTE = "Renda é um indicador e não determina preferências."
-# Quartil da mediana de renda na referência (1º = abaixo; 2º e 3º = próximo; 4º = acima).
-INCOME_LEVEL = {1: "below", 2: "near", 3: "near", 4: "above"}
-INCOME_TEXT = {
-    "above": "Poder de compra acima da média {ref}. Perfil compatível com oferta premium.",
-    "near": "Poder de compra próximo da média {ref}. Perfil compatível com oferta mista.",
-    "below": "Poder de compra abaixo da média {ref}. Perfil compatível com oferta de melhor custo-benefício.",
-}
+
+
+def income_text(median) -> str:
+    """Só o dado, sem interpretação (nada de "poder de compra" nem perfil): "Renda mediana: R$ 1.500/mês"."""
+    return "Renda mediana: R$ " + f"{round(median):,}".replace(",", ".") + "/mês"
 
 
 def income_block(median, quartile, ref: str, approximate: bool, source: dict | None) -> dict:
-    """Renda para a tela: valor, quartil, frase padrão, fonte e nota. Sem valor: a mensagem padrão, nunca estimativa."""
+    """Renda para a tela: valor, quartil, texto só com o valor, fonte e nota. Sem valor: a mensagem padrão, nunca estimativa."""
     if median is None:
         return {"available": False, "message": NO_DATA.format(item="renda"), "note": INCOME_NOTE, "source": source}
-    level = INCOME_LEVEL[quartile]
     return {
         "available": True,
         "median": float(median),
         "quartile": quartile,
-        "level": level,
-        "text": INCOME_TEXT[level].format(ref=ref),
+        "text": income_text(median),
         "approximate": approximate,
         "note": INCOME_NOTE,
         "source": source,

@@ -75,14 +75,14 @@ describe('ranking de cidades', () => {
       [2, 'Beta', 0, 2, 0, 0, null, null, null, null, [5], [1], [0.5], [0], [1]],
     ],
     criteria: [{ business_type_key: 'hospital', direction: 'attract', weight: 1 }],
-    income: { levels: { 4: 'above' }, texts: { above: 'acima' }, note: 'nota', missing: 'sem renda', source: null },
+    income: { note: 'nota', missing: 'sem renda', source: null },
   };
   it('remonta cada cidade sem recalcular nota', async () => {
     const { cityRankRows } = await import('./lib.js');
     const [a, b] = cityRankRows(res);
     expect([a.name, a.score, a.rank]).toEqual(['Alfa', 100, 1]);
     expect(a.criteria[0]).toMatchObject({ type: 'hospital', n: 9, per_10k: 3, per_km2: 0.009, lower: 1, higher: 0 });
-    expect(a.income).toMatchObject({ available: true, level: 'above', text: 'acima', note: 'nota' });
+    expect(a.income).toMatchObject({ available: true, text: 'Renda mediana: R$ 3.000/mês', note: 'nota' });
     expect(a.label).toEqual([-35, -8]);
     expect(b.income).toEqual({ available: false, message: 'sem renda', note: 'nota', source: null });
     expect(b.coverage.share).toBe(0);

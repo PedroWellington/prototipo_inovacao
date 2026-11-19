@@ -12,10 +12,9 @@ from threading import Lock
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.scoring.rank import CATALOG_VERSION_SQL, INCOME_LEVEL, INCOME_NOTE, INCOME_TEXT, NO_DATA, TYPES_SQL, income_source, missing_types
+from app.scoring.rank import CATALOG_VERSION_SQL, INCOME_NOTE, NO_DATA, TYPES_SQL, income_source, missing_types
 
 INCOME_KEY = "renda"
-INCOME_REF = "das cidades analisadas"
 COLUMNS = ["ibge", "name", "uf", "score", "rank", "population", "area_km2", "total_active", "located",
            "income_median", "income_quartile", "lx", "ly", "n", "n_cnpj", "per_10k", "per_km2", "lower_share", "higher_share"]
 
@@ -158,9 +157,7 @@ def rank_cities(db: Session, *, region: int | None, uf: str | None, criteria: li
         **base,
         "status": "ok",
         "criteria": crit_out,
-        "income": {  # uma vez só: a cidade traz a mediana e o quartil; nível e frase saem daqui
-            "levels": INCOME_LEVEL,
-            "texts": {lvl: t.format(ref=INCOME_REF) for lvl, t in INCOME_TEXT.items()},
+        "income": {  # uma vez só: a cidade traz a mediana; nota, mensagem e fonte saem daqui
             "note": INCOME_NOTE,
             "missing": NO_DATA.format(item="renda"),
             "source": income_source(db),

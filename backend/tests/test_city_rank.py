@@ -109,8 +109,8 @@ def test_income_criterion_and_text(client):
     # renda: Beta 1000 (p 0), Gama 2000 (p 0,5), Alfa 3000 (p 1)
     assert table(res) == [("Alfa", 1, 100.0), ("Gama", 2, 50.0), ("Beta", 3, 0.0)]
     alfa = as_dicts(res)[0]
-    assert alfa["income_median"] == 3000 and alfa["income_quartile"] == 4 and res["income"]["levels"]["4"] == "above"
-    assert res["income"]["texts"]["above"] == "Poder de compra acima da média das cidades analisadas. Perfil compatível com oferta premium."
+    assert alfa["income_median"] == 3000 and alfa["income_quartile"] == 4
+    assert "texts" not in res["income"] and "levels" not in res["income"]  # só o valor; nada de frase interpretativa
     assert res["income"]["note"] == "Renda é um indicador e não determina preferências."
     assert res["criteria"][-1] == {"business_type_key": "renda", "direction": "attract", "weight": 2}
     # Delta não tem renda: com renda como critério fica fora (sem estimar); sem ela, entra e a renda fica nula.
