@@ -5,7 +5,7 @@ import { html } from './html.js';
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const easeOutCubic = (k) => 1 - (1 - k) ** 3;
-const int = (v) => new Intl.NumberFormat('pt-BR').format(v);
+const int = (v) => new Intl.NumberFormat('pt-BR').format(Math.round(v)); // inteiro também no meio da contagem
 
 // Esqueleto com o tamanho exato do conteúdo final (h, w em CSS): CLS 0. Brilho só por opacity (CSS).
 export const skeleton = (h = '14px', w = '100%') => html`<span class="sk" style="height:${h};width:${w}" aria-hidden="true"></span>`;

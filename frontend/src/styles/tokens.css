@@ -51,6 +51,10 @@
   --score-1: var(--scale-1);
   --score-none: var(--scale-none);
   --map-line: var(--paper);
+  /* Mapinhas (comparar, bairro, slides): preenchimento mais escuro que o cartão, limites ≥ 3:1 sobre ele */
+  --mini-fill: var(--sand); /* 1,23:1 abaixo de --paper */
+  --mini-line: var(--muted-dark); /* limites internos: 4,1:1 sobre --sand */
+  --mini-edge: var(--ink); /* contorno da cidade: 13:1 sobre --paper */
 
   /* Tipografia: Inter local (shared/design-tokens.css), com as fontes do sistema enquanto ela carrega */
   --font-sans: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif;
@@ -154,5 +158,8 @@
   --score-1: #3b302a;
   --score-none: #2b2522;
   --map-line: var(--bg);
+  --mini-fill: var(--bg-2); /* abaixo de --surface (#352d27) */
+  --mini-line: var(--text-2); /* 7,5:1 sobre --bg-2 */
+  --mini-edge: var(--text); /* 11,6:1 sobre --surface */
   --shadow-float: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.5);
 }

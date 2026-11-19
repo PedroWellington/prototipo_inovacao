@@ -31,11 +31,12 @@ export function miniMap(geo, { fill = () => null, highlight = null, label = 'Min
     return out.length > 2 ? 'M' + out.join('L') + 'Z' : '';
   };
   const d = (f) => rings(f.geometry).map(ring).join('');
+  const ds = feats.map(d);
   const paths = feats
-    .map((f) => {
+    .map((f, i) => {
       const id = f.id ?? f.properties?.id;
       const c = fill(id);
-      return `<path d="${d(f)}" class="mm-area${id === highlight ? ' is-hl' : ''}"${c ? ` style="fill:${c}"` : ''}/>`;
+      return `<path d="${ds[i]}" class="mm-area${id === highlight ? ' is-hl' : ''}"${c ? ` style="fill:${c}"` : ''}/>`;
     })
     .join('');
   // O destacado vai por último para o contorno ficar por cima.
@@ -50,5 +51,5 @@ export function miniMap(geo, { fill = () => null, highlight = null, label = 'Min
         })
         .join('')
     : '';
-  return html`<svg class="mini-map" viewBox="-4 -4 ${(W + 8).toFixed(0)} ${(H + 8).toFixed(0)}" role="img" aria-label="${label}">${raw(paths)}${hl ? raw(`<path d="${d(hl)}" class="mm-hl"/>`) : ''}${raw(marks)}</svg>`;
+  return html`<svg class="mini-map" viewBox="-4 -4 ${(W + 8).toFixed(0)} ${(H + 8).toFixed(0)}" role="img" aria-label="${label}"><path class="mm-edge" d="${ds.join('')}"/>${raw(paths)}${hl ? raw(`<path d="${d(hl)}" class="mm-hl"/>`) : ''}${raw(marks)}</svg>`;
 }

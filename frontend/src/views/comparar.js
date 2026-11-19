@@ -2,6 +2,8 @@
 // com fonte e data. Nenhuma nota entre cidades nem inferência: só os números de cada uma.
 // Outra cidade abre no explorador, que pede a confirmação do crédito.
 import { get } from '../api.js';
+import { compareRows } from '../compareRows.js';
+import { metric } from '../components/metric.js';
 import { miniMap } from '../components/miniMap.js';
 import { appPage, legalFooter, pageHead } from '../components/page.js';
 import { loadCredits } from '../credits.js';
@@ -39,10 +41,33 @@ const column = ({ status: st, geo }) => html`<section class="ov-block cmp-col" d
         <div><dt>Cadastros ativos (CNPJ)</dt><dd>${countNumber(st.coverage.total_active)}<small>Receita Federal, ref. ${st.reference_month}; só tipos do catálogo</small></dd></div>
         <div><dt>Cobertura</dt><dd><span class="tabular">${fmt.pct(st.coverage.share)}</span> localizados${growBar(st.coverage.share, `${fmt.pct(st.coverage.share)} localizados`)}<small>parte dos cadastros localizada em um bairro</small></dd></div>`
       : html`<p class="ov-empty">${NO_DATA('estabelecimentos')}</p>`}
-    <div><dt>Renda mediana</dt><dd>${st.income?.available ? html`<span class="tabular">${fmt.int(Math.round(st.income.median))}</span> R$/mês` : st.income?.message || NO_DATA('renda')}<small>${st.income?.source?.name || 'IBGE, Censo 2022'}</small></dd></div>
+    <div><dt>Renda mediana</dt><dd>${st.income?.available ? html`R$ <span class="tabular">${fmt.int(Math.round(st.income.median))}</span>/mês` : st.income?.message || NO_DATA('renda')}<small>${st.income?.source?.name || 'IBGE, Censo 2022'}</small></dd></div>
   </dl>
   <button type="button" class="btn btn-secondary btn-sm btn-block" data-open-city="${st.ibge}">${icon('map', 14)} Ver análise local</button>
 </section>`;
+
+// "Lado a lado": as duas primeiras cidades, uma linha por indicador. O maior valor leva o texto "maior" (não só cor).
+const sideBySide = (cols) => {
+  if (cols.length < 2) return '';
+  const [a, b] = cols.map((c) => c.status);
+  return html`<section class="ov-block cmp-side" aria-labelledby="cmpSideTitle" data-cx>
+    <div class="cmp-side-head"><h2 id="cmpSideTitle">Lado a lado</h2>
+      <p class="small muted">${a.name} e ${b.name}: o valor de cada cidade e a diferença entre elas.${cols.length > 2 ? ' Só as duas primeiras cidades da comparação.' : ''}</p></div>
+    ${compareRows(a, b).map((r) => html`<div class="cmp-row">
+      <div class="cmp-row-head"><h3>${r.label}</h3><small>${r.source}</small></div>
+      ${[a, b].map((s, i) => metric({
+        label: `${s.name} – ${s.uf}`,
+        value: r.values[i],
+        text: r.values[i] == null ? 'sem dado suficiente' : null,
+        decimals: r.decimals,
+        prefix: r.prefix,
+        unit: r.unit,
+        extra: r.max === i ? html`<span class="cmp-max">maior</span>` : '',
+      }))}
+      <p class="cmp-diff">${r.text}${r.ratio ? html`<small>razão calculada a partir dos valores ao lado</small>` : ''}</p>
+    </div>`)}
+  </section>`;
+};
 
 export async function render(root) {
   const user = await loadUser();
@@ -73,6 +98,7 @@ export async function render(root) {
             <button type="button" class="btn btn-primary" data-go="/explorer">${icon('map', 16)} Abrir uma cidade</button></div>`
         : ''}
       <div class="cmp-grid" data-cols>${cols.map(column)}${addSlot()}</div>
+      <div data-side>${sideBySide(cols)}</div>
       ${legalFooter()}`,
   });
 
@@ -91,7 +117,10 @@ export async function render(root) {
     const el = root.querySelector('[data-cols]');
     const cols = await Promise.all(picked.map(cityData));
     mount(el, html`${cols.map(column)}${addSlot()}`);
+    const side = root.querySelector('[data-side]');
+    mount(side, sideBySide(cols));
     animateOnView(el);
+    animateOnView(side);
   }
   root.addEventListener('change', (e) => {
     if (!e.target.matches('[data-add]') || !e.target.value) return;
