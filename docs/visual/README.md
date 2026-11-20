@@ -12,6 +12,7 @@ Geradas por `frontend/perf/screens.mjs` (usuário descartável com sede no Recif
 - `redesign/`: telas do redesign premium (Fases 2 a 9), claro e escuro, desktop e celular.
 - `sem-cara-de-ia/`: `antes-*` e `depois-*` da limpeza "sem cara de IA".
 - `tutorial-e-assistente/`: tutorial de primeira vez (passos 1 e 2) e assistente de IA (aberto, resposta, botão no explorador), claro e escuro, desktop e celular. Capturas com o servidor sem chave do Groq: a resposta mostra "Assistente indisponível no momento.", o caminho de erro; nenhuma resposta foi simulada.
+- `landing/` (2026-11-20): seção do vídeo, "Do bairro ao ponto", "Dados e fontes" na nova posição, mapa do Brasil no primeiro quadro (uma cor) e com o Nordeste em destaque, claro e escuro, desktop e celular; detalhe do bairro com a comparação de renda e páginas do PDF e dos slides com renda.
 - `movimento-*.webm`: tema em círculo, entrada da Visão geral, troca de página, ranking reordenando, abrir cidade, tooltip (`frontend/perf/record.mjs`).
 
 Para gerar capturas novas já leves: `frontend/perf/screens-tema.mjs` ou `perf/assistente.mjs` numa pasta temporária e converter para WebP (qualidade 78) antes de versionar.

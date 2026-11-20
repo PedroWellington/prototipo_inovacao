@@ -78,8 +78,18 @@ Decisão do Pedro: nada de recorte por cidade; Brasil inteiro em `vicus-dados` (
 | Tema escuro azul (branch `teste/tema-escuro-azul`, 2026-11-19, teste) | Egyptian Blue, Stone Blue e Scarlet como tokens; derivados calculados; vidro, pílulas e botão vermelho só no escuro; claro sem mudança | ✅ na branch, sem merge | `docs/DESIGN-SYSTEM.md`; `docs/visual/tema-escuro-azul/`; axe 0 |
 | Tema escuro azul, 2ª rodada (branch, 2026-11-19) | Fundo `#02101e` (Egyptian Blue + 50% de preto), cartões em Egyptian Blue; mapas com moldura preta, contorno da cidade preto e limites internos claros (≥ 3:1) | ✅ na branch, sem merge | `docs/DESIGN-SYSTEM.md`; `docs/visual/tema-escuro-azul/r2-*`; axe 0 |
 | Vídeo por tema (2026-11-19) | `landing/video/escuro.html` (+ `escuro.js`, script à parte por causa da CSP) no tema escuro, `index.html` no claro; mesma `narracao.mp3` e mesmos CUES; `?embed=1`/`?auto=1`/`?cena=N`, rótulo "Voz" escondido, movimento reduzido sem tremores nem "whip"; capa `poster-escuro.jpg` (cena 8); aviso "Animação ilustrativa" | ✅ | `frontend/perf/video.mjs` (as 11 cenas dos dois vídeos com MP3, botão de som); axe 0 |
+| Landing, mapa inicial e renda (2026-11-20) | 1. Vídeo como seção própria ("VÍDEO · 36 S", "Como a VICUS / funciona.", duração de `VIDEO_SECONDS`); 2. "Dentro do bairro, / cada rua conta."; 3. "Dados e fontes" só com "Dados com fonte sustentam a análise.", depois das perguntas frequentes (numeração 01 a 07); 4. Brasil numa cor só na abertura, Nordeste acende em 0,6 s no trecho que leva a ele (canvas e mapa real), contraste ≥ 3,25:1 medido nos dois temas; 5. "Renda mediana da cidade" / "do bairro" com a comparação "(bairro ÷ cidade − 1) × 100" e "calculado a partir de" em tela, PDF, slides e assistente; 6. CountUp só em inteiros ≥ 10; 7. frases antigas trocadas | ✅ | `151d208`, `97b6848`, `4343cc7`, `1284b8c`; `docs/visual/landing/`; axe 0 (landing inteira, dois temas, desktop e celular); `docs/DESIGN-SYSTEM.md` (contrastes do mapa); `docs/SCORING.md` (renda) |
 
 ## Agora
+
+Landing, mapa inicial e renda (2026-11-20): vídeo com título de seção, frases novas, "Dados e fontes" depois das perguntas
+frequentes, Brasil numa cor só ao abrir e Nordeste em destaque só na rolagem, renda do bairro comparada com a da cidade e
+CountUp só em inteiros. Na Vercel não há variável nova: o próximo deploy da `main` publica tudo. As frases antigas sobram só em
+arquivos fora do Git (`landing/VICUS-Recife-Edicao-Urbana.html`, a referência do protótipo original, e logs em `.playwright-mcp/`).
+De quebra, o axe passou a rolar até o fim da landing e achou contraste baixo antigo no tema claro (etiquetas do FAQ, de "Dados e
+fontes" e do bloco final); corrigido.
+
+Antes:
 
 Vídeo por tema e tema escuro azul (2026-11-19): branch `teste/tema-escuro-azul` mesclada na `main` a pedido do Pedro.
 O tema escuro azul e o vídeo novo passam a valer em produção no próximo deploy da Vercel.
