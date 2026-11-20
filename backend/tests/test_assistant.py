@@ -317,12 +317,49 @@ def test_income_texts_show_only_the_value():
 
     src = {"name": "IBGE, Censo Demográfico 2022", "url": "", "reference_date": "2022"}
     for approx in (False, True):
-        inc = income_block(1500.4, 4, "da cidade", approx, src)
-        assert inc["text"] == "Renda mediana: R$ 1.500/mês"
+        inc = income_block(1500.4, 4, approx, src, "do bairro", {"median": 1250, "source": src})
+        assert inc["text"] == "Renda mediana do bairro: R$ 1.500/mês"
         line = assistant.income_line(inc)
         assert assistant.violations(inc["text"] + " " + line + " " + inc["note"]) == []
         assert ("aproximado" in line) is approx and "IBGE, Censo Demográfico 2022" in line
+        assert inc["approximate"] is approx  # o aviso "aproximado" continua quando vem de setores
+    assert income_block(1250, 2, False, src, "da cidade")["text"] == "Renda mediana da cidade: R$ 1.250/mês"
+    assert "comparison" not in income_block(1250, 2, False, src, "da cidade")
     assert "sem interpretar" in assistant.SYSTEM_PROMPT
+
+
+SRC = {"name": "IBGE, Censo Demográfico 2022", "url": "", "reference_date": "2022"}
+CITY_SRC = {"name": "IBGE, Censo 2022, municípios", "url": "", "reference_date": "2022-08"}
+
+
+@pytest.mark.parametrize("hood, city, expected", [
+    (5000, 1250, "300% maior que a da cidade"),  # bairro maior
+    (1000, 1250, "20% menor que a da cidade"),  # bairro menor
+    (1255, 1250, "igual à da cidade"),  # diferença menor que 1% (0,4%)
+    (1238, 1250, "igual à da cidade"),  # -0,96%
+    (1263, 1250, "1% maior que a da cidade"),  # 1,04%: já não é igual
+    (None, 1250, "sem dado suficiente para comparar"),  # falta o bairro
+    (1000, None, "sem dado suficiente para comparar"),  # falta a cidade
+])
+def test_income_comparison_with_city(hood, city, expected):
+    """(bairro ÷ cidade − 1) × 100, arredondado; com o rótulo "calculado a partir de" e a fonte e a data dos dois valores."""
+    from app.scoring.rank import NO_DATA, income_block
+
+    inc = income_block(hood, 1, False, SRC, "do bairro", {"median": city, "source": CITY_SRC})
+    cmp = inc["comparison"]
+    assert cmp["text"] == expected
+    assert cmp["available"] is (hood is not None and city is not None)
+    line = assistant.income_line(inc)
+    assert expected in line
+    if cmp["available"]:
+        assert cmp["basis"] == "calculado a partir de" and "calculado a partir de: bairro, IBGE, Censo Demográfico 2022, ref. 2022; "             "cidade, IBGE, Censo 2022, municípios, ref. 2022-08" in line
+        assert cmp["city_text"] == "Renda mediana da cidade: R$ 1.250/mês"
+        same = assistant.income_line(income_block(hood, 1, False, SRC, "do bairro", {"median": city, "source": SRC}))
+        assert "calculado a partir de: bairro e cidade, IBGE, Censo Demográfico 2022, ref. 2022" in same  # mesma fonte: uma vez
+    if hood is None:
+        assert inc["message"] == NO_DATA.format(item="renda")  # nunca estima o valor que falta
+    # "maior", "menor" e "igual" desta comparação não disparam a guarda contra interpretação da renda
+    assert assistant.violations(line) == []
 
 
 def test_backend_code_has_no_income_interpretation():

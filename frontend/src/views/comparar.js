@@ -41,7 +41,7 @@ const column = ({ status: st, geo }) => html`<section class="ov-block cmp-col" d
         <div><dt>Cadastros ativos (CNPJ)</dt><dd>${countNumber(st.coverage.total_active)}<small>Receita Federal, ref. ${st.reference_month}; só tipos do catálogo</small></dd></div>
         <div><dt>Cobertura</dt><dd><span class="tabular">${fmt.pct(st.coverage.share)}</span> localizados${growBar(st.coverage.share, `${fmt.pct(st.coverage.share)} localizados`)}<small>parte dos cadastros localizada em um bairro</small></dd></div>`
       : html`<p class="ov-empty">${NO_DATA('estabelecimentos')}</p>`}
-    <div><dt>Renda mediana</dt><dd>${st.income?.available ? html`R$ <span class="tabular">${fmt.int(Math.round(st.income.median))}</span>/mês` : st.income?.message || NO_DATA('renda')}<small>${st.income?.source?.name || 'IBGE, Censo 2022'}</small></dd></div>
+    <div><dt>Renda mediana da cidade</dt><dd>${st.income?.available ? html`R$ <span class="tabular">${fmt.int(Math.round(st.income.median))}</span>/mês` : st.income?.message || NO_DATA('renda')}<small>${st.income?.source?.name || 'IBGE, Censo 2022'}</small></dd></div>
   </dl>
   <button type="button" class="btn btn-secondary btn-sm btn-block" data-open-city="${st.ibge}">${icon('map', 14)} Ver análise local</button>
 </section>`;

@@ -25,24 +25,74 @@ def missing_types(types: dict, keys: list[str]) -> list[str]:
 INCOME_NOTE = "Renda é um indicador e não determina preferências."
 
 
-def income_text(median) -> str:
-    """Só o dado, sem interpretação (nada de "poder de compra" nem perfil): "Renda mediana: R$ 1.500/mês"."""
-    return "Renda mediana: R$ " + f"{round(median):,}".replace(",", ".") + "/mês"
+NO_COMPARISON = "sem dado suficiente para comparar"
+BASIS = "calculado a partir de"
 
 
-def income_block(median, quartile, ref: str, approximate: bool, source: dict | None) -> dict:
-    """Renda para a tela: valor, quartil, texto só com o valor, fonte e nota. Sem valor: a mensagem padrão, nunca estimativa."""
+def brl(v) -> str:
+    return "R$ " + f"{round(v):,}".replace(",", ".")
+
+
+def income_text(median, of: str = "do bairro") -> str:
+    """Só o dado, sem interpretação (nada de "poder de compra" nem perfil): "Renda mediana do bairro: R$ 5.000/mês"."""
+    return f"Renda mediana {of}: {brl(median)}/mês"
+
+
+def income_comparison(median, city_median) -> str:
+    """Só a conta (bairro ÷ cidade − 1) × 100, inteiro (meio para cima); diferença abaixo de 1%: "igual à da cidade".
+    Sem um dos dois valores: NO_COMPARISON (nunca estima). "maior"/"menor" descrevem o número, não o lugar."""
+    if median is None or not city_median:
+        return NO_COMPARISON
+    diff = (float(median) / float(city_median) - 1) * 100
+    if abs(diff) < 1:
+        return "igual à da cidade"
+    pct = f"{int(abs(diff) + 0.5):,}".replace(",", ".")
+    return f"{pct}% {'maior' if diff > 0 else 'menor'} que a da cidade"
+
+
+def income_block(median, quartile, approximate: bool, source: dict | None, of: str = "do bairro", city: dict | None = None) -> dict:
+    """Renda para a tela, o PDF, os slides e o assistente: valor, quartil, texto só com o valor, fonte e nota.
+    Sem valor: a mensagem padrão, nunca estimativa. city = {"median", "source"}: compara o bairro (ou a área) com a
+    cidade; a comparação leva a fonte e a data dos dois valores."""
+    out = {"label": f"Renda mediana {of}", "note": INCOME_NOTE, "source": source}
     if median is None:
-        return {"available": False, "message": NO_DATA.format(item="renda"), "note": INCOME_NOTE, "source": source}
-    return {
-        "available": True,
-        "median": float(median),
-        "quartile": quartile,
-        "text": income_text(median),
-        "approximate": approximate,
-        "note": INCOME_NOTE,
-        "source": source,
-    }
+        out |= {"available": False, "message": NO_DATA.format(item="renda")}
+    else:
+        out |= {"available": True, "median": float(median), "quartile": quartile, "text": income_text(median, of), "approximate": approximate}
+    if city is not None:
+        city_median = city.get("median")
+        ok = median is not None and bool(city_median)
+        out["comparison"] = {
+            "available": ok,
+            "text": income_comparison(median, city_median),
+            "city_text": income_text(city_median, "da cidade") if city_median else None,
+            "basis": BASIS,
+            "sources": [{"of": of.split()[-1], **(source or {})}, {"of": "cidade", **(city.get("source") or {})}],
+        }
+    return out
+
+
+def source_line(src: dict | None) -> str:
+    src = src or {}
+    return f'{src.get("name", "IBGE, Censo 2022")}, ref. {src.get("reference_date", "2022")}'
+
+
+def sources_line(sources: list[dict]) -> str:
+    """Fonte e data de cada valor; a mesma fonte para os dois vira "bairro e cidade, <fonte>, ref. <data>"."""
+    lines = [source_line(s) for s in sources]
+    if len(set(lines)) == 1:
+        return f'{" e ".join(s["of"] for s in sources)}, {lines[0]}'
+    return "; ".join(f'{s["of"]}, {line}' for s, line in zip(sources, lines))
+
+
+def comparison_line(cmp: dict | None) -> str:
+    """Comparação com a cidade, só a conta: "300% maior que a da cidade (Renda mediana da cidade: R$ 1.250/mês;
+    calculado a partir de: bairro, <fonte>, ref.; cidade, <fonte>, ref.)". Sem um dos valores: "sem dado suficiente"."""
+    if not cmp:
+        return ""
+    if not cmp["available"]:
+        return cmp["text"]
+    return f'{cmp["text"]} ({cmp["city_text"]}; {cmp["basis"]}: {sources_line(cmp["sources"])})'
 
 
 def income_source(db: Session) -> dict | None:
@@ -129,7 +179,7 @@ def city_context(db: Session, ibge: int):
     return db.execute(
         text(
             """
-            SELECT m.ibge, m.name, m.uf, s.loaded_at, s.reference_month, s.total_active, s.located, s.neighborhoods, s.division_kind,
+            SELECT m.ibge, m.name, m.uf, m.income_median, s.loaded_at, s.reference_month, s.total_active, s.located, s.neighborhoods, s.division_kind,
                    (""" + CATALOG_VERSION_SQL + """) AS catalog_version
             FROM municipalities m LEFT JOIN city_data_status s ON s.municipality_ibge = m.ibge
             WHERE m.ibge = :m
@@ -188,6 +238,8 @@ def rank(db: Session, ibge: int, criteria: list[dict]) -> dict:
     ).mappings().all()
 
     inc_src = income_source(db)
+    inc_city = {"median": city["income_median"], "source": inc_src}
+    of = "da área" if city["division_kind"] == "area" else "do bairro"
     neighborhoods = []
     for r in rows:
         crit = []
@@ -209,7 +261,7 @@ def rank(db: Session, ibge: int, criteria: list[dict]) -> dict:
                 "rank": r["rank"],
                 "coverage": {"level": r["coverage_level"], "located_count": r["located_count"]},
                 "criteria": crit,
-                "income": income_block(r["income_median"], r["income_quartile"], "da cidade", r["income_method"] == "setores", inc_src),
+                "income": income_block(r["income_median"], r["income_quartile"], r["income_method"] == "setores", inc_src, of, inc_city),
             }
         )
 

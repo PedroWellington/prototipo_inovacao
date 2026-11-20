@@ -82,9 +82,9 @@ describe('ranking de cidades', () => {
     const [a, b] = cityRankRows(res);
     expect([a.name, a.score, a.rank]).toEqual(['Alfa', 100, 1]);
     expect(a.criteria[0]).toMatchObject({ type: 'hospital', n: 9, per_10k: 3, per_km2: 0.009, lower: 1, higher: 0 });
-    expect(a.income).toMatchObject({ available: true, text: 'Renda mediana: R$ 3.000/mês', note: 'nota' });
+    expect(a.income).toMatchObject({ available: true, text: 'Renda mediana da cidade: R$ 3.000/mês', note: 'nota' });
     expect(a.label).toEqual([-35, -8]);
-    expect(b.income).toEqual({ available: false, message: 'sem renda', note: 'nota', source: null });
+    expect(b.income).toEqual({ available: false, label: 'Renda mediana da cidade', message: 'sem renda', note: 'nota', source: null });
     expect(b.coverage.share).toBe(0);
   });
   it('frase comparativa igual à dos bairros', async () => {

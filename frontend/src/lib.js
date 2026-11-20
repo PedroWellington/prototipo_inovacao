@@ -81,8 +81,8 @@ export function cityRankRows(res) {
     c.coverage = { total_active: c.total_active, located: c.located, share: c.total_active ? c.located / c.total_active : 0 };
     c.income =
       c.income_median == null
-        ? { available: false, message: inc.missing, note: inc.note, source: inc.source }
-        : { available: true, median: c.income_median, quartile: c.income_quartile, text: `Renda mediana: ${brl(c.income_median)}/mês`, approximate: false, note: inc.note, source: inc.source };
+        ? { available: false, label: 'Renda mediana da cidade', message: inc.missing, note: inc.note, source: inc.source }
+        : { available: true, label: 'Renda mediana da cidade', median: c.income_median, quartile: c.income_quartile, text: `Renda mediana da cidade: ${brl(c.income_median)}/mês`, approximate: false, note: inc.note, source: inc.source };
     return c;
   });
 }

@@ -17,7 +17,7 @@ describe('compareRows', () => {
     const pop = row(rows, 'População');
     expect(pop.text).toBe('Recife tem 1,6x a população de Maceió; diferença de 600 habitantes');
     expect(pop.max).toBe(0);
-    expect(row(rows, 'Renda mediana').text).toBe('Recife tem 1,2x a renda mediana de Maceió; diferença de R$ 250/mês');
+    expect(row(rows, 'Renda mediana da cidade').text).toBe('Recife tem 1,2x a renda mediana de Maceió; diferença de R$ 250/mês');
     expect(row(rows, 'Cobertura').text).toBe('diferença de 5 pontos percentuais');
     for (const r of rows) expect(r.text).not.toMatch(/melhor|pior|vencedor|recomend/i);
   });
@@ -32,7 +32,7 @@ describe('compareRows', () => {
 
   it('sem dado em uma cidade: "sem dado suficiente" e nenhum destaque', () => {
     const r = compareRows(recife, city({ name: 'Y', has_data: false, income: { available: false } }));
-    for (const label of ['Cadastros ativos (CNPJ)', 'Cobertura', 'Renda mediana']) {
+    for (const label of ['Cadastros ativos (CNPJ)', 'Cobertura', 'Renda mediana da cidade']) {
       expect(row(r, label).text).toBe('sem dado suficiente');
       expect(row(r, label).max).toBeNull();
     }

@@ -6,7 +6,7 @@ Os slides são uma narrativa curta, não o relatório fatiado: capa, o que busca
 """
 from app.config import PRODUCT_NAME
 from app.report.pdf import C, COVERAGE, LEGAL, LEGAL_APP, NOT_ADVICE, SCALE, M, W, Doc, direction, money, num, ordinal
-from app.scoring.rank import NO_DATA
+from app.scoring.rank import NO_DATA, comparison_line, sources_line
 
 
 def render_route(d: dict, shapes: dict, plan: dict, checklist: list[tuple[str, str]]) -> bytes:
@@ -223,7 +223,8 @@ def render_slides(d: dict, shapes: dict) -> bytes:
             ("Mesmo ramo", num(comp["n"]) if comp else None, f"CNPJ, ref. {ref}", "concorrência"),
             ("Linha reta à sede", f"{num(h['straight_km'], 1)} km" if h["straight_km"] is not None else None, "nossa conta (PostGIS)", "distância")
             if d["hq"] else
-            ("Renda mediana", money(h["income"]["median"]) if h["income"].get("available") else None, "IBGE, Censo 2022", "renda"),
+            (h["income"].get("label", "Renda mediana"), money(h["income"]["median"]) if h["income"].get("available") else None,
+             h["income"].get("comparison", {}).get("text", "IBGE, Censo 2022"), "renda"),
         ]
         tw = (170 - 12) / 3
         for i, (k, v, src, item) in enumerate(sup):
@@ -239,7 +240,8 @@ def render_slides(d: dict, shapes: dict) -> bytes:
         pdf.city_map(shapes, X + 182, 18, CW - 186, 98, {h["id"]: h["rank"]}, focus=h["id"], alt=f"{h['name']} destacado no mapa da cidade")
         cov = h["coverage"]
         foot(f"Nota de 0 a 100 entre os {d['count']} {d['unit']} da cidade. Cobertura dos dados neste {unit1}: "
-             f"{COVERAGE.get(cov['level'], cov['level'])} ({num(cov['located_count'])} cadastros localizados).")
+             f"{COVERAGE.get(cov['level'], cov['level'])} ({num(cov['located_count'])} cadastros localizados)."
+             + ("" if d["hq"] or not h["income"].get("comparison") else f" Renda: {comparison_line(h['income']['comparison'])}."))
 
     # (e) comparação lado a lado
     pdf.add_page()
@@ -247,7 +249,8 @@ def render_slides(d: dict, shapes: dict) -> bytes:
     cw = (CW - 5 * (n - 1)) / max(1, n)
     rows = [("Moradores", lambda h: num(h["population"]) if h["population"] is not None else "sem dado¹"),
             ("Mesmo ramo", lambda h: num(h["competition"]["n"]) if h["competition"] else "sem dado¹"),
-            ("Renda mediana", lambda h: money(h["income"]["median"]) if h["income"].get("available") else "sem dado¹"),
+            (f"Renda mediana {'da área' if d['unit'] == 'áreas' else 'do bairro'}", lambda h: money(h["income"]["median"]) if h["income"].get("available") else "sem dado¹"),
+            ("Renda x cidade", lambda h: h["income"].get("comparison", {}).get("text", "sem dado suficiente para comparar")),
             ("Linha reta à sede", lambda h: f"{num(h['straight_km'], 1)} km" if h["straight_km"] is not None else ("sem sede" if not d["hq"] else "sem dado¹"))]
     for i, h in enumerate(d["neighborhoods"]):
         x = X + i * (cw + 5)
@@ -262,9 +265,11 @@ def render_slides(d: dict, shapes: dict) -> bytes:
         yy = y + 37
         for k, f in rows:
             pdf.label(x + 5, yy, k, w=cw - 10)
-            pdf.text_at(x + 5, yy + 4, cw - 10, f(h), 11, "b", "ink", h=5)
-            yy += 15
+            end = pdf.text_at(x + 5, yy + 4, cw - 10, f(h), 11, "b", "ink", h=5)
+            yy = max(yy + 15, end + 5)  # valor em duas linhas ("19% menor que a da cidade") empurra a linha seguinte
+    cmp = next((h["income"]["comparison"] for h in d["neighborhoods"] if h["income"].get("comparison", {}).get("available")), None)
     foot(f"Nota 0–100 (barra). Moradores e renda: IBGE, Censo 2022. Mesmo ramo: CNPJ, ref. {ref}. Linha reta: nossa conta."
+         + (f" Renda x cidade: {cmp['city_text']}; {cmp['basis']}: " + sources_line(cmp["sources"]) + "." if cmp else "")
          + (" ¹ " + NO_DATA.format(item="[item]") if any("sem dado¹" in f(h) for h in d["neighborhoods"] for _, f in rows) else ""))
 
     # (f) como lemos os dados

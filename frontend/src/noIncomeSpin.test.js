@@ -22,6 +22,8 @@ describe('renda sem interpretação', () => {
   it('a lista pega as expressões proibidas', () => {
     for (const t of ['poder de compra', 'dispostas a pagar', 'consumidores com essa renda', 'perfil de consumo', 'Perfil compatível com oferta premium']) expect(t).toMatch(SPIN);
     expect('Renda mediana: R$ 1.500/mês').not.toMatch(SPIN);
+    // a comparação com a cidade é só a conta: "maior", "menor" e "igual" não disparam a guarda
+    for (const t of ['Renda mediana do bairro: R$ 5.000/mês', '300% maior que a da cidade', '20% menor que a da cidade', 'igual à da cidade', 'sem dado suficiente para comparar']) expect(t).not.toMatch(SPIN);
   });
 
   it('nenhum arquivo do repositório interpreta a renda', () => {

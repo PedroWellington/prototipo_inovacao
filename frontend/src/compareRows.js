@@ -41,7 +41,7 @@ export function compareRows(a, b) {
       source: `${cnpj}; parte dos cadastros localizada em um bairro`,
     },
     {
-      label: 'Renda mediana', values: of((s) => (s.income?.available ? s.income.median : null)), prefix: 'R$ ', unit: '/mês', kind: 'money',
+      label: 'Renda mediana da cidade', values: of((s) => (s.income?.available ? s.income.median : null)), prefix: 'R$ ', unit: '/mês', kind: 'money',
       noun: 'a renda mediana', source: income,
     },
   ];

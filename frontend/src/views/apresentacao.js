@@ -4,6 +4,7 @@
 // Dados de POST /report/data (sem Google); textos da narrativa vêm prontos do servidor (os mesmos do PDF).
 // Movimento só com o que já existe: cascade (entrada), countNumber/countUp (números) e growBar (barras).
 import { get, getCached, post } from '../api.js';
+import { sourcesText } from '../components/income.js';
 import { miniMap } from '../components/miniMap.js';
 import { appPage, pageHead } from '../components/page.js';
 import { fmt, html, mount } from '../html.js';
@@ -66,6 +67,11 @@ export async function render(root) {
   const ranks = () => new Map(d.neighborhoods.map((h) => [h.id, String(h.rank)]));
   const map = (opts) => (geo ? miniMap(geo, opts) : html`<p class="small muted">${NO_DATA('limites')}</p>`);
   const foot = (txt) => html`<p class="slide-foot" data-cx>${txt}</p>`;
+  // Renda x cidade: a conta vem do servidor; aqui só a fonte e a data dos dois valores.
+  const incomeBasis = () => {
+    const c = d.neighborhoods.find((h) => h.income.comparison?.available)?.income.comparison;
+    return c ? ` Renda x cidade: ${c.city_text}; ${c.basis}: ${sourcesText(c.sources)}.` : '';
+  };
   const kicker = (k, t) => html`<p class="ov-eyebrow" data-cx>${k}</p><h2 data-cx>${t}</h2>`;
 
   function stat(label, value, src, missing) {
@@ -78,7 +84,7 @@ export async function render(root) {
     const comp = h.competition;
     const third = d.hq
       ? stat('Linha reta à sede', h.straight_km != null ? `${fmt.dec(h.straight_km)} km` : null, 'nossa conta (PostGIS)', NO_DATA('distância'))
-      : stat('Renda mediana', h.income.available ? brl(h.income.median) : null, 'IBGE, Censo 2022', NO_DATA('renda'));
+      : stat(h.income.label || 'Renda mediana', h.income.available ? brl(h.income.median) : null, h.income.comparison?.text || 'IBGE, Censo 2022', NO_DATA('renda'));
     return html`<article class="slide slide-hood">
       <div class="slide-main">
         <p class="ov-eyebrow" data-cx>${h.rank}º de ${d.count} · ${unit1()}</p><h2 data-cx>${h.name}</h2>
@@ -128,9 +134,10 @@ export async function render(root) {
           <p class="slide-cmp-score">${countNumber(h.score, { decimals: 1 })}</p>${growBar(h.score / 100, `Nota ${fmt.dec(h.score)} de 100`)}
           <dl><dt>Moradores</dt><dd>${sem(h.population, fmt.int)}</dd>
             <dt>Mesmo ramo</dt><dd>${h.competition ? fmt.int(h.competition.n) : 'sem dado¹'}</dd>
-            <dt>Renda mediana</dt><dd>${h.income.available ? brl(h.income.median) : 'sem dado¹'}</dd>
+            <dt>${h.income.label || 'Renda mediana'}</dt><dd>${h.income.available ? brl(h.income.median) : 'sem dado¹'}</dd>
+            <dt>Renda x cidade</dt><dd>${h.income.comparison?.text || 'sem dado suficiente para comparar'}</dd>
             <dt>Linha reta à sede</dt><dd>${d.hq ? sem(h.straight_km, (v) => `${fmt.dec(v)} km`) : 'sem sede'}</dd></dl></div>`)}</div>
-        ${foot(`Nota de 0 a 100 (barra). Moradores e renda: IBGE, Censo 2022. Mesmo ramo: CNPJ, ref. ${ref()}. Linha reta: nossa conta.${missing ? ` ¹ ${NO_DATA('[item]')}` : ''}`)}</article>`,
+        ${foot(`Nota de 0 a 100 (barra). Moradores e renda: IBGE, Censo 2022. Mesmo ramo: CNPJ, ref. ${ref()}. Linha reta: nossa conta.${incomeBasis()}${missing ? ` ¹ ${NO_DATA('[item]')}` : ''}`)}</article>`,
       // (f) como lemos os dados
       html`<article class="slide">${kicker('Como lemos os dados', 'Três ideias para ler as notas')}
         <ol class="slide-ideas">

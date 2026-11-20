@@ -79,7 +79,7 @@ def status(ibge: int, request: Request, db: Session = Depends(get_data_db)):
         "message": None if has_data else NO_DATA.format(item="estabelecimentos"),
         "population": row["population"],
         "area_km2": round(row["area_km2"], 1) if row["area_km2"] else None,
-        "income": income_block(row["income_median"], row["income_quartile"], "das cidades do estado", False, income_source(db)),
+        "income": income_block(row["income_median"], row["income_quartile"], False, income_source(db), "da cidade"),
     }
     if has_data:
         body |= {

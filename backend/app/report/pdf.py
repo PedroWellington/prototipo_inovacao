@@ -11,7 +11,7 @@ from pathlib import Path
 from fpdf import FPDF
 
 from app.config import PRODUCT_NAME
-from app.scoring.rank import NO_DATA
+from app.scoring.rank import NO_DATA, comparison_line, source_line
 
 FONTS = Path(__file__).parent / "fonts"
 C = {
@@ -256,6 +256,19 @@ def cover(pdf: Doc, d: dict, shapes: dict, title: str, subtitle: str):
     pdf.set_char_spacing(0)
 
 
+def income_of(d: dict, label: str) -> str:
+    """"Renda mediana do bairro" ou "da área", conforme a divisão da cidade."""
+    return f"{label} {'da área' if d['unit'] == 'áreas' else 'do bairro'}"
+
+
+def city_income_note(d: dict) -> str:
+    """Nota das tabelas: o valor da cidade, para comparar com a coluna da renda (ou a falta dele)."""
+    cmp = next((h["income"].get("comparison") for h in d["neighborhoods"] if h["income"].get("comparison")), None)
+    if not cmp or not cmp.get("city_text"):
+        return "Renda mediana da cidade: " + NO_DATA.format(item="renda") + " Por isso, sem dado suficiente para comparar."
+    return f'{cmp["city_text"]} ({source_line(cmp["sources"][-1])}). Comparação de cada {d["unit"][:-1]} com a cidade: na página dele.'
+
+
 def cell_or(v, fmt) -> str:
     return "sem dado¹" if v is None else fmt(v)
 
@@ -296,14 +309,14 @@ def summary(pdf: Doc, d: dict, shapes: dict):
     # tabela
     y = y + mh + 8
     cols = [("Pos.", 11, "C"), ("Bairro" if d["unit"] == "bairros" else "Área", 39, "L"), ("Nota", 15, "R"), ("População", 21, "R"),
-            ("hab/km²", 18, "R"), ("Renda mediana", 24, "R"), ("Mesmo ramo", 23, "R"), ("Linha reta até a sede", 23, "R")]
+            ("hab/km²", 18, "R"), (income_of(d, "Renda mediana"), 24, "R"), ("Mesmo ramo", 23, "R"), ("Linha reta até a sede", 23, "R")]
     x = M
     pdf.color("fill", C["coal"])
-    pdf.rect(M, y, W, 10, "F")
+    pdf.rect(M, y, W, 12, "F")  # 12 mm: "Renda mediana do bairro" ocupa 3 linhas
     for t, w, a in cols:
         pdf.text_at(x + 1.5, y + 2, w - 3, t.upper(), 6.2, "sb", "on_dark", a, h=3, spacing=0.3)
         x += w
-    y += 10
+    y += 12
     for i, h in enumerate(d["neighborhoods"]):
         inc = h["income"]
         comp = h["competition"]
@@ -339,6 +352,7 @@ def summary(pdf: Doc, d: dict, shapes: dict):
              ]
     if any(h["income"].get("approximate") for h in d["neighborhoods"]):
         notes.append("* Renda aproximada: média das medianas dos setores censitários da área, ponderada pelos domicílios.")
+    notes.append(city_income_note(d))
     if missing:
         notes.append("¹ sem dado: " + NO_DATA.format(item="[item da coluna]"))
     if not d["hq"]:
@@ -472,7 +486,7 @@ def comparison_page(pdf: Doc, d: dict):
     y = counts_table(pdf, d, y) + 8
     y = pdf.label(M, y, "Contexto: população, renda, concorrência e cobertura", "copper_dark") + 1.5
     cols = [("Bairro" if d["unit"] == "bairros" else "Área", 40, "L"), ("População", 22, "R"), ("hab/km²", 18, "R"),
-            ("Renda mediana", 26, "R"), ("Mesmo ramo", 20, "R"), ("Mesmo ramo /km²", 22, "R"), ("Cobertura", 26, "R")]
+            (income_of(d, "Renda mediana"), 26, "R"), ("Mesmo ramo", 20, "R"), ("Mesmo ramo /km²", 22, "R"), ("Cobertura", 26, "R")]
     pdf.color("fill", C["coal"])
     pdf.rect(M, y, W, 10, "F")
     x = M
@@ -501,6 +515,7 @@ def comparison_page(pdf: Doc, d: dict):
              "entre parênteses, quantos cadastros foram localizados."]
     if any(h["income"].get("approximate") for h in d["neighborhoods"]):
         notes.append("* Renda aproximada: média das medianas dos setores censitários da área, ponderada pelos domicílios.")
+    notes.append(city_income_note(d))
     if any(v is None for h in d["neighborhoods"] for v in (h["population"], h["pop_density"])) or d["competitor"] is None             or any(not h["income"].get("available") for h in d["neighborhoods"]):
         notes.append("¹ sem dado: " + NO_DATA.format(item="[item da coluna]"))
     y += 1.2
@@ -544,7 +559,7 @@ def neighborhood_page(pdf: Doc, d: dict, h: dict, shapes: dict):
     tiles = [
         ("População", num(h["population"]) if h["population"] is not None else None, "habitantes", pop_src, "população"),
         ("Densidade", num(h["pop_density"]) if h["pop_density"] is not None else None, "hab/km²", "IBGE, Censo 2022 ÷ área", "densidade demográfica"),
-        ("Renda (mediana)", money(inc["median"]) if inc.get("available") else None,
+        (inc.get("label", "Renda mediana"), money(inc["median"]) if inc.get("available") else None,
          ("aproximado, por setores" if inc.get("approximate") else "por responsável, mensal"),
          "IBGE, Censo 2022", "renda"),
         ("Área", num(h["area_km2"], 2) if h["area_km2"] else None, "km²", "IBGE, malha 2022", "área"),
@@ -552,19 +567,20 @@ def neighborhood_page(pdf: Doc, d: dict, h: dict, shapes: dict):
     tw4 = (W - 12) / 4
     for i, (k, v, unit, src, item) in enumerate(tiles):
         x = M + i * (tw4 + 4)
-        pdf.box(x, y, tw4, 30, "stone")
+        pdf.box(x, y, tw4, 34, "stone")
         ly = pdf.label(x + 4, y + 3.5, k, w=tw4 - 8)
         if v is None:
             pdf.text_at(x + 4, ly + 1.5, tw4 - 8, NO_DATA.format(item=item), 7.6, "m", "muted", h=3.6)
         else:
             yv = pdf.text_at(x + 4, ly + 1, tw4 - 8, v, 15 if len(v) < 10 else 12.5, "b", "ink", h=7)
             pdf.text_at(x + 4, yv, tw4 - 8, unit, 7.5, "", "muted", h=3.4)
-        pdf.source(x + 4, y + 24, tw4 - 8, src)
-    if inc.get("available"):
-        src = inc.get("source") or {}
-        y2 = pdf.source(M, y + 31.5, W, f'{inc["text"]}. Fonte: {src.get("name", "IBGE, Censo 2022")}, ref. {src.get("reference_date", "2022")}. {inc["note"]}')
-    else:
-        y2 = y + 31.5
+        pdf.source(x + 4, y + 28, tw4 - 8, src)
+    # valor, fonte e a comparação com a cidade (só a conta, com a fonte e a data dos dois valores)
+    cmp = comparison_line(inc.get("comparison"))
+    line = f'{inc["text"]}. Fonte: {source_line(inc.get("source"))}.' if inc.get("available") else ""
+    if cmp:
+        line += f" Comparação com a cidade: {cmp}."
+    y2 = pdf.source(M, y + 35.5, W, f'{line} {inc["note"]}'.strip()) if line else y + 35.5
     y = y2 + 5
 
     # barras por critério
