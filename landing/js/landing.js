@@ -692,11 +692,24 @@ const io = new IntersectionObserver((entries) => {
 }, { rootMargin: '0px 0px -8% 0px' });
 document.querySelectorAll('.rv').forEach((el) => io.observe(el));
 
+// Mesma regra do app (frontend/src/motion.js): só conta inteiro a partir de 10, sempre em inteiros; menor que 10,
+// decimal ou movimento reduzido mostram o final direto. Na contagem, o leitor de tela lê só o final (sr-only).
 function countUp(el, to) {
   const show = (v) => (el.textContent = v.toLocaleString('pt-BR'));
-  if (reduced) return show(to);
+  if (reduced || !Number.isInteger(to) || Math.abs(to) < 10) return show(to);
+  const final = document.createElement('span');
+  final.className = 'sr-only';
+  final.textContent = to.toLocaleString('pt-BR');
+  el.setAttribute('aria-hidden', 'true');
+  el.after(final);
   const t0 = performance.now(), dur = 1200;
-  const step = (t) => { const k = clamp((t - t0) / dur); show(Math.round(to * (1 - (1 - k) ** 3))); if (k < 1) requestAnimationFrame(step); };
+  const step = (t) => {
+    const k = clamp((t - t0) / dur);
+    show(Math.round(to * (1 - (1 - k) ** 3)));
+    if (k < 1) return requestAnimationFrame(step);
+    el.removeAttribute('aria-hidden');
+    final.remove();
+  };
   requestAnimationFrame(step);
 }
 // Sem a API (ex.: npm run serve), a lista fica só com nome e link: nenhuma data é inventada.
