@@ -97,7 +97,7 @@
           </article>
           <article class="chapter align-right" data-start=".70" data-end=".81">
             <div class="chapter-kicker">06 <span></span> DO BAIRRO AO PONTO</div>
-            <h2>Em um bairro, <em>o território ganha forma.</em></h2>
+            <h2>Dentro do bairro,<br /> <em>cada rua conta.</em></h2>
           </article>
           <article class="chapter align-left" data-start=".81" data-end=".91">
             <div class="chapter-kicker">07 <span></span> A UNIDADE GANHA VIDA</div>
@@ -122,21 +122,28 @@
     <!-- Painel de produto: tudo abaixo é página (fundo claro no tema claro, grafite no escuro). -->
     <section class="pg product" id="conheca" aria-labelledby="conhecaTitulo">
       <div class="product-shell">
-        <div class="section-meta rv"><span>VICUS / CONHEÇA A VICUS</span><span>01 — 06</span></div>
+        <div class="section-meta rv"><span>VICUS / CONHEÇA A VICUS</span><span>01 — 07</span></div>
         <div class="product-intro"><div class="rv"><div class="subheading">Conheça a VICUS</div><h2 id="conhecaTitulo">Dados abertos, <em>critérios seus.</em></h2></div><p class="rv" style="--i:1">A VICUS é uma plataforma de inteligência territorial para quem vai abrir ou expandir um negócio. Ela organiza dados públicos e mostra como cada lugar se encaixa no que você definiu. A decisão é sua.</p></div>
         <div class="benefits">
           <div class="benefit rv" style="--i:0"><span>QUEM SOMOS</span><b>Uma equipe de dados e território</b><p>Trabalhamos com fontes abertas e um método transparente: cada número mostra de onde veio e de quando é.</p></div>
           <div class="benefit rv" style="--i:1"><span>O QUE FAZEMOS</span><b>Comparamos lugares pelos seus critérios</b><p>Cidades e bairros do Brasil inteiro, ordenados pelo que você quer perto e longe, com o peso que você escolhe.</p></div>
           <div class="benefit rv" style="--i:2"><span>PARA QUEM</span><b>Para quem decide onde abrir</b><p>Redes, franquias, clínicas, comércios e serviços que precisam escolher uma cidade ou um bairro com dados à mão.</p></div>
         </div>
+      </div>
+    </section>
+
+    <section class="pg video-section" id="video" aria-labelledby="videoTitulo">
+      <div class="product-shell">
+        <div class="section-meta rv"><span>VICUS / VÍDEO</span><span>02 — 07</span></div>
+        <div class="product-intro"><div class="rv"><div class="subheading">Vídeo · <span data-video-s>36</span> s</div><h2 id="videoTitulo">Como a VICUS<br /><em>funciona.</em></h2></div></div>
         <!-- Vídeo: só a capa carrega com a página; iframe, áudio e animação só depois do clique (js/video.js). -->
-        <button type="button" class="video-cover rv" id="videoOpen">
+        <button type="button" class="video-cover rv" id="videoOpen" aria-labelledby="videoPlay videoTitulo">
           <img class="poster-claro" src="video/poster.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
           <img class="poster-escuro" src="video/poster-escuro.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" />
-          <span class="video-play"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>Ver como funciona · 36 s</span>
+          <span class="video-play" id="videoPlay"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg><span>Ver como funciona · <span data-video-s>36</span> s</span></span>
         </button>
         <p class="video-note rv">Animação ilustrativa: os exemplos não representam dados reais.</p>
-        <dialog class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-label="Vídeo: como o VICUS funciona">
+        <dialog class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="videoTitulo">
           <button type="button" class="video-close">Fechar</button>
           <p class="video-note">Animação ilustrativa: os exemplos não representam dados reais.</p>
         </dialog>
@@ -145,7 +152,7 @@
 
     <section class="pg how" id="como-funciona" aria-labelledby="comoTitulo">
       <div class="product-shell">
-        <div class="section-meta rv"><span>VICUS / COMO FUNCIONA</span><span>02 — 06</span></div>
+        <div class="section-meta rv"><span>VICUS / COMO FUNCIONA</span><span>03 — 07</span></div>
         <div class="product-intro"><div class="rv"><div class="subheading">Como funciona</div><h2 id="comoTitulo">Três passos, <em>no seu ritmo.</em></h2></div><p class="rv" style="--i:1">Você define, explora e compara. Cada etapa mostra os dados e as fontes por trás de cada posição.</p></div>
         <ol class="steps">
           <li class="step rv" style="--i:0"><span class="step-num">01</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><b>Defina os critérios</b><p>O que você quer perto, o que quer longe e o peso de cada item, de 1 a 5. Há sugestões por ramo para começar.</p></li>
@@ -167,29 +174,10 @@
       </div>
     </section>
 
-    <section class="pg sources" id="fontes" aria-labelledby="fontesTitulo">
-      <div class="product-shell">
-        <div class="section-meta rv"><span>VICUS / DADOS E FONTES</span><span>03 — 06</span></div>
-        <div class="product-intro"><div class="rv"><div class="subheading">Dados e fontes</div><h2 id="fontesTitulo">Um mapa bonito chama atenção. <em>Dados com fonte sustentam a análise.</em></h2></div><p class="rv" style="--i:1">Só dados abertos, cada um com data de referência. Cadastro não é prédio: por isso cada área mostra a cobertura dos seus dados.</p></div>
-        <div class="sources-grid">
-          <ul class="source-list rv" id="sourceList" aria-busy="true" aria-label="Fontes de dados">
-            <li class="sk"><span class="skeleton" style="width:62%"></span><span class="skeleton" style="width:18%"></span></li>
-            <li class="sk"><span class="skeleton" style="width:48%"></span><span class="skeleton" style="width:18%"></span></li>
-            <li class="sk"><span class="skeleton" style="width:70%"></span><span class="skeleton" style="width:18%"></span></li>
-            <li class="sk"><span class="skeleton" style="width:55%"></span><span class="skeleton" style="width:18%"></span></li>
-          </ul>
-          <div class="source-side rv" style="--i:1">
-            <div class="stat" id="citiesStat" hidden><b class="stat-num" id="citiesCount" data-count="0">0</b><span>cidades com dados carregados</span><small>Receita Federal (CNPJ) localizada por bairro ou área do IBGE</small></div>
-            <p class="source-note">Os limites da animação vêm da Malha Municipal 2022 e da Malha de Bairros do Censo 2022, ambas do IBGE (<a href="data/FONTES.md">detalhes e datas</a>). A loja da animação é uma ilustração.</p>
-            <div class="source-links"><a href="https://www.ibge.gov.br/" target="_blank" rel="noopener noreferrer">IBGE <span>↗</span></a><a href="https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj" target="_blank" rel="noopener noreferrer">Receita Federal · CNPJ <span>↗</span></a><a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener noreferrer">CNES / DATASUS <span>↗</span></a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap <span>↗</span></a></div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <section class="pg plans" id="planos" aria-labelledby="planosTitulo">
       <div class="product-shell">
-        <div class="section-meta rv"><span>VICUS / PLANOS E CRÉDITOS</span><span>04 — 06</span></div>
+        <div class="section-meta rv"><span>VICUS / PLANOS E CRÉDITOS</span><span>04 — 07</span></div>
         <div class="product-intro"><div class="rv"><div class="subheading">Planos e créditos</div><h2 id="planosTitulo">Um crédito, <em>uma cidade.</em></h2></div><p class="rv" style="--i:1">Cada crédito abre uma cidade por 30 dias; reabrir dentro do prazo não gasta outro. O ranking de cidades usa 1 crédito por busca.</p></div>
         <p class="plans-note rv" role="note">Valores previstos, sujeitos a alteração antes do lançamento. Os planos estarão disponíveis em breve.</p>
         <div class="plan-grid">
@@ -202,7 +190,7 @@
 
     <section class="pg faq" id="perguntas" aria-labelledby="faqTitulo">
       <div class="product-shell">
-        <div class="section-meta rv"><span>VICUS / PERGUNTAS FREQUENTES</span><span>05 — 06</span></div>
+        <div class="section-meta rv"><span>VICUS / PERGUNTAS FREQUENTES</span><span>05 — 07</span></div>
         <div class="product-intro"><div class="rv"><div class="subheading">Perguntas frequentes</div><h2 id="faqTitulo">Respostas <em>diretas.</em></h2></div></div>
         <div class="faq-list">
           <details class="rv" style="--i:0"><summary>De onde vêm os dados?</summary><p>Da Receita Federal (dados abertos do CNPJ), do IBGE (malhas territoriais e Censo 2022: população, área e renda), do CNES/DATASUS (unidades de saúde) e do OpenStreetMap (mapa-base). Cada número leva a fonte e a data de referência.</p></details>
@@ -210,6 +198,26 @@
           <details class="rv" style="--i:2"><summary>E se faltar dado na minha cidade?</summary><p>Mostramos que não encontramos, sem estimar nem inventar valores. A cobertura de dados de cada área fica sempre à vista.</p></details>
           <details class="rv" style="--i:3"><summary>Como funcionam os créditos?</summary><p>1 crédito abre 1 cidade por 30 dias, e reabrir dentro do prazo não gasta outro. O ranking de cidades de um alcance (Brasil, uma região ou um estado) usa 1 crédito por busca.</p></details>
           <details class="rv" style="--i:4"><summary>O que a VICUS não faz?</summary><p>Não usa avaliações nem fotos de terceiros, não guarda dados de sócios e não usa nenhum atributo pessoal no cálculo. Faturamento e sede da sua empresa não entram no ranking.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg sources" id="fontes" aria-labelledby="fontesTitulo">
+      <div class="product-shell">
+        <div class="section-meta rv"><span>VICUS / DADOS E FONTES</span><span>06 — 07</span></div>
+        <div class="product-intro"><div class="rv"><div class="subheading">Dados e fontes</div><h2 id="fontesTitulo"><em>Dados com fonte sustentam a análise.</em></h2></div><p class="rv" style="--i:1">Só dados abertos, cada um com data de referência. Cadastro não é prédio: por isso cada área mostra a cobertura dos seus dados.</p></div>
+        <div class="sources-grid">
+          <ul class="source-list rv" id="sourceList" aria-busy="true" aria-label="Fontes de dados">
+            <li class="sk"><span class="skeleton" style="width:62%"></span><span class="skeleton" style="width:18%"></span></li>
+            <li class="sk"><span class="skeleton" style="width:48%"></span><span class="skeleton" style="width:18%"></span></li>
+            <li class="sk"><span class="skeleton" style="width:70%"></span><span class="skeleton" style="width:18%"></span></li>
+            <li class="sk"><span class="skeleton" style="width:55%"></span><span class="skeleton" style="width:18%"></span></li>
+          </ul>
+          <div class="source-side rv" style="--i:1">
+            <div class="stat" id="citiesStat" hidden><b class="stat-num" id="citiesCount" data-count="0">0</b><span>cidades com dados carregados</span><small>Receita Federal (CNPJ) localizada por bairro ou área do IBGE</small></div>
+            <p class="source-note">Os limites da animação vêm da Malha Municipal 2022 e da Malha de Bairros do Censo 2022, ambas do IBGE (<a href="data/FONTES.md">detalhes e datas</a>). A loja da animação é uma ilustração.</p>
+            <div class="source-links"><a href="https://www.ibge.gov.br/" target="_blank" rel="noopener noreferrer">IBGE <span>↗</span></a><a href="https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj" target="_blank" rel="noopener noreferrer">Receita Federal · CNPJ <span>↗</span></a><a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener noreferrer">CNES / DATASUS <span>↗</span></a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap <span>↗</span></a></div>
+          </div>
         </div>
       </div>
     </section>

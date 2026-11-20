@@ -1,4 +1,8 @@
 // Vídeo "como funciona": o iframe (e com ele a animação e a narração) só existe com o modal aberto.
+import { VIDEO_SECONDS } from './config.js';
+
+// Botão e etiqueta da seção mostram a mesma duração (o HTML traz o valor para quem está sem JS).
+for (const el of document.querySelectorAll('[data-video-s]')) el.textContent = String(VIDEO_SECONDS);
 const open = document.getElementById('videoOpen');
 const dlg = document.getElementById('videoModal');
 let frame = null;
