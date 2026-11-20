@@ -223,8 +223,11 @@ html[data-theme=dark] .preview-map{border:4px solid #000}html[data-theme=dark] .
 .video-close{position:absolute;top:16px;right:16px;min-width:48px;min-height:48px;padding:12px 20px;border:0;border-radius:50px;background:var(--copper-soft);color:var(--coal);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .video-close:focus-visible{outline:3px solid var(--copper-soft);outline-offset:3px}
 @media(max-width:760px){.video-play{min-height:60px;font-size:13px;padding:16px 22px}.video-frame{width:100vw;border-radius:0}}
-/* Cabeçalho de "Como funciona" e do vídeo: mesmas cores de texto de .plans (AA nos dois temas) */
-:is(.how,.video-section) .section-meta{color:var(--muted-dark)}:is(.how,.video-section) .subheading{color:var(--copper-dark)}
+/* Cabeçalho de "Como funciona", do vídeo e das perguntas: mesmas cores de texto de .plans (AA nos dois temas) */
+:is(.how,.video-section,.faq) .section-meta{color:var(--muted-dark)}:is(.how,.video-section,.faq) .subheading{color:var(--copper-dark)}
+.end-section .subheading{color:var(--copper-soft)} /* sobre --coal: o cobre puro dava 3,9:1 */
+/* "Dados e fontes" (fundo areia): etiqueta e numeração com AA sobre --sand (4,8:1 e 5,7:1) */
+.sources .section-meta,.sources .product-intro>p{color:var(--muted-ink)}.sources .subheading{color:var(--copper-deep)}
 /* "Dados e fontes": título de uma frase só, em duas linhas equilibradas ao lado do texto */
 .sources .product-intro h2{max-width:11.5em;text-wrap:balance}
 /* Vídeo: capa do tema atual (a outra fica display:none e, com loading=lazy, nem é baixada) e o aviso de animação ilustrativa */

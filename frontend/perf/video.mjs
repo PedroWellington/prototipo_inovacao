@@ -58,8 +58,10 @@ for (const [device, viewport, theme, reduced] of [
   const attrs = await page.locator('#videoModal iframe').evaluate((f) => [f.getAttribute('src'), f.allow, f.title]);
   ok(attrs.join('|') === `/video/${video}.html?embed=1&auto=1|autoplay|Vídeo: como o VICUS funciona`, d(`iframe ${attrs.join(' | ')}`));
   ok(await page.locator('#videoModal .video-note').isVisible(), d('aviso "Animação ilustrativa" no modal'));
-  const dlg = await page.locator('#videoModal').evaluate((e) => [e.getAttribute('role'), e.getAttribute('aria-modal'), e.getAttribute('aria-label')].join('|'));
-  ok(dlg === 'dialog|true|Vídeo: como o VICUS funciona', d('role, aria-modal e aria-label'));
+  // Modal e botão ligados ao título da seção ("Como a VICUS funciona.") por aria-labelledby.
+  const dlg = await page.evaluate(() => { const e = document.getElementById('videoModal'); const t = document.getElementById(e.getAttribute('aria-labelledby'));
+    return [e.getAttribute('role'), e.getAttribute('aria-modal'), t?.tagName, t?.textContent, document.getElementById('videoOpen').getAttribute('aria-labelledby')].join('|'); });
+  ok(dlg === 'dialog|true|H2|Como a VICUSfunciona.|videoPlay videoTitulo', d(`role, aria-modal e aria-labelledby (${dlg})`));
   await page.waitForTimeout(3500);
   const inner = page.frameLocator('#videoModal iframe');
   ok(await inner.locator('#cap').count() === 1, d('animação abriu dentro do iframe (CSP real)'));

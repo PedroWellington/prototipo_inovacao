@@ -16,6 +16,14 @@ cd frontend; node perf/a11y.mjs      # cria um usuário descartável; sai com c�
 | Explorador: início, ranking do Recife e detalhes do bairro | 0 | 0 |
 | Minha conta e termos | 0 | 0 |
 
+## Rodada de 2026-11-20 (landing inteira)
+
+O script passou a rolar até o fim da landing (perguntas frequentes, "Dados e fontes", bloco final) e a medir o hero com o Nordeste
+em destaque. Antes, as seções de baixo ainda estavam com opacidade 0 (reveladas pela rolagem) e o axe não as media. Achou, só no
+tema claro: numeração e etiqueta do FAQ (`--muted` e `--copper` sobre o papel, 3,2:1 e 3,7:1), de "Dados e fontes" (sobre areia,
+2,6:1 e 4,1:1) e a etiqueta do bloco final (cobre sobre grafite, 3,9:1). Corrigido com `--muted-dark`/`--copper-dark` no papel,
+`--muted-ink`/`--copper-deep` na areia e `--copper-soft` no grafite. Resultado: 0 violações nos dois temas, desktop e celular.
+
 ## O que foi corrigido para chegar a zero
 
 - **Contraste da paleta.**
