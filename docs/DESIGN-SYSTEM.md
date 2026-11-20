@@ -82,6 +82,20 @@ Nota do contorno no explorador: a escala vai do escuro ao claro, então nenhum c
 mais escuros. Nesses trechos a forma da cidade continua clara pelos limites internos (`--snow`, ≥ 3:1 em todos os
 tons) e pelo número de cada área; o contorno preto é reforço, não o único sinal.
 
+### Mapa do Brasil na abertura da landing (2026-11-20, os dois temas)
+
+A página abre com o Brasil numa cor só (todos os estados com o mesmo preenchimento); o Nordeste só ganha destaque
+quando a rolagem entra no trecho que leva a ele (p ≥ 0,09 da linha do tempo do hero), numa transição de 0,6 s, e
+volta a uma cor só ao subir. Movimento reduzido: troca sem animação. Cores em `landing/js/landing.js` (`C.ufs`,
+`C.ufBorder`, `C.nordeste`, `C.nordesteBorder`); no mapa real (`frontend/src/hero/main.js`) Brasil e Nordeste são
+opacos e as divisas têm 1,5 px. Medido nos pixels de capturas a 1440 × 900 (valor mais baixo de cada caso, com o antisserrilhado das diagonais):
+
+| Caso | Claro (canvas · mapa real) | Escuro (canvas · mapa real) |
+|---|---|---|
+| Divisa clara x estado (Brasil numa cor) | 3,80 · 3,42 | 3,56 · 3,25 |
+| Nordeste em destaque x demais estados | 3,50 · 3,49 | 3,64 · 3,64 |
+| Divisa escura do Nordeste x Nordeste | 5,63 · 6,34 | 6,71 · 7,69 |
+
 Decisão do botão: o Scarlet puro dá 4,45:1 com branco, então o **preenchimento** do botão usa `--scarlet-btn`
 (o mesmo vermelho com 12% de preto), 5,51:1. O Scarlet puro fica no brilho do botão e em pontos e etiquetas que
 sempre têm texto ou ícone junto (nenhuma informação só por cor).

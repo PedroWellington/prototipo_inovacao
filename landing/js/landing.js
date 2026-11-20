@@ -308,10 +308,12 @@ const C = {
   glow: rgba(T.copperSoft, 0.22),
   flatFill: rgba(T.muted, 0.16), flatMesh: rgba(T.sand, 0.22),
   ring: rgba(T.copperSoft, 0.35), halo: rgba(T.copperSoft, 0.18), dot: T.copperSoft, core: T.coal2,
-  // Estados (Nordeste em destaque), Brasil, Nordeste, PE e Recife: tons de sage sobre grafite.
-  ne: tint(T.sage, T.coal, 0.03), ufs: tint(T.sage, T.coal, 0.25), ufSide: tint(T.coal2, T.sage, 0.08), ufBorder: rgba(T.sand, 0.24),
+  // Estados (todos com o mesmo preenchimento), Brasil, Nordeste, PE e Recife: tons de sage sobre grafite.
+  // Contraste (WCAG 1.4.11, mínimo 3:1, nos dois temas): divisa x estado 3,8:1; Nordeste x demais estados 3,5:1;
+  // divisas do Nordeste (escuras) x Nordeste 5,4:1. Conta e tabela em docs/DESIGN-SYSTEM.md.
+  ufs: tint(T.sage, T.coal, 0.55), ufSide: tint(T.coal2, T.sage, 0.08), ufBorder: rgba(T.sand, 0.7),
   br: tint(T.sage, T.coal, 0.1), brSide: T.coal2, brBorder: rgba(T.sand, 0.56),
-  nordeste: tint(T.sage, T.sand, 0.15), nordesteSide: tint(T.coal2, T.sage, 0.3), nordesteBorder: rgba(T.sand, 0.73),
+  nordeste: tint(T.sage, T.sand, 0.4), nordesteSide: tint(T.coal2, T.sage, 0.3), nordesteBorder: rgba(T.coal, 0.9),
   pe: tint(T.sage, T.sand, 0.4), peSide: tint(T.coal2, T.sage, 0.4), peBorder: rgba(T.copperSoft, 0.84),
   recife: tint(T.sage, T.sand, 0.08), recifeSide: tint(T.coal2, T.sage, 0.15), recifeBorder: rgba(T.copperSoft, 0.77),
   focus: T.copperSoft, focusSide: T.copperDark, focusBorder: rgba(T.paper, 0.82),
@@ -387,13 +389,20 @@ function atmosphere(p) {
   }
 }
 
+// Destaque do Nordeste: a página abre com o Brasil numa cor só; quando a rolagem entra no trecho que leva ao Nordeste
+// (p >= NE_AT), o Nordeste acende em NE_MS, por tempo (não pela rolagem), e apaga do mesmo jeito ao voltar ao início.
+// Movimento reduzido: troca sem animação. neT vai de 0 a 1 em linha reta; a curva suave fica em neHi().
+const NE_AT = 0.09, NE_MS = 600;
+let neT = 0;
+const neGoal = (p) => (p >= NE_AT ? 1 : 0);
+const neHi = () => neT * neT * (3 - 2 * neT);
 // Agenda única de opacidade das camadas (canvas e mapa real). A troca de geometria é só opacidade, na escala em que a
 // câmera já está; e a camada mãe continua como contexto até a filha ocupar a tela (antes, o Nordeste sumia enquanto
 // Pernambuco ainda era pequeno, e parecia que a escala recomeçava).
-function alphas(p) {
+function alphas(p, hi = neHi()) {
   return {
     estados: easeOut(p, 0.27, 0.36),
-    nordeste: easeIn(p, 0.09, 0.19) * easeOut(p, 0.42, 0.5),
+    nordeste: hi * easeOut(p, 0.42, 0.5),
     pe: easeIn(p, 0.275, 0.36) * easeOut(p, 0.55, 0.63),
     municipios: easeIn(p, 0.33, 0.43) * easeOut(p, 0.66, 0.74),
     recife: easeIn(p, 0.405, 0.485) * easeOut(p, 0.66, 0.76),
@@ -408,11 +417,8 @@ function drawTerritory(p) {
   const br = pick('brasil'), pe = pick('pe'), rec = pick('recife');
   if (A.estados > 0.002 && br) {
     const a = op * A.estados;
-    if (br.estados) {
-      drawSolid(br.estados, a, { depth: 15, of: (f) => (NE.has(f.props.uf)
-        ? { alpha: 0.98, top: C.ne, side: C.ufSide, border: C.ufBorder, depth: 15 }
-        : { alpha: 0.78, top: C.ufs, side: C.ufSide, border: C.ufBorder, depth: 15 }) });
-    } else drawSolid(br.brasil, a, { top: C.br, side: C.brSide, border: C.brBorder, depth: 21 });
+    if (br.estados) drawSolid(br.estados, a, { top: C.ufs, side: C.ufSide, border: C.ufBorder, depth: 15 }); // uma cor só
+    else drawSolid(br.brasil, a, { top: C.br, side: C.brSide, border: C.brBorder, depth: 21 });
   }
   if (A.nordeste > 0.002 && br) {
     drawSolid(br.nordesteUFs || br.nordeste, op * A.nordeste,
@@ -492,10 +498,11 @@ async function startHero() {
     const timeout = new Promise((_, no) => setTimeout(() => no(new Error('tempo esgotado')), 30000));
     const [{ createHeroMap }, brasil, pe, recife] = await Promise.race([
       Promise.all([import('/app/hero/hero.js'), fetchJSON('data/brasil-1.json'), fetchJSON('data/pe-2.json'), fetchJSON('data/recife-2.json')]), timeout]);
-    const colors = { ne: C.ne, ufs: C.ufs, nordeste: C.nordeste, pe: C.pe, recife: C.recife, focus: C.focus, focusBorder: C.focusBorder, palette: PALETTE,
+    const colors = { ufs: C.ufs, nordeste: C.nordeste, pe: C.pe, recife: C.recife, focus: C.focus, focusBorder: C.focusBorder, palette: PALETTE,
       border: { estados: C.ufBorder, nordeste: C.nordesteBorder, municipios: C.flatMesh, pe: C.peBorder, recife: C.recifeBorder, bairros: C.hoodBorder } };
     const viewAt = (p) => mapView(p);
-    hero.api = await Promise.race([createHeroMap(heroEl, { topos: { brasil, pe, recife }, focus: FOCUS, colors, mobile: size.mobile, viewAt, alphasAt: alphas }), timeout]);
+    const alphasAt = (p) => alphas(p, neGoal(p)); // pré-carga: o caminho com o destaque de cada ponto
+    hero.api = await Promise.race([createHeroMap(heroEl, { topos: { brasil, pe, recife }, focus: FOCUS, colors, mobile: size.mobile, viewAt, alphasAt }), timeout]);
     Object.assign(hero, { mode: 'map', since: performance.now() });
     heroEl.classList.add('is-live');
     dirty = true;
@@ -596,14 +603,16 @@ function tick(time) {
   const before = current;
   current = reduced ? target : mix(current, target, 1 - Math.exp(-dt / TAU));
   if (Math.abs(current - target) < 0.00005) current = target;
-  if (!inView) { current = target; previous = 0; return; }
+  if (!inView) { current = target; neT = neGoal(current); previous = 0; return; }
+  const goal = neGoal(current);
+  if (neT !== goal) { neT = reduced ? goal : clamp(neT + Math.sign(goal - neT) * (dt / NE_MS)); dirty = true; }
   if (current !== before || dirty) {
     dirty = false;
     const t0 = performance.now();
     render(current);
     adapt(performance.now() - t0);
   }
-  if (current !== target) requestFrame(); else previous = 0;
+  if (current !== target || neT !== goal) requestFrame(); else previous = 0;
 }
 // Qualidade adaptativa: se o desenho passar do orçamento por vários quadros, reduz a densidade de pixels.
 function adapt(ms) {

@@ -46,8 +46,9 @@ const NE = new Set(['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE']);
 // maxzoom: até onde a fonte é recortada em tiles; acima disso o mapa amplia o tile que já tem (sem recortar de novo
 // a cada nível de zoom do mergulho). Ajustado à escala em que cada camada aparece na linha do tempo.
 const LAYERS = [
-  { key: 'estados', fill: 0.62, line: 0.5, maxzoom: 7 },
-  { key: 'nordeste', fill: 0.5, line: 0.75, maxzoom: 7 },
+  // Brasil e Nordeste opacos: o contraste das divisas e do destaque (mínimo 3:1) não depende do mapa-base embaixo.
+  { key: 'estados', fill: 0.92, line: 1, maxzoom: 7 },
+  { key: 'nordeste', fill: 1, line: 1, maxzoom: 7 },
   { key: 'municipios', fill: 0, line: 0.35, maxzoom: 10 },
   { key: 'pe', fill: 0.5, line: 0.85, maxzoom: 10 },
   { key: 'recife', fill: 0.42, line: 0.8, maxzoom: 13 },
@@ -59,9 +60,11 @@ const LAYERS = [
 export async function createHeroMap(host, { topos, focus, colors, mobile = false, viewAt, alphasAt }) {
   const mapEl = host.querySelector('.hero-map-canvas');
   const holoEl = host.querySelector('.hero-holo');
+  const estados = topoToGeoJSON(topos.brasil, 'estados');
   const data = {
-    estados: topoToGeoJSON(topos.brasil, 'estados', (p) => ({ ne: NE.has(p.uf) })),
-    nordeste: topoToGeoJSON(topos.brasil, 'nordeste'),
+    estados,
+    // Nordeste como as 9 UFs (divisas escuras entre elas), como no canvas da landing.
+    nordeste: { type: 'FeatureCollection', features: estados.features.filter((f) => NE.has(f.properties.uf)) },
     municipios: topoToGeoJSON(topos.pe, 'municipios'),
     pe: topoToGeoJSON(topos.pe, 'pernambuco'),
     recife: topoToGeoJSON(topos.recife, 'cidade'),
@@ -94,7 +97,7 @@ export async function createHeroMap(host, { topos, focus, colors, mobile = false
   new MutationObserver(unfocus).observe(host, { childList: true, subtree: true });
   unfocus();
   const fills = {
-    estados: ['case', ['get', 'ne'], colors.ne, colors.ufs],
+    estados: colors.ufs, // uma cor só: o destaque do Nordeste é a camada nordeste, que a landing acende pela rolagem
     nordeste: colors.nordeste,
     municipios: colors.ufs,
     pe: colors.pe,
@@ -106,7 +109,8 @@ export async function createHeroMap(host, { topos, focus, colors, mobile = false
     map.addLayer({ id: `${key}-fill`, type: 'fill', source: key, layout: { visibility: 'none' }, paint: { 'fill-color': fills[key], 'fill-opacity': 0 } });
     map.addLayer({ id: `${key}-line`, type: 'line', source: key, paint: {
       'line-color': key === 'bairros' ? ['case', ['get', 'focus'], colors.focusBorder, colors.border[key]] : colors.border[key],
-      'line-width': key === 'bairros' ? ['case', ['get', 'focus'], 2.5, 0.8] : key === 'municipios' ? 0.5 : 1.1,
+      // Divisas do Brasil e do Nordeste com 1,5 px: com 1,1 px o antisserrilhado das diagonais ficava abaixo de 3:1.
+      'line-width': key === 'bairros' ? ['case', ['get', 'focus'], 2.5, 0.8] : key === 'municipios' ? 0.5 : key === 'estados' || key === 'nordeste' ? 1.5 : 1.1,
       'line-opacity': 0,
     }, layout: { visibility: 'none' } });
   }
